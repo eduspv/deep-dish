@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🍽️ Deep Dish -- Frontend
 
 O **Deep Dish** é uma plataforma digital de **fila inteligente e reserva
