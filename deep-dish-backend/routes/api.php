@@ -8,3 +8,5 @@ Route::get('/health', function () {
         'app' => 'Deep Dish API',
     ]);
 });
+
+Route::post('/restaurante/register', [App\Http\Controllers\ClienteController::class, 'register']);
