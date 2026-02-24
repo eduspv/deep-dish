@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         // criando tabela dos clientes
-        Schema::create('clientes', function (Blueprint $table) {
+        Schema::create('cliente', function (Blueprint $table) {
             // id auto-incrementável
             $table->id();
             // campo de nome do tipo string
