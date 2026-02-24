@@ -15,9 +15,7 @@ class RestauranteController extends Controller
 
     public function register(Request $request)
     {
-        // Se o frontend estiver mandando JSON corretamente com Content-Type: application/json,
-        // você pode trocar por: $data = $request->all();
-        $data = json_decode($request->getContent(), true);
+        $data = $request->all();
 
         try {
             // ✅ Controller valida entrada (camada HTTP)
