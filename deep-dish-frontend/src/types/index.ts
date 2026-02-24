@@ -25,6 +25,11 @@ export interface Restaurant {
   currentQueueSize: number;
 }
 
+export interface AuthSession {
+  token: string;          // JWT do backend
+  restaurant: Restaurant; // dados do restaurante
+}
+
 export interface Table {
   id: string;
   restaurantId: string;
