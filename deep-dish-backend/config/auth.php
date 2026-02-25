@@ -1,5 +1,5 @@
 <?php
-
+//Essa página define as configurações do nosso middleware como ele vai ser autenticado.
 return [
 
     /*
@@ -40,6 +40,18 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+    // ✅ JWT para cliente
+    'cliente' => [
+        'driver' => 'jwt',
+        'provider' => 'cliente',
+    ],
+
+    // ✅ JWT para restaurante
+    'restaurante' => [
+        'driver' => 'jwt',
+        'provider' => 'restaurante',
+    ],
     ],
 
     /*
@@ -65,10 +77,14 @@ return [
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'Cliente' => [
+            'driver' => 'eloquent',
+            'model' => env('AUTH_MODEL', App\Models\Cliente::class),
+        ],
+        'Restaurante' => [
+            'driver' => 'eloquent',
+            'model' => env('AUTH_MODEL', App\Models\Restaurante::class),
+        ],
     ],
 
     /*
