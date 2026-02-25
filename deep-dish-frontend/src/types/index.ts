@@ -11,19 +11,20 @@ export interface Restaurant {
   id: string;
   name: string;
   tipo: string;
+  email: string;
+  cnpj: string;
   endereco: string;
   cidade: string;
   telefone: string;
   imagem_url: string;
   horario_aberto: string;
-  fila_atividade: boolean;
-  reservas_habilitadas: boolean;
+  fila_ativa: boolean;
   tamanho_fila_atual: number;
 }
 
 export interface AuthSession {
-  token: string;          // JWT do backend
-  restaurant: Restaurant; // dados do restaurante
+  token: string;          
+  restaurant: Restaurant; 
 }
 
 export interface Table {
