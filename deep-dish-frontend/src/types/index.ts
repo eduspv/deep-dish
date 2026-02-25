@@ -1,33 +1,30 @@
-export interface User {
+export interface Cliente {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  role: 'USER' | 'RESTAURANT';
+  cpf: string;
+  tipo_usuario: 'cliente' | 'restaurante' | '';
   avatarUrl?: string;
 }
-
+//TODO CONSERTAR AS INTERFACES PARA ENTRAREM NO PADRÃO DO SITE
 export interface Restaurant {
   id: string;
   name: string;
-  description: string;
-  type: string;
-  address: string;
-  city: string;
-  phone: string;
-  imageUrl: string;
-  rating: number;
-  priceRange: 1 | 2 | 3 | 4;
-  openingHours: string;
-  queueActive: boolean;
-  reservationsEnabled: boolean;
-  averageWaitTime: number;
-  currentQueueSize: number;
+  tipo: string;
+  email: string;
+  cnpj: string;
+  endereco: string;
+  cidade: string;
+  telefone: string;
+  imagem_url: string;
+  horario_aberto: string;
+  fila_ativa: boolean;
+  tamanho_fila_atual: number;
 }
 
 export interface AuthSession {
-  token: string;          // JWT do backend
-  restaurant: Restaurant; // dados do restaurante
+  token: string;          
+  restaurant: Restaurant; 
 }
 
 export interface Table {
