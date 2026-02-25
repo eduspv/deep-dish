@@ -1,8 +1,9 @@
 // src/contexts/AuthContext.tsx
 
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { Cliente } from "@/types";
+import { Cliente, Restaurante } from "@/types";
 import { mockUser, mockRestaurantUser } from "@/mocks/user";
+import { User } from "@/types";
 
 const BASE = import.meta.env.VITE_API_URL;
 
@@ -16,7 +17,7 @@ type RestaurantRegisterData = {
 };
 
 interface AuthContextType {
-  user: Cliente | null;
+  user: Cliente | Restaurante | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 
@@ -34,7 +35,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<Cliente | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // -------- LOGIN NORMAL (mock)
@@ -93,6 +94,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
         // ✅ salva dados no localStorage
         localStorage.setItem("jwt", result.token);
+        localStorage.setItem("user", JSON.stringify(result.restaurante)); 
+        setUser(result.restaurante); // importante pra isAuthenticated funcionar
 
         if (result.tipo_usuario) {
           localStorage.setItem("tipo_usuario", result.tipo_usuario);

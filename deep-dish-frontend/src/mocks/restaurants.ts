@@ -1,6 +1,6 @@
-import { Restaurant, Table, TimeSlot, StaffMember, RestaurantSettings } from '@/types';
+import { Restaurante, Table, TimeSlot, StaffMember, RestaurantSettings } from '@/types';
 
-export const mockRestaurants: Restaurant[] = [
+export const mockRestaurants: Restaurante[] = [
   {
     id: 'r1',
     name: 'Trattoria Bella Notte',
@@ -9,7 +9,7 @@ export const mockRestaurants: Restaurant[] = [
     cidade: 'São Paulo',
     telefone: '(11) 3333-1111',
     imagem_url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&h=400&fit=crop',
-    horario_aberto: '12:00 - 23:00',
+    horario_funcionamento: '12:00 - 23:00',
     fila_ativa: true,
     tamanho_fila_atual: 8,
     email: 'adm@example.com',
@@ -23,7 +23,7 @@ export const mockRestaurants: Restaurant[] = [
     cidade: 'São Paulo',
     telefone: '(11) 3333-2222',
     imagem_url: 'https://images.unsplash.com/photo-1579027989536-b7b1f875659b?w=600&h=400&fit=crop',
-    horario_aberto: '11:30 - 22:30',
+    horario_funcionamento: '11:30 - 22:30',
     fila_ativa: true,
     email: 'adm@example.com',
     cnpj: '12.345.678/0001-99',
@@ -37,7 +37,7 @@ export const mockRestaurants: Restaurant[] = [
     cidade: 'São Paulo',
     telefone: '(11) 3333-3333',
     imagem_url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=400&fit=crop',
-    horario_aberto: '11:00 - 23:30',
+    horario_funcionamento: '11:00 - 23:30',
     fila_ativa: false,
     tamanho_fila_atual: 0,
     email: 'adm@example.com',
@@ -51,7 +51,7 @@ export const mockRestaurants: Restaurant[] = [
     cidade: 'São Paulo',
     telefone: '(11) 3333-4444',
     imagem_url: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=400&fit=crop',
-    horario_aberto: '19:00 - 00:00',
+    horario_funcionamento: '19:00 - 00:00',
     fila_ativa: true,
     tamanho_fila_atual: 5,
     email: 'adm@example.com',
@@ -65,7 +65,7 @@ export const mockRestaurants: Restaurant[] = [
     cidade: 'São Paulo',
     telefone: '(11) 3333-5555',
     imagem_url: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&h=400&fit=crop',
-    horario_aberto: '17:00 - 02:00',
+    horario_funcionamento: '17:00 - 02:00',
     fila_ativa: true,
     email: 'adm@example.com',
     cnpj: '12.345.678/0001-99',
@@ -79,7 +79,7 @@ export const mockRestaurants: Restaurant[] = [
     cidade: 'São Paulo',
     telefone: '(11) 3333-6666',
     imagem_url: 'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=600&h=400&fit=crop',
-    horario_aberto: '11:00 - 21:00',
+    horario_funcionamento: '11:00 - 21:00',
     fila_ativa: false,
     email: 'adm@example.com',
     cnpj: '12.345.678/0001-99',

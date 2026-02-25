@@ -1,3 +1,4 @@
+// src/App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -48,27 +49,48 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/restaurant/login" element={<RestaurantLogin />} />
-              <Route path="/restaurant/register" element={<RestaurantRegister />} />
+              <Route
+                path="/restaurant/register"
+                element={<RestaurantRegister />}
+              />
             </Route>
 
-            {/* Client App */}
-            <Route element={<ProtectedRoute tipo_usuario="cliente"><AppLayout /></ProtectedRoute>}>
+            {/* Client App (cliente E restaurante podem acessar) */}
+            <Route
+              element={
+                <ProtectedRoute allow={["cliente", "restaurante"]}>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route path="/app" element={<AppHome />} />
               <Route path="/app/search" element={<Search />} />
               <Route path="/app/restaurants" element={<Restaurants />} />
               <Route path="/app/restaurants/:id" element={<RestaurantDetail />} />
               <Route path="/app/confirm" element={<Confirm />} />
               <Route path="/app/queue" element={<Queue />} />
-              <Route path="/app/reservations/:id" element={<ReservationDetail />} />
+              <Route
+                path="/app/reservations/:id"
+                element={<ReservationDetail />}
+              />
             </Route>
 
-            {/* Restaurant Admin */}
-            <Route element={<ProtectedRoute tipo_usuario="restaurante"><AdminLayout /></ProtectedRoute>}>
+            {/* Restaurant Admin (só restaurante) */}
+            <Route
+              element={
+                <ProtectedRoute allow={["restaurante"]}>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route path="/restaurant/dashboard" element={<Dashboard />} />
               <Route path="/restaurant/settings" element={<Settings />} />
               <Route path="/restaurant/tables" element={<Tables />} />
               <Route path="/restaurant/queue" element={<QueueManagement />} />
-              <Route path="/restaurant/reservations" element={<AdminReservations />} />
+              <Route
+                path="/restaurant/reservations"
+                element={<AdminReservations />}
+              />
               <Route path="/restaurant/staff" element={<Staff />} />
             </Route>
 
