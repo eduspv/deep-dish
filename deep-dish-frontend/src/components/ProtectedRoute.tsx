@@ -4,16 +4,16 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface Props {
   children: React.ReactElement;
-  role: 'USER' | 'RESTAURANT';
+  tipo_usuario: 'cliente' | 'restaurante' | '';
 }
 
-const ProtectedRoute: React.FC<Props> = ({ children, role }) => {
+const ProtectedRoute: React.FC<Props> = ({ children, tipo_usuario }) => {
   const { user, isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
-    return <Navigate to={role === 'RESTAURANT' ? '/restaurant/login' : '/login'} replace />;
+    return <Navigate to={tipo_usuario === '' ? '/cliente/login' : '/login'} replace />;
   }
-  if (user?.role !== role) {
+  if (user?.tipo_usuario !== tipo_usuario) {
     return <Navigate to="/" replace />;
   }
   return children;

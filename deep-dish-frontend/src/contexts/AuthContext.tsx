@@ -1,7 +1,7 @@
 // src/contexts/AuthContext.tsx
 
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { User } from "@/types";
+import { Cliente } from "@/types";
 import { mockUser, mockRestaurantUser } from "@/mocks/user";
 
 const BASE = import.meta.env.VITE_API_URL;
@@ -16,7 +16,7 @@ type RestaurantRegisterData = {
 };
 
 interface AuthContextType {
-  user: User | null;
+  user: Cliente | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 
@@ -34,7 +34,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<Cliente | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // -------- LOGIN NORMAL (mock)

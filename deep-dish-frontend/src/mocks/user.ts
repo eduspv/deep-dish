@@ -1,17 +1,17 @@
-import { User } from '@/types';
+import { Cliente } from '@/types';
 
-export const mockUser: User = {
+export const mockUser: Cliente = {
   id: 'user-1',
   name: 'João Silva',
   email: 'joao@email.com',
-  phone: '(11) 99999-0000',
-  role: 'USER',
+  cpf: '123.456.789-00',
+  tipo_usuario: 'cliente',
 };
 
-export const mockRestaurantUser: User = {
+export const mockRestaurantUser: Cliente = {
   id: 'rest-admin-1',
   name: 'Maria Chef',
   email: 'maria@deepdish.com',
-  phone: '(11) 98888-0000',
-  role: 'RESTAURANT',
+  cpf: '123.456.789-00',  
+  tipo_usuario: 'restaurante',
 };

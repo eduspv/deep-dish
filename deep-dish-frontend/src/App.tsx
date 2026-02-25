@@ -52,7 +52,7 @@ const App = () => (
             </Route>
 
             {/* Client App */}
-            <Route element={<ProtectedRoute role="USER"><AppLayout /></ProtectedRoute>}>
+            <Route element={<ProtectedRoute tipo_usuario="cliente"><AppLayout /></ProtectedRoute>}>
               <Route path="/app" element={<AppHome />} />
               <Route path="/app/search" element={<Search />} />
               <Route path="/app/restaurants" element={<Restaurants />} />
@@ -63,7 +63,7 @@ const App = () => (
             </Route>
 
             {/* Restaurant Admin */}
-            <Route element={<ProtectedRoute role="RESTAURANT"><AdminLayout /></ProtectedRoute>}>
+            <Route element={<ProtectedRoute tipo_usuario="restaurante"><AdminLayout /></ProtectedRoute>}>
               <Route path="/restaurant/dashboard" element={<Dashboard />} />
               <Route path="/restaurant/settings" element={<Settings />} />
               <Route path="/restaurant/tables" element={<Tables />} />
