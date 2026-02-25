@@ -9,4 +9,4 @@ Route::get('/health', function () {
     ]);
 });
 
-Route::post('/restaurante/register', [App\Http\Controllers\ClienteController::class, 'register']);
+Route::post('/restaurante/register', [App\Http\Controllers\RestauranteController::class, 'register']);

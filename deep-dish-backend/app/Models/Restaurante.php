@@ -1,16 +1,16 @@
-<?php 
+<?php
 
 namespace App\Models;
 
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Auth\Restaurante as Authenticatable;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class Restaurante extends Autenticable
+class Restaurante extends Authenticatable implements JWTSubject
 {
- /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
+
+    protected $table = 'restaurante';
 
     protected $fillable = [
         'name',
@@ -22,17 +22,26 @@ class Restaurante extends Autenticable
         'password',
     ];
 
-     protected $hidden = [
+    protected $hidden = [
         'password',
-    ];  
+    ];
 
-
-      protected function casts(): array
+    protected function casts(): array
     {
         return [
             'password' => 'hashed',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
-    }   
+    }
+
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims(): array
+    {
+        return [];
+    }
 }
