@@ -1,13 +1,13 @@
+//TODO CONSERTAR AS INTERFACES PARA ENTRAREM NO PADRÃO DO SITE
+
 export interface Cliente {
   id: string;
   name: string;
   email: string;
   cpf: string;
-  tipo_usuario: 'cliente' | 'restaurante' | '';
-  avatarUrl?: string;
 }
-//TODO CONSERTAR AS INTERFACES PARA ENTRAREM NO PADRÃO DO SITE
-export interface Restaurant {
+
+export interface Restaurante {
   id: string;
   name: string;
   tipo: string;
@@ -17,14 +17,16 @@ export interface Restaurant {
   cidade: string;
   telefone: string;
   imagem_url: string;
-  horario_aberto: string;
+  horario_funcionamento: string;
   fila_ativa: boolean;
   tamanho_fila_atual: number;
 }
 
+export type User = Cliente | Restaurante;
+
 export interface AuthSession {
   token: string;          
-  restaurant: Restaurant; 
+  restaurant: Restaurante; 
 }
 
 export interface Table {

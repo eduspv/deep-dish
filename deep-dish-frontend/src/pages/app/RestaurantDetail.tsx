@@ -6,13 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/StatusBadge';
 import { mockRestaurants, mockTimeSlots, mockTables } from '@/mocks/restaurants';
-import { Restaurant, TimeSlot } from '@/types';
+import { Restaurante, TimeSlot } from '@/types';
 import { MapPin, Clock, Star, Users, Phone } from 'lucide-react';
 
 const RestaurantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [restaurant, setRestaurant] = useState<Restaurante | null>(null);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [partySize, setPartySize] = useState('2');

@@ -5,7 +5,6 @@ export const mockUser: Cliente = {
   name: 'João Silva',
   email: 'joao@email.com',
   cpf: '123.456.789-00',
-  tipo_usuario: 'cliente',
 };
 
 export const mockRestaurantUser: Cliente = {
@@ -13,5 +12,4 @@ export const mockRestaurantUser: Cliente = {
   name: 'Maria Chef',
   email: 'maria@deepdish.com',
   cpf: '123.456.789-00',  
-  tipo_usuario: 'restaurante',
 };

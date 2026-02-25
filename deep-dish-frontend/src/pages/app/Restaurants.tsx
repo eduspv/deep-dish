@@ -4,12 +4,12 @@ import RestaurantCard from '@/components/RestaurantCard';
 import EmptyState from '@/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { mockRestaurants } from '@/mocks/restaurants';
-import { Restaurant } from '@/types';
+import { Restaurante } from '@/types';
 import { Utensils } from 'lucide-react';
 
 const Restaurants: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [restaurants, setRestaurants] = useState<Restaurante[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

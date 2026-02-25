@@ -1,9 +1,9 @@
-import { Restaurant } from '@/types';
+import { Restaurante } from '@/types';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Users, Star } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 
-const RestaurantCard = ({ restaurant }: { restaurant: Restaurant }) => {
+const RestaurantCard = ({ restaurant }: { restaurant: Restaurante }) => {
   const priceLabel = '€'.repeat(restaurant.priceRange);
 
   return (
