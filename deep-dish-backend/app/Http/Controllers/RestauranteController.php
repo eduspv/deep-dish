@@ -25,9 +25,9 @@ class RestauranteController extends Controller
                     'required',
                     'email',
                     'regex:/^[^@]+@[^@]+\.(com)$/i',
-                    'unique:restaurantes,email',
+                    'unique:restaurante,email',
                 ],
-                'cnpj' => 'required|string|unique:restaurantes,cnpj',
+                'cnpj' => 'required|string|unique:restaurante,cnpj',
                 'tipo' => 'required|string|in:bifes,vegetariano,churrasco,frutos do mar,comida caseira',
                 'endereco' => 'required|string',
                 'password' => 'required|string|min:6',
@@ -38,7 +38,7 @@ class RestauranteController extends Controller
 
             return response()->json([
                 'message' => 'Restaurante cadastrado com sucesso!',
-                'restaurante' => $result['restaurante'],
+                'restaurante' => $result['tipo_usuario'],
                 'token' => $result['token'],
             ], 201);
 

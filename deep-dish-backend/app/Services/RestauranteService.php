@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Repositories\RestauranteRepository;
+use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class RestauranteService
@@ -13,18 +14,21 @@ class RestauranteService
 
     public function register(array $validated): array
     {
-        // ✅ Regra de negócio: tipo_usuario é definido pelo sistema (não vem do request)
-        $validated['tipo_usuario'] = 'restaurante';
+        return DB::transaction(function () use ($validated) {
 
-        // ✅ Persiste via repository
-        $restaurante = $this->repo->create($validated);
+            // Regra de negócio: tipo_usuario é definido pelo sistema
+            $validated['tipo_usuario'] = 'restaurante';
 
-        // ✅ Gera token JWT para o restaurante recém criado
-        $token = JWTAuth::fromUser($restaurante);
+            // Persiste via repository
+            $restaurante = $this->repo->create($validated);
 
-        return [
-            'restaurante' => $restaurante,
-            'token' => $token,
-        ];
+            // Gera token JWT para o restaurante recém criado
+            $token = JWTAuth::fromUser($restaurante);
+
+            return [
+                'tipo_usuario' => $restaurante->tipo_usuario,
+                'token' => $token,
+            ];
+        });
     }
 }

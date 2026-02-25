@@ -12,6 +12,8 @@ class Cliente extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
+ protected $table = 'cliente';
+
     protected $fillable = [
         'name',
         'email',

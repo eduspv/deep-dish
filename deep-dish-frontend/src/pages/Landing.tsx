@@ -32,7 +32,7 @@ const Landing: React.FC = () => {
             initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.6, delay: 0.3 }}
           >
             <Link to="/register"><Button size="lg" className="text-base px-8">Criar conta</Button></Link>
-            <Link to="/login"><Button size="lg" variant="outline" className="text-base px-8 border-dark-surface-foreground/30 text-dark-surface-foreground hover:bg-dark-surface-foreground/10">Entrar</Button></Link>
+            <Link to="/login"><Button size="lg" variant="outline" className="text-base px-8 border-dark-surface-foreground/30 text-black-surface-foreground hover:bg-dark-surface-foreground/10">Entrar</Button></Link>
           </motion.div>
         </div>
       </section>
@@ -100,9 +100,14 @@ const Landing: React.FC = () => {
               <Button size="lg" className="text-base px-8">Cadastrar meu restaurante</Button>
             </Link>
             <Link to="/restaurant/login">
-              <Button size="lg" variant="outline" className="text-base px-8 border-dark-surface-foreground/30 text-dark-surface-foreground hover:bg-dark-surface-foreground/10">
-                Já tenho conta <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-base px-8 border-dark-surface-foreground/30 text-black hover:bg-dark-surface-foreground/10"
+              >
+                Já tenho conta
+                <ChevronRight className="ml-1 h-4 w-4 text-black" />
+            </Button>
             </Link>
           </div>
         </div>
