@@ -26,7 +26,7 @@ class RestauranteService
             $token = JWTAuth::fromUser($restaurante);
 
             return [
-                'tipo_usuario' => $restaurante->tipo_usuario,
+                'restaurante' => $restaurante,
                 'token' => $token,
             ];
         });
