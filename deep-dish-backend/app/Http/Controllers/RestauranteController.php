@@ -30,6 +30,11 @@ class RestauranteController extends Controller
                 'cnpj' => 'required|string|unique:restaurante,cnpj',
                 'tipo' => 'required|string|in:bifes,vegetariano,churrasco,frutos do mar,comida caseira',
                 'endereco' => 'required|string',
+                'cidade' => 'nullable|string',
+                'telefone' => 'nullable|string',
+                'imagem_url' => 'nullable|string',
+                'horario_funcionamento' => 'nullable|string',
+                'fila_ativa' => 'nullable|boolean',
                 'password' => 'required|string|min:6',
             ])->validate();
 

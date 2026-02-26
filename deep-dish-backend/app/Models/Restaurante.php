@@ -18,6 +18,11 @@ class Restaurante extends Authenticatable implements JWTSubject
         'cnpj',
         'tipo',
         'endereco',
+        'cidade',
+        'telefone',
+        'imagem_url',
+        'horario_funcionamento',
+        'fila_ativa',
         'tipo_usuario',
         'password',
     ];
