@@ -8,13 +8,19 @@ import { Label } from '@/components/ui/label';
 const RestaurantLogin: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const { loginRestaurant, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await loginRestaurant(email, password);
-    navigate('/restaurant/dashboard');
+    setError('');
+    try {
+      await loginRestaurant(email, password);
+      navigate('/restaurant/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao entrar. Tente novamente.');
+    }
   };
 
   return (
@@ -28,6 +34,9 @@ const RestaurantLogin: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div><Label htmlFor="email">E-mail</Label><Input id="email" type="email" placeholder="admin@restaurante.com" value={email} onChange={e => setEmail(e.target.value)} required /></div>
           <div><Label htmlFor="password">Senha</Label><Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required /></div>
+          {error && (
+            <p className="text-sm text-destructive" role="alert">{error}</p>
+          )}
           <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'Entrando...' : 'Entrar'}</Button>
         </form>
         <p className="text-center text-sm text-muted-foreground">

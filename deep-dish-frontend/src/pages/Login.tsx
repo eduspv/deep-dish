@@ -8,13 +8,19 @@ import { Label } from '@/components/ui/label';
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, password);
-    navigate('/app');
+    setError('');
+    try {
+      await login(email, password);
+      navigate('/app');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao entrar. Tente novamente.');
+    }
   };
 
   return (
@@ -34,6 +40,9 @@ const Login: React.FC = () => {
             <Label htmlFor="password">Senha</Label>
             <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
           </div>
+          {error && (
+            <p className="text-sm text-destructive" role="alert">{error}</p>
+          )}
           <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'Entrando...' : 'Entrar'}</Button>
         </form>
         <p className="text-center text-sm text-muted-foreground">
