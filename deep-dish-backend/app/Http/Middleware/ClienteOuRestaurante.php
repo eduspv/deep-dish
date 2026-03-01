@@ -11,10 +11,10 @@ class ClienteOuRestaurante
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if(auth('Cliente')->check()){
+        if (auth('cliente')->check()) {
             return $next($request);
         }
-        if(auth('Restaurante')->check()){
+        if (auth('restaurante')->check()) {
             return $next($request);
         }
         return response()->json(['message'=> 'Unauthorized'],401);

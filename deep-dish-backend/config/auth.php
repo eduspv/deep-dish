@@ -14,8 +14,8 @@ return [
     */
 
     'defaults' => [
-        'guard' => env('AUTH_GUARD', 'web'),
-        'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+        'guard' => 'cliente',
+        'passwords' => 'clientes',
     ],
 
     /*
@@ -36,11 +36,6 @@ return [
     */
 
     'guards' => [
-        'web' => [
-            'driver' => 'session',
-            'provider' => 'users',
-        ],
-
     // ✅ JWT para cliente
     'cliente' => [
         'driver' => 'jwt',
@@ -72,18 +67,13 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        'cliente' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            'model' => App\Models\Cliente::class,
         ],
-
-        'Cliente' => [
+        'restaurante' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\Cliente::class),
-        ],
-        'Restaurante' => [
-            'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\Restaurante::class),
+            'model' => App\Models\Restaurante::class,
         ],
     ],
 
@@ -107,13 +97,20 @@ return [
     */
 
     'passwords' => [
-        'users' => [
-            'provider' => 'users',
-            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
-            'expire' => 60,
-            'throttle' => 60,
-        ],
+    'clientes' => [
+        'provider' => 'cliente',
+        'table' => 'password_reset_tokens',
+        'expire' => 60,
+        'throttle' => 60,
     ],
+
+    'restaurantes' => [
+    'provider' => 'restaurante',
+    'table' => 'password_reset_tokens',
+    'expire' => 60,
+    'throttle' => 60,
+    ],
+],
 
     /*
     |--------------------------------------------------------------------------
