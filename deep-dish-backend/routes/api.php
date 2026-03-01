@@ -11,21 +11,26 @@ Route::get('/health', function () {
 
 //Definindo as rotas publicas.
 Route::prefix('cliente')->group(function () {
-    //adicione as rotas publicas com prefixo de cliente aqui:
+    Route::post('/register', [App\Http\Controllers\Auth\ClienteAuthController::class, 'register']);
+    Route::post('/login', [App\Http\Controllers\Auth\ClienteAuthController::class, 'login']);
 });
 
-Route::prefix('restaurante')->group(function(){
-    //adicione as rotas publicas com prefixo de restaurante aqui:
-    Route::post('/register', [App\Http\Controllers\RestauranteController::class, 'register']);
+Route::prefix('restaurante')->group(function () {
+    Route::post('/register', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'register']);
+    Route::post('/login', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'login']);
 });
 
 //Definindo Rotas Protegidas
 Route::prefix('cliente')->middleware('auth:cliente')->group(function () {
-    //adicione as rotas protegidas do Cliente Aqui
+    Route::get('/me', [App\Http\Controllers\Auth\ClienteAuthController::class, 'me']);
+    Route::post('/logout', [App\Http\Controllers\Auth\ClienteAuthController::class, 'logout']);
+    Route::post('/refresh', [App\Http\Controllers\Auth\ClienteAuthController::class, 'refresh']);
 });
 
-Route::prefix('cliente')->middleware('auth:cliente')->group(function () {
-    //adicione as rotas protegidas do Restaurante Aqui
+Route::prefix('restaurante')->middleware('auth:restaurante')->group(function () {
+    Route::get('/me', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'me']);
+    Route::post('/logout', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'logout']);
+    Route::post('/refresh', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'refresh']);
 });
 
 Route::prefix('cliente')->middleware('cliente.or.restaurante')->group(function(){

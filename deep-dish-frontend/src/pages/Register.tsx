@@ -5,17 +5,34 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+const onlyDigits = (value: string) => value.replace(/\D/g, '');
+
+const formatCpf = (digits: string) => {
+  const d = onlyDigits(digits).slice(0, 11);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+};
+
 const Register: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [cpfDigits, setCpfDigits] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const { register, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await register(name, email, password);
-    navigate('/app');
+    setError('');
+    try {
+      await register(name, email, cpfDigits, password);
+      navigate('/app');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao criar conta. Tente novamente.');
+    }
   };
 
   return (
@@ -29,12 +46,41 @@ const Register: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div><Label htmlFor="name">Nome</Label><Input id="name" placeholder="Seu nome" value={name} onChange={e => setName(e.target.value)} required /></div>
           <div><Label htmlFor="email">E-mail</Label><Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required /></div>
+          <div>
+            <Label htmlFor="cpf">CPF</Label>
+            <Input
+              id="cpf"
+              placeholder="000.000.000-00"
+              inputMode="numeric"
+              autoComplete="off"
+              value={formatCpf(cpfDigits)}
+              onChange={(e) => {
+                const nextDigits = onlyDigits(e.target.value).slice(0, 11);
+                setCpfDigits(nextDigits);
+              }}
+              required
+            />
+          </div>
           <div><Label htmlFor="password">Senha</Label><Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required /></div>
+          {error && (
+            <p className="text-sm text-destructive" role="alert">{error}</p>
+          )}
           <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'Criando...' : 'Criar conta'}</Button>
         </form>
-        <p className="text-center text-sm text-muted-foreground">
-          Já tem conta? <Link to="/login" className="font-medium text-primary hover:underline">Entrar</Link>
-        </p>
+        <div className="space-y-1 text-center text-sm text-muted-foreground">
+          <p>
+            Já tem conta?{" "}
+            <Link to="/login" className="font-medium text-primary hover:underline">
+              Entrar
+            </Link>
+          </p>
+          <p>
+            É um restaurante?{" "}
+            <Link to="/restaurant/register" className="font-medium text-primary hover:underline">
+              Cadastrar restaurante
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
