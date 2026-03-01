@@ -8,14 +8,21 @@ import { Label } from '@/components/ui/label';
 const Register: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [cpf, setCpf] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const { register, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await register(name, email, password);
-    navigate('/app');
+    setError('');
+    try {
+      await register(name, email, cpf, password);
+      navigate('/app');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao criar conta. Tente novamente.');
+    }
   };
 
   return (
@@ -29,7 +36,11 @@ const Register: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div><Label htmlFor="name">Nome</Label><Input id="name" placeholder="Seu nome" value={name} onChange={e => setName(e.target.value)} required /></div>
           <div><Label htmlFor="email">E-mail</Label><Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required /></div>
+          <div><Label htmlFor="cpf">CPF</Label><Input id="cpf" placeholder="000.000.000-00" value={cpf} onChange={e => setCpf(e.target.value)} required /></div>
           <div><Label htmlFor="password">Senha</Label><Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required /></div>
+          {error && (
+            <p className="text-sm text-destructive" role="alert">{error}</p>
+          )}
           <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'Criando...' : 'Criar conta'}</Button>
         </form>
         <p className="text-center text-sm text-muted-foreground">

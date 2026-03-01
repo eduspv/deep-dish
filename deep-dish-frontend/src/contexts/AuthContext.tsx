@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { Cliente, Restaurante } from "@/types";
 import { User } from "@/types";
-import { mockUser } from "@/mocks/user";
+import { getAuthHeaders } from "@/services/api";
 
 const BASE = import.meta.env.VITE_API_URL;
 
@@ -24,21 +24,13 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   loginRestaurant: (email: string, password: string) => Promise<void>;
 
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, cpf: string, password: string) => Promise<void>;
   registerRestaurant: (data: RestaurantRegisterData) => Promise<boolean>;
 
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
-
-function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("jwt");
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -153,16 +145,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  // -------- REGISTER NORMAL (mock)
-  const register = useCallback(
-    async (name: string, email: string, _password: string) => {
-      setIsLoading(true);
-      await new Promise((r) => setTimeout(r, 700));
-      setUser({ ...mockUser, name, email });
+  // -------- REGISTER CLIENTE (API real)
+  const register = useCallback(async (name: string, email: string, cpf: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${BASE}/cliente/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, cpf, password }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        // backend manda { error, details } (422) ou { error } (outros)
+        const details = data?.details;
+        const firstDetail =
+          details && typeof details === "object"
+            ? (Object.values(details).flat() as unknown[]).find((v) => typeof v === "string")
+            : null;
+
+        const msg =
+          (typeof firstDetail === "string" && firstDetail) ||
+          data?.error ||
+          "Erro ao criar conta.";
+
+        throw new Error(msg);
+      }
+
+      if (!data?.token) throw new Error("Resposta inválida do servidor.");
+
+      localStorage.setItem("jwt", data.token);
+      localStorage.setItem("tipo_usuario", data.type ?? "cliente");
+
+      if (data?.cliente) {
+        setUser(data.cliente);
+        localStorage.setItem("user", JSON.stringify(data.cliente));
+        return;
+      }
+
+      // fallback: buscar dados completos
+      const meRes = await fetch(`${BASE}/cliente/me`, { headers: getAuthHeaders() });
+      if (!meRes.ok) throw new Error("Conta criada, mas falhou ao carregar dados do usuário.");
+      const cliente = await meRes.json();
+      setUser(cliente);
+      localStorage.setItem("user", JSON.stringify(cliente));
+    } finally {
       setIsLoading(false);
-    },
-    []
-  );
+    }
+  }, []);
 
   // -------- REGISTER RESTAURANTE (REAL API)
   const registerRestaurant = useCallback(
