@@ -67,9 +67,20 @@ const Register: React.FC = () => {
           )}
           <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'Criando...' : 'Criar conta'}</Button>
         </form>
-        <p className="text-center text-sm text-muted-foreground">
-          Já tem conta? <Link to="/login" className="font-medium text-primary hover:underline">Entrar</Link>
-        </p>
+        <div className="space-y-1 text-center text-sm text-muted-foreground">
+          <p>
+            Já tem conta?{" "}
+            <Link to="/login" className="font-medium text-primary hover:underline">
+              Entrar
+            </Link>
+          </p>
+          <p>
+            É um restaurante?{" "}
+            <Link to="/restaurant/register" className="font-medium text-primary hover:underline">
+              Cadastrar restaurante
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

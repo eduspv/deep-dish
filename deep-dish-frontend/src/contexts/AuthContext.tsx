@@ -25,7 +25,7 @@ interface AuthContextType {
   loginRestaurant: (email: string, password: string) => Promise<void>;
 
   register: (name: string, email: string, cpf: string, password: string) => Promise<void>;
-  registerRestaurant: (data: RestaurantRegisterData) => Promise<boolean>;
+  registerRestaurant: (data: RestaurantRegisterData) => Promise<void>;
 
   logout: () => void;
 }
@@ -197,7 +197,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // -------- REGISTER RESTAURANTE (REAL API)
   const registerRestaurant = useCallback(
-    async (data: RestaurantRegisterData): Promise<boolean> => {
+    async (data: RestaurantRegisterData): Promise<void> => {
       setIsLoading(true);
 
       try {
@@ -212,14 +212,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const result = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-          console.error("Status:", response.status);
-          console.error("Body:", result);
-          return false;
+          const details = result?.details;
+          const firstDetail =
+            details && typeof details === "object"
+              ? (Object.values(details).flat() as unknown[]).find((v) => typeof v === "string")
+              : null;
+
+          const msg =
+            (typeof firstDetail === "string" && firstDetail) ||
+            result?.error ||
+            "Erro ao cadastrar restaurante.";
+
+          throw new Error(msg);
         }
 
         if (!result?.token) {
-          console.error("Resposta inválida do servidor (token ausente)");
-          return false;
+          throw new Error("Resposta inválida do servidor.");
         }
 
         // ✅ salva dados no localStorage
@@ -231,12 +239,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           localStorage.setItem("tipo_usuario", result.type);
         }
 
-        console.log("Restaurante registrado com sucesso:", result);
-
-        return true;
       } catch (error) {
         console.error("Erro ao registrar restaurante:", error);
-        return false;
+        throw error instanceof Error ? error : new Error("Erro ao cadastrar restaurante.");
       } finally {
         setIsLoading(false);
       }

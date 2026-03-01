@@ -5,14 +5,33 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const onlyDigits = (value: string) => value.replace(/\D/g, "");
+
+const formatCnpj = (digits: string) => {
+  const d = onlyDigits(digits).slice(0, 14);
+  if (d.length <= 2) return d;
+  if (d.length <= 5) return `${d.slice(0, 2)}.${d.slice(2)}`;
+  if (d.length <= 8) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`;
+  if (d.length <= 12) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`;
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+};
 
 const RestaurantRegister: React.FC = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [cnpj, setCnpj] = useState("");
+  const [cnpjDigits, setCnpjDigits] = useState("");
   const [tipo, setTipo] = useState("");
   const [endereco, setEndereco] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const { registerRestaurant, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -20,18 +39,25 @@ const RestaurantRegister: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const ok = await registerRestaurant({
+    setError("");
+    if (!tipo) {
+      setError("Selecione o tipo do restaurante.");
+      return;
+    }
+
+    try {
+      await registerRestaurant({
         name,
         email,
         password,
-        cnpj,
+        cnpj: cnpjDigits,
         tipo,
         endereco,
       });
-
-      if (ok) {
-        navigate("/restaurant/dashboard");
-      }
+      navigate("/restaurant/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao cadastrar restaurante. Tente novamente.");
+    }
 
   };
 
@@ -80,23 +106,31 @@ const RestaurantRegister: React.FC = () => {
               id="cnpj"
               type="text"
               inputMode="numeric"
-              placeholder="CNPJ da empresa"
-              value={cnpj}
-              onChange={(e) => setCnpj(e.target.value)}
+              autoComplete="off"
+              placeholder="00.000.000/0000-00"
+              value={formatCnpj(cnpjDigits)}
+              onChange={(e) => {
+                const nextDigits = onlyDigits(e.target.value).slice(0, 14);
+                setCnpjDigits(nextDigits);
+              }}
               required
             />
           </div>
 
           <div>
             <Label htmlFor="tipo-restaurante">Tipo do restaurante</Label>
-            <Input
-              id="tipo-restaurante"
-              type="text"
-              placeholder="Bife ou italiano..."
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-              required
-            />
+            <Select value={tipo} onValueChange={setTipo}>
+              <SelectTrigger id="tipo-restaurante">
+                <SelectValue placeholder="Selecione um tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bifes">Bifes</SelectItem>
+                <SelectItem value="vegetariano">Vegetariano</SelectItem>
+                <SelectItem value="churrasco">Churrasco</SelectItem>
+                <SelectItem value="frutos do mar">Frutos do mar</SelectItem>
+                <SelectItem value="comida caseira">Comida caseira</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -122,6 +156,12 @@ const RestaurantRegister: React.FC = () => {
               required
             />
           </div>
+
+          {error && (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          )}
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Cadastrando..." : "Cadastrar"}
