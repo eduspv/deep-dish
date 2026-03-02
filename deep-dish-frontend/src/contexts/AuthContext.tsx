@@ -27,7 +27,7 @@ interface AuthContextType {
   register: (name: string, email: string, cpf: string, password: string) => Promise<void>;
   registerRestaurant: (data: RestaurantRegisterData) => Promise<void>;
 
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -249,7 +249,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    const token = localStorage.getItem("jwt");
+    const tipo = localStorage.getItem("tipo_usuario");
+
+    if (token && tipo) {
+      const endpoint =
+        tipo === "restaurante"
+          ? `${BASE}/restaurante/logout`
+          : `${BASE}/cliente/logout`;
+      try {
+        await fetch(endpoint, {
+          method: "POST",
+          headers: getAuthHeaders(),
+        });
+      } catch {
+        // rede falhou: mesmo assim desloga localmente
+      }
+    }
+
     setUser(null);
     localStorage.removeItem("jwt");
     localStorage.removeItem("tipo_usuario");

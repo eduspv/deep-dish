@@ -20,6 +20,7 @@ class Cliente extends Authenticatable implements JWTSubject
         'email',
         'cpf',
         'password',
+        'token_version',
     ];
 
     protected $hidden = [
@@ -33,14 +34,17 @@ class Cliente extends Authenticatable implements JWTSubject
             'password' => 'hashed',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'token_version' => 'integer',
         ];
     }
     public function getJWTIdentifier()
     {
         return $this->getKey();
     }
-    public function getJWTCustomClaims()
+    public function getJWTCustomClaims(): array
     {
-        return [];
+        return [
+            'token_version' => $this->token_version ?? 0,
+        ];
     }
 }

@@ -96,7 +96,11 @@ class RestauranteAuthController extends Controller
 
     public function logout()
     {
-        auth('restaurante')->logout();
+        $user = auth('restaurante')->user();
+
+        if ($user) {
+            $user->increment('token_version');
+        }
 
         return response()->json([
             'message' => 'Logout realizado com sucesso',
