@@ -84,7 +84,11 @@ class ClienteAuthController extends Controller
 
     public function logout()
     {
-        auth('cliente')->logout();
+        $user = auth('cliente')->user();
+
+        if ($user) {
+            $user->increment('token_version');
+        }
 
         return response()->json([
             'message' => 'Logout realizado com sucesso'

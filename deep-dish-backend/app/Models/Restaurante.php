@@ -25,6 +25,7 @@ class Restaurante extends Authenticatable implements JWTSubject
         'fila_ativa',
         'tipo_usuario',
         'password',
+        'token_version',
     ];
 
     protected $hidden = [
@@ -37,6 +38,7 @@ class Restaurante extends Authenticatable implements JWTSubject
             'password' => 'hashed',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'token_version' => 'integer',
         ];
     }
 
@@ -47,6 +49,8 @@ class Restaurante extends Authenticatable implements JWTSubject
 
     public function getJWTCustomClaims(): array
     {
-        return [];
+        return [
+            'token_version' => $this->token_version ?? 0,
+        ];
     }
 }

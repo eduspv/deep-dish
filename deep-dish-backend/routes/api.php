@@ -21,13 +21,13 @@ Route::prefix('restaurante')->group(function () {
 });
 
 //Definindo Rotas Protegidas
-Route::prefix('cliente')->middleware('auth:cliente')->group(function () {
+Route::prefix('cliente')->middleware(['auth:cliente', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
     Route::get('/me', [App\Http\Controllers\Auth\ClienteAuthController::class, 'me']);
     Route::post('/logout', [App\Http\Controllers\Auth\ClienteAuthController::class, 'logout']);
     Route::post('/refresh', [App\Http\Controllers\Auth\ClienteAuthController::class, 'refresh']);
 });
 
-Route::prefix('restaurante')->middleware('auth:restaurante')->group(function () {
+Route::prefix('restaurante')->middleware(['auth:restaurante', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
     Route::get('/me', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'me']);
     Route::post('/logout', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'logout']);
     Route::post('/refresh', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'refresh']);
