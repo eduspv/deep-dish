@@ -13,8 +13,14 @@ export interface Restaurante {
   tipo: string;
   email: string;
   cnpj: string;
-  endereco: string;
+  logradouro: string;
+  numero: string;
+  complemento?: string | null;
+  bairro: string;
   cidade: string;
+  estado: string;
+  cep: string;
+  endereco_completo?: string;
   telefone: string;
   imagem_url: string;
   horario_funcionamento: string;

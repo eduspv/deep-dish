@@ -13,7 +13,13 @@ type RestaurantRegisterData = {
   password: string;
   cnpj: string;
   tipo: string;
-  endereco: string;
+  logradouro: string;
+  numero: string;
+  complemento?: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  cep: string;
 };
 
 interface AuthContextType {

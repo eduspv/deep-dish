@@ -24,24 +24,74 @@ const formatCnpj = (digits: string) => {
   return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
 };
 
+const formatCep = (digits: string) => {
+  const d = onlyDigits(digits).slice(0, 8);
+  if (d.length <= 5) return d;
+  return `${d.slice(0, 5)}-${d.slice(5)}`;
+};
+
+const UFS = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
+  "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+] as const;
+
 const RestaurantRegister: React.FC = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [cnpjDigits, setCnpjDigits] = useState("");
   const [tipo, setTipo] = useState("");
-  const [endereco, setEndereco] = useState("");
+  const [logradouro, setLogradouro] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
+  const [cepDigits, setCepDigits] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const { registerRestaurant, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  const cepValue = formatCep(cepDigits);
+  const cepRaw = onlyDigits(cepDigits);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setError("");
+
     if (!tipo) {
       setError("Selecione o tipo do restaurante.");
+      return;
+    }
+
+    if (cepRaw.length !== 8) {
+      setError("CEP deve ter 8 dígitos (ex: 12345-678).");
+      return;
+    }
+
+    if (estado.length !== 2) {
+      setError("Selecione o estado (UF).");
+      return;
+    }
+
+    if (!logradouro.trim()) {
+      setError("Preencha o logradouro.");
+      return;
+    }
+
+    if (!numero.trim()) {
+      setError("Preencha o número.");
+      return;
+    }
+
+    if (!bairro.trim()) {
+      setError("Preencha o bairro.");
+      return;
+    }
+
+    if (!cidade.trim()) {
+      setError("Preencha a cidade.");
       return;
     }
 
@@ -52,13 +102,18 @@ const RestaurantRegister: React.FC = () => {
         password,
         cnpj: cnpjDigits,
         tipo,
-        endereco,
+        logradouro: logradouro.trim(),
+        numero: numero.trim(),
+        complemento: complemento.trim() || undefined,
+        bairro: bairro.trim(),
+        cidade: cidade.trim(),
+        estado,
+        cep: cepRaw.length === 8 ? formatCep(cepRaw) : cepValue,
       });
       navigate("/restaurant/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao cadastrar restaurante. Tente novamente.");
     }
-
   };
 
   return (
@@ -134,15 +189,100 @@ const RestaurantRegister: React.FC = () => {
           </div>
 
           <div>
-            <Label htmlFor="endereco">Endereço</Label>
+            <Label htmlFor="cep">CEP</Label>
             <Input
-              id="endereco"
+              id="cep"
               type="text"
-              placeholder="American Office tower sala..."
-              value={endereco}
-              onChange={(e) => setEndereco(e.target.value)}
+              inputMode="numeric"
+              autoComplete="postal-code"
+              placeholder="12345-678"
+              value={cepValue}
+              onChange={(e) => setCepDigits(onlyDigits(e.target.value).slice(0, 8))}
+              maxLength={9}
               required
             />
+          </div>
+
+          <div>
+            <Label htmlFor="logradouro">Logradouro</Label>
+            <Input
+              id="logradouro"
+              type="text"
+              placeholder="Rua, avenida..."
+              value={logradouro}
+              onChange={(e) => setLogradouro(e.target.value)}
+              maxLength={255}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="numero">Número</Label>
+              <Input
+                id="numero"
+                type="text"
+                placeholder="123"
+                value={numero}
+                onChange={(e) => setNumero(e.target.value)}
+                maxLength={20}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="complemento">Complemento</Label>
+              <Input
+                id="complemento"
+                type="text"
+                placeholder="Sala, bloco..."
+                value={complemento}
+                onChange={(e) => setComplemento(e.target.value)}
+                maxLength={100}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="bairro">Bairro</Label>
+            <Input
+              id="bairro"
+              type="text"
+              placeholder="Bairro"
+              value={bairro}
+              onChange={(e) => setBairro(e.target.value)}
+              maxLength={100}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="cidade">Cidade</Label>
+              <Input
+                id="cidade"
+                type="text"
+                placeholder="Cidade"
+                value={cidade}
+                onChange={(e) => setCidade(e.target.value)}
+                maxLength={100}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="estado">Estado (UF)</Label>
+              <Select value={estado} onValueChange={setEstado} required>
+                <SelectTrigger id="estado">
+                  <SelectValue placeholder="UF" />
+                </SelectTrigger>
+                <SelectContent>
+                  {UFS.map((uf) => (
+                    <SelectItem key={uf} value={uf}>
+                      {uf}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>
