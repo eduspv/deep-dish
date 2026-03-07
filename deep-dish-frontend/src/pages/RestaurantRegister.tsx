@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TIPOS_RESTAURANTE } from "@/constants/tipos";
 
 const onlyDigits = (value: string) => value.replace(/\D/g, "");
 
@@ -179,11 +180,9 @@ const RestaurantRegister: React.FC = () => {
                 <SelectValue placeholder="Selecione um tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="bifes">Bifes</SelectItem>
-                <SelectItem value="vegetariano">Vegetariano</SelectItem>
-                <SelectItem value="churrasco">Churrasco</SelectItem>
-                <SelectItem value="frutos do mar">Frutos do mar</SelectItem>
-                <SelectItem value="comida caseira">Comida caseira</SelectItem>
+                {TIPOS_RESTAURANTE.map(t => (
+                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

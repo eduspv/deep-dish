@@ -79,7 +79,7 @@ class RestauranteRepository
         }
 
         if (!empty($filters['tipo'])) {
-            $query->where('tipo', $filters['tipo']);
+            $query->whereRaw('LOWER(tipo) LIKE ?', ['%' . strtolower($filters['tipo']) . '%']);
         }
 
         return $query

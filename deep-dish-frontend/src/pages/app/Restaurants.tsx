@@ -1,41 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import RestaurantCard from '@/components/RestaurantCard';
 import EmptyState from '@/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Restaurante } from '@/types';
-import { Utensils } from 'lucide-react';
+import { Utensils, ChevronLeft } from 'lucide-react';
 import { restaurantsService } from '@/services/restaurants.service';
 
 const Restaurants: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [restaurants, setRestaurants] = useState<Restaurante[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       setLoading(true);
-      const name = searchParams.get('name') || undefined;
-      const city = searchParams.get('city') || undefined;
       try {
-        const results = await restaurantsService.listRestaurants({ name, city });
-        if (!cancelled) {
-          setRestaurants(results);
-        }
+        const results = await restaurantsService.listRestaurants({
+          q:      searchParams.get('q')      || undefined,
+          cidade: searchParams.get('cidade') || undefined,
+          estado: searchParams.get('estado') || undefined,
+          bairro: searchParams.get('bairro') || undefined,
+          cep:    searchParams.get('cep')    || undefined,
+          tipo:   searchParams.get('tipo')   || undefined,
+        });
+        if (!cancelled) setRestaurants(results);
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
     load();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [searchParams]);
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-2xl font-bold text-foreground">Restaurantes</h1>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Voltar
+        </button>
+        <h1 className="font-display text-2xl font-bold text-foreground">Restaurantes</h1>
+      </div>
+
       {loading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map(i => (

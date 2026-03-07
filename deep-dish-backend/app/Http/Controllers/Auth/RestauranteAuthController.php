@@ -24,7 +24,7 @@ class RestauranteAuthController extends Controller
                 'unique:restaurante,email',
             ],
             'cnpj' => 'required|string|unique:restaurante,cnpj',
-            'tipo' => 'required|string|in:bifes,vegetariano,churrasco,frutos do mar,comida caseira',
+            'tipo' => 'required|string|in:brasileira,italiana,japonesa,chinesa,árabe,mexicana,francesa,portuguesa,churrasco,frutos do mar,vegetariano,vegano,fast food,pizza,hamburguer,cafeteria,padaria,comida caseira',
             'logradouro' => 'required|string|max:255',
             'numero' => 'required|string|max:20',
             'complemento' => 'nullable|string|max:100',
