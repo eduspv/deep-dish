@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/StatusBadge';
 import { mockRestaurants, mockTimeSlots, mockTables } from '@/mocks/restaurants';
 import { Restaurante, TimeSlot } from '@/types';
-import { MapPin, Clock, Users, Phone } from 'lucide-react';
+import { MapPin, Clock, Users, Phone, Star } from 'lucide-react';
 
 const RestaurantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -49,8 +49,17 @@ const RestaurantDetail: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-dark-surface/80 to-transparent" />
         <div className="absolute bottom-4 left-4 right-4">
           <h1 className="font-display text-2xl md:text-3xl font-bold text-dark-surface-foreground">{restaurant.name}</h1>
-          <div className="flex items-center gap-3 mt-1 text-sm text-dark-surface-foreground/80 capitalize">
-            <span>{restaurant.tipo}</span>
+          <div className="flex items-center gap-3 mt-1 text-sm text-dark-surface-foreground/80">
+            {typeof restaurant.rating === 'number' && (
+              <span className="flex items-center gap-1">
+                <Star className="h-4 w-4 fill-gold-accent text-gold-accent" />
+                {restaurant.rating.toFixed(1)}
+              </span>
+            )}
+            <span className="capitalize">{restaurant.tipo}</span>
+            {typeof restaurant.priceRange === 'number' && restaurant.priceRange > 0 && (
+              <span>{'€'.repeat(restaurant.priceRange)}</span>
+            )}
           </div>
         </div>
       </div>
@@ -58,7 +67,7 @@ const RestaurantDetail: React.FC = () => {
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2 space-y-6">
           <div className="rounded-xl bg-card p-5 shadow-card">
-            <p className="text-foreground capitalize">{restaurant.tipo}</p>
+            <p className="text-foreground">{restaurant.description || restaurant.tipo}</p>
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-muted-foreground">
               <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{endereco || restaurant.cidade}</span>
               {restaurant.horario_funcionamento && (
@@ -71,7 +80,8 @@ const RestaurantDetail: React.FC = () => {
             </div>
           </div>
 
-          <div className="rounded-xl bg-card p-5 shadow-card">
+          {restaurant.reservationsEnabled && (
+            <div className="rounded-xl bg-card p-5 shadow-card">
               <h2 className="font-display text-lg font-semibold text-foreground mb-3">Horários disponíveis</h2>
               <div className="flex flex-wrap gap-2">
                 {timeSlots.map(ts => (
@@ -86,6 +96,7 @@ const RestaurantDetail: React.FC = () => {
                 ))}
               </div>
             </div>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -101,14 +112,20 @@ const RestaurantDetail: React.FC = () => {
                   <span className="text-sm font-medium text-foreground">Fila ativa</span>
                   <StatusBadge status="waiting" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{restaurant.tamanho_fila_atual} pessoas na fila</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {restaurant.tamanho_fila_atual} pessoas · ~
+                  {restaurant.averageWaitTime ?? 20}
+                  min
+                </p>
                 <Button onClick={handleQueue} className="w-full mt-3" size="sm">Entrar na fila</Button>
               </div>
             )}
 
-            <Button onClick={handleReserve} disabled={!selectedTime} className="w-full" size="lg">
-              Reservar mesa
-            </Button>
+            {restaurant.reservationsEnabled && (
+              <Button onClick={handleReserve} disabled={!selectedTime} className="w-full" size="lg">
+                Reservar mesa
+              </Button>
+            )}
           </div>
         </div>
       </div>

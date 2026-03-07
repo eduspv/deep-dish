@@ -26,6 +26,12 @@ export interface Restaurante {
   horario_funcionamento: string;
   fila_ativa: boolean;
   tamanho_fila_atual: number;
+  // Campos extras usados na UI / mocks
+  rating?: number;
+  priceRange?: number;
+  description?: string;
+  averageWaitTime?: number;
+  reservationsEnabled?: boolean;
 }
 
 export type User = Cliente | Restaurante;

@@ -8,7 +8,7 @@ export const restaurantsService = {
     await delay(500);
     let results = [...mockRestaurants];
     if (filters?.name) results = results.filter(r => r.name.toLowerCase().includes(filters.name!.toLowerCase()));
-    if (filters?.city) results = results.filter(r => r.city.toLowerCase().includes(filters.city!.toLowerCase()));
+    if (filters?.city) results = results.filter(r => r.cidade.toLowerCase().includes(filters.city!.toLowerCase()));
     return results;
   },
   async getRestaurantById(id: string): Promise<Restaurante | undefined> {
