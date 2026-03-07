@@ -18,6 +18,7 @@ Route::prefix('cliente')->group(function () {
 Route::prefix('restaurante')->group(function () {
     Route::post('/register', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'register']);
     Route::post('/login', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'login']);
+    Route::get('/', [App\Http\Controllers\RestauranteController::class, 'index']);
 });
 
 //Definindo Rotas Protegidas

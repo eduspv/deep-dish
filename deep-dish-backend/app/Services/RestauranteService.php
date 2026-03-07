@@ -24,4 +24,14 @@ class RestauranteService
             ];
         });
     }
+
+    /**
+     * Busca restaurantes por nome e campos de endereço.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public function searchByEndereco(array $filters)
+    {
+        return $this->repo->searchByEndereco($filters);
+    }
 }
