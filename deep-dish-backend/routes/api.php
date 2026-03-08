@@ -9,6 +9,10 @@ Route::get('/health', function () {
     ]);
 });
 
+// Horários configurados pelo restaurante (reservas e fila) - rota pública
+Route::get('/horarios', [App\Http\Controllers\HorariosController::class, 'show']);
+Route::get('/restaurante/{restaurante}/horarios', [App\Http\Controllers\HorariosController::class, 'show']);
+
 //Definindo as rotas publicas.
 Route::prefix('cliente')->group(function () {
     Route::post('/register', [App\Http\Controllers\Auth\ClienteAuthController::class, 'register']);
