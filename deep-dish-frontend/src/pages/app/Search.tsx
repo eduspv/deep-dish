@@ -6,10 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Search as SearchIcon } from 'lucide-react';
 import { TIPOS_RESTAURANTE } from '@/constants/tipos';
 
-const TIPOS = [
-  'Italiana', 'Japonesa', 'Brasileira', 'Árabe', 'Mexicana',
-  'Vegetariano', 'Frutos do Mar', 'Fast Food',
-];
+
 
 const ESTADOS = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA',
