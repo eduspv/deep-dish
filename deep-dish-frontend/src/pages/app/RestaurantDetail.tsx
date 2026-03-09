@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/StatusBadge';
 import { mockRestaurants, mockTimeSlots, mockTables } from '@/mocks/restaurants';
 import { Restaurante, TimeSlot } from '@/types';
-import { MapPin, Clock, Star, Users, Phone } from 'lucide-react';
+import { MapPin, Clock, Users, Phone, Star } from 'lucide-react';
 
 const RestaurantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,8 +34,10 @@ const RestaurantDetail: React.FC = () => {
   };
 
   const handleReserve = () => {
-    navigate('/app/confirm', { state: { restaurantId: id, restaurantName: restaurant?.name, restaurantImage: restaurant?.imageUrl, time: selectedTime, partySize: Number(partySize) } });
+    navigate('/app/confirm', { state: { restaurantId: id, restaurantName: restaurant?.name, restaurantImage: restaurant?.imagem_url, time: selectedTime, partySize: Number(partySize) } });
   };
+
+  const endereco = restaurant?.endereco_completo || (restaurant ? [restaurant.logradouro, restaurant.numero, restaurant.bairro, restaurant.cidade, restaurant.estado].filter(Boolean).join(', ') : '');
 
   if (loading) return <div className="space-y-4"><Skeleton className="h-56 rounded-xl" /><Skeleton className="h-8 w-48" /><Skeleton className="h-20" /></div>;
   if (!restaurant) return <p className="text-center text-muted-foreground py-20">Restaurante não encontrado.</p>;
@@ -43,14 +45,21 @@ const RestaurantDetail: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="relative h-56 md:h-72 overflow-hidden rounded-xl">
-        <img src={restaurant.imageUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+        <img src={restaurant.imagem_url || ''} alt={restaurant.name} className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-dark-surface/80 to-transparent" />
         <div className="absolute bottom-4 left-4 right-4">
           <h1 className="font-display text-2xl md:text-3xl font-bold text-dark-surface-foreground">{restaurant.name}</h1>
           <div className="flex items-center gap-3 mt-1 text-sm text-dark-surface-foreground/80">
-            <span className="flex items-center gap-1"><Star className="h-4 w-4 fill-gold-accent text-gold-accent" />{restaurant.rating}</span>
-            <span>{restaurant.type}</span>
-            <span>{'€'.repeat(restaurant.priceRange)}</span>
+            {typeof restaurant.rating === 'number' && (
+              <span className="flex items-center gap-1">
+                <Star className="h-4 w-4 fill-gold-accent text-gold-accent" />
+                {restaurant.rating.toFixed(1)}
+              </span>
+            )}
+            <span className="capitalize">{restaurant.tipo}</span>
+            {typeof restaurant.priceRange === 'number' && restaurant.priceRange > 0 && (
+              <span>{'€'.repeat(restaurant.priceRange)}</span>
+            )}
           </div>
         </div>
       </div>
@@ -58,11 +67,15 @@ const RestaurantDetail: React.FC = () => {
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2 space-y-6">
           <div className="rounded-xl bg-card p-5 shadow-card">
-            <p className="text-foreground">{restaurant.description}</p>
+            <p className="text-foreground">{restaurant.description || restaurant.tipo}</p>
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-muted-foreground">
-              <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{restaurant.address}, {restaurant.city}</span>
-              <span className="flex items-center gap-2"><Clock className="h-4 w-4" />{restaurant.openingHours}</span>
-              <span className="flex items-center gap-2"><Phone className="h-4 w-4" />{restaurant.phone}</span>
+              <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{endereco || restaurant.cidade}</span>
+              {restaurant.horario_funcionamento && (
+                <span className="flex items-center gap-2"><Clock className="h-4 w-4" />{restaurant.horario_funcionamento}</span>
+              )}
+              {restaurant.telefone && (
+                <span className="flex items-center gap-2"><Phone className="h-4 w-4" />{restaurant.telefone}</span>
+              )}
               <span className="flex items-center gap-2"><Users className="h-4 w-4" />{availableTables.length} mesas livres</span>
             </div>
           </div>
@@ -93,13 +106,17 @@ const RestaurantDetail: React.FC = () => {
               <Input type="number" min="1" max="20" value={partySize} onChange={e => setPartySize(e.target.value)} />
             </div>
 
-            {restaurant.queueActive && (
+            {restaurant.fila_ativa && (
               <div className="rounded-lg border border-border p-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">Fila ativa</span>
                   <StatusBadge status="waiting" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{restaurant.currentQueueSize} pessoas · ~{restaurant.averageWaitTime}min</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {restaurant.tamanho_fila_atual} pessoas · ~
+                  {restaurant.averageWaitTime ?? 20}
+                  min
+                </p>
                 <Button onClick={handleQueue} className="w-full mt-3" size="sm">Entrar na fila</Button>
               </div>
             )}

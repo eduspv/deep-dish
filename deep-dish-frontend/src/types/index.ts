@@ -13,13 +13,25 @@ export interface Restaurante {
   tipo: string;
   email: string;
   cnpj: string;
-  endereco: string;
+  logradouro: string;
+  numero: string;
+  complemento?: string | null;
+  bairro: string;
   cidade: string;
+  estado: string;
+  cep: string;
+  endereco_completo?: string;
   telefone: string;
   imagem_url: string;
   horario_funcionamento: string;
   fila_ativa: boolean;
   tamanho_fila_atual: number;
+  // Campos extras usados na UI / mocks
+  rating?: number;
+  priceRange?: number;
+  description?: string;
+  averageWaitTime?: number;
+  reservationsEnabled?: boolean;
 }
 
 export type User = Cliente | Restaurante;

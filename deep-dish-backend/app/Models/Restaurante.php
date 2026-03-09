@@ -17,8 +17,13 @@ class Restaurante extends Authenticatable implements JWTSubject
         'email',
         'cnpj',
         'tipo',
-        'endereco',
+        'logradouro',
+        'numero',
+        'complemento',
+        'bairro',
         'cidade',
+        'estado',
+        'cep',
         'telefone',
         'imagem_url',
         'horario_funcionamento',
@@ -27,6 +32,8 @@ class Restaurante extends Authenticatable implements JWTSubject
         'password',
         'token_version',
     ];
+
+    protected $appends = ['endereco_completo'];
 
     protected $hidden = [
         'password',
@@ -40,6 +47,21 @@ class Restaurante extends Authenticatable implements JWTSubject
             'updated_at' => 'datetime',
             'token_version' => 'integer',
         ];
+    }
+
+    public function getEnderecoCompletoAttribute(): string
+    {
+        $partes = array_filter([
+            $this->logradouro,
+            $this->numero,
+            $this->complemento,
+            $this->bairro,
+            $this->cidade,
+            $this->estado,
+            $this->cep,
+        ]);
+
+        return implode(', ', $partes);
     }
 
     public function getJWTIdentifier()
