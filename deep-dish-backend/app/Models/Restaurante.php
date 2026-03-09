@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
@@ -74,5 +75,15 @@ class Restaurante extends Authenticatable implements JWTSubject
         return [
             'token_version' => $this->token_version ?? 0,
         ];
+    }
+
+    public function mesas(): HasMany
+    {
+        return $this->hasMany(Mesa::class, 'restaurante_id');
+    }
+
+    public function filas(): HasMany
+    {
+        return $this->hasMany(Fila::class, 'restaurante_id');
     }
 }
