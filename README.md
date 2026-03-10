@@ -172,7 +172,21 @@ JWT / Sanctum.
 
 ------------------------------------------------------------------------
 
+## 👨🏻‍💼 Link Pitch Deck
+
+https://www.canva.com/design/DAHDZnOSuv4/Id21tAfjwMEOS-4B5mpf_w/edit
+      
+------------------------------------------------------------------------
+
 ## ✨ Deep Dish
 
 Uma experiência moderna para restaurantes que querem organização,
 velocidade e sofisticação.
+
+## Integrantes
+EBrenda Regis Batista Bandeira: Analista de requisitos/ UX
+Eduardo Gondim Marinho: Analista de requisitos/ UX
+Eduardo Serra Pierre Vidal: Desenvolvedor Full Stack/ Scrum Master
+João Guilherme Costa Pereira: Desenvolvedor Full Stack 
+João Pedro Vieira de Oliveira: Desenvolvedor Full Stack 
+
