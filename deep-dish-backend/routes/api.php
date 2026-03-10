@@ -30,6 +30,8 @@ Route::prefix('cliente')->middleware(['auth:cliente', \App\Http\Middleware\Verif
     Route::get('/me', [App\Http\Controllers\Auth\ClienteAuthController::class, 'me']);
     Route::post('/logout', [App\Http\Controllers\Auth\ClienteAuthController::class, 'logout']);
     Route::post('/refresh', [App\Http\Controllers\Auth\ClienteAuthController::class, 'refresh']);
+    Route::post('/fila', [App\Http\Controllers\ClienteFilaController::class, 'store']);
+    Route::delete('/fila/{clienteFila}', [App\Http\Controllers\ClienteFilaController::class, 'destroy']);
 });
 
 Route::prefix('restaurante')->middleware(['auth:restaurante', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
