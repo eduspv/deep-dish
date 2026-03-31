@@ -172,7 +172,7 @@ O design foi construído com base na **psicologia das cores** aplicada ao setor 
 
 | Nome | Papel |
 |---|---|
-| Brenda Regis Batista Bandeira | Analista de Requisitos / UX |
+| Brenda Regis Batista Bandeira | Analista de Requisitos / UX | 
 | Eduardo Gondim Marinho | Analista de Requisitos / UX |
 | Eduardo Serra Pierre Vidal | Desenvolvedor Full Stack / Scrum Master |
 | João Guilherme Costa Pereira | Desenvolvedor Full Stack |
