@@ -71,9 +71,14 @@ class HorariosController extends Controller
             if ($tipo === null || $tipo === 'fila') {
                 foreach ($restaurante->filas as $fila) {
                     foreach ($fila->clienteFilas as $clienteFila) {
+                        if ($clienteFila->status !== \App\Models\ClienteFila::STATUS_AGUARDANDO) {
+                            continue;
+                        }
                         $horariosFila[] = [
+                            'horario_reserva' => $fila->horario_reserva?->format(\DateTimeInterface::ATOM),
                             'horario_entrada' => $clienteFila->created_at->format(\DateTimeInterface::ATOM),
                             'qntd_pessoas' => $clienteFila->qntd_pessoas,
+                            'posicao' => $clienteFila->posicao,
                             'fila_id' => $fila->id,
                         ];
                     }

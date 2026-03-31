@@ -2,28 +2,25 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ClienteFila extends Model
 {
-    /** Status: waiting, called, seated, cancelled */
-    public const STATUS_WAITING = 'waiting';
-    public const STATUS_CALLED = 'called';
-    public const STATUS_SEATED = 'seated';
-    public const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_AGUARDANDO = 'aguardando';
 
-    protected $table = 'clientefila';
+    public const STATUS_PROMOVIDO = 'promovido';
+
+    public const STATUS_CANCELADO = 'cancelado';
+
+    protected $table = 'cliente_fila';
 
     protected $fillable = [
-        'fila_id',
-        'cliente_id',
-        'clientemesa_id',
+        'id_fila',
+        'id_cliente',
         'qntd_pessoas',
-        'position',
+        'posicao',
         'status',
-        'estimated_time',
     ];
 
     protected function casts(): array
@@ -36,26 +33,11 @@ class ClienteFila extends Model
 
     public function fila(): BelongsTo
     {
-        return $this->belongsTo(Fila::class, 'fila_id');
+        return $this->belongsTo(Fila::class, 'id_fila');
     }
 
     public function cliente(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class, 'cliente_id');
-    }
-
-    public function clienteMesa(): BelongsTo
-    {
-        return $this->belongsTo(ClienteMesa::class, 'clientemesa_id');
-    }
-
-    public function scopeWaiting(Builder $query): Builder
-    {
-        return $query->where('status', self::STATUS_WAITING);
-    }
-
-    public function scopeCancelled(Builder $query): Builder
-    {
-        return $query->where('status', self::STATUS_CANCELLED);
+        return $this->belongsTo(Cliente::class, 'id_cliente');
     }
 }

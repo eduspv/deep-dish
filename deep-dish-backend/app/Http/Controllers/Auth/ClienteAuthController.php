@@ -64,7 +64,7 @@ class ClienteAuthController extends Controller
     
         $credentials = $request->only('email', 'password');
     
-        if (!$token = auth('cliente')->attempt($credentials)) {
+        if (! $token = auth('api')->attempt($credentials)) {
             return response()->json([
                 'error' => 'Email ou senha inválidos'
             ], 401);
@@ -79,12 +79,12 @@ class ClienteAuthController extends Controller
 
     public function me()
     {
-        return response()->json(auth('cliente')->user());
+        return response()->json(auth('api')->user());
     }
 
     public function logout()
     {
-        $user = auth('cliente')->user();
+        $user = auth('api')->user();
 
         if ($user) {
             $user->increment('token_version');
@@ -98,7 +98,7 @@ class ClienteAuthController extends Controller
     public function refresh()
     {
         return response()->json([
-            'token' => auth('cliente')->refresh()
+            'token' => auth('api')->refresh()
         ]);
     }
 }
