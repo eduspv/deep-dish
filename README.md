@@ -176,7 +176,7 @@ O design foi construído com base na **psicologia das cores** aplicada ao setor 
 | Eduardo Gondim Marinho | Analista de Requisitos / UX |
 | Eduardo Serra Pierre Vidal | Desenvolvedor Full Stack / Scrum Master |
 | João Guilherme Costa Pereira | Desenvolvedor Full Stack |
-| João Pedro Vieira de Oliveira | Desenvolvedor Full Stack |
+| João Pedro Vieira de Oliveira | Desenvolvedor Full Stack | !!!!!!!!!
 | Arthur Cavalcante Neves | Desenvolvedor Full Stack | UI-UX |
 
 ---
