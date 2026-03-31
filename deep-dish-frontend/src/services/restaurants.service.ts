@@ -1,9 +1,10 @@
 import { Restaurante, TimeSlot } from '@/types';
-import { mockRestaurants, mockTimeSlots } from '@/mocks/restaurants';
-
-const BASE = import.meta.env.VITE_API_URL;
+import { mockTimeSlots } from '@/mocks/restaurants';
+import { httpClient } from './httpClient';
 
 export const restaurantsService = {
+
+  // ─── Lista restaurantes com filtros ─────────────────────
   async listRestaurants(filters?: {
     q?:      string;
     cidade?: string;
@@ -21,59 +22,29 @@ export const restaurantsService = {
     if (filters?.cep)    params.set('cep',    filters.cep);
     if (filters?.tipo)   params.set('tipo',   filters.tipo);
 
-    const url = `${BASE}/restaurante${params.toString() ? `?${params.toString()}` : ''}`;
+    const query = params.toString();
+    const path  = query ? `/restaurante?${query}` : '/restaurante';
 
+    // backend retorna paginado: { data: [...], total, per_page... }
+    const res = await httpClient.get<{ data: Restaurante[] } | Restaurante[]>(path);
+
+    // suporte aos dois formatos de resposta
+    if (Array.isArray(res))      return res;
+    if (Array.isArray(res.data)) return res.data;
+    return [];
+  },
+
+  // ─── Busca um restaurante pelo ID ───────────────────────
+  async getRestaurantById(id: string): Promise<Restaurante | null> {
     try {
-      const res  = await fetch(url);
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        console.error('Erro ao buscar restaurantes:', data);
-        throw new Error('Erro ao carregar restaurantes.');
-      }
-
-      if (Array.isArray(data))      return data as Restaurante[];
-      if (Array.isArray(data.data)) return data.data as Restaurante[];
-      return [];
-    } catch (e) {
-      console.error('Falha na chamada à API, usando mocks como fallback.', e);
-      let results = [...mockRestaurants];
-      if (filters?.q) {
-        const q = filters.q.toLowerCase();
-        results = results.filter(r =>
-          r.name.toLowerCase().includes(q)    ||
-          r.cidade?.toLowerCase().includes(q) ||
-          r.bairro?.toLowerCase().includes(q),
-        );
-      }
-      if (filters?.cidade) results = results.filter(r => r.cidade?.toLowerCase().includes(filters.cidade!.toLowerCase()));
-      if (filters?.estado) results = results.filter(r => r.estado?.toLowerCase().includes(filters.estado!.toLowerCase()));
-      if (filters?.bairro) results = results.filter(r => r.bairro?.toLowerCase().includes(filters.bairro!.toLowerCase()));
-      if (filters?.tipo)   results = results.filter(r => r.tipo?.toLowerCase().includes(filters.tipo!.toLowerCase()));
-      return results;
+      return await httpClient.get<Restaurante>(`/restaurante/${id}`);
+    } catch {
+      return null;
     }
   },
 
-  async getRestaurantById(id: string): Promise<Restaurante | undefined> {
-    const url = `${BASE}/restaurante/${id}`;
-
-  try {
-    const res  = await fetch(url);
-    const data = await res.json().catch(() => null);
-
-    if (!res.ok || !data) {
-      console.error('Erro ao buscar restaurante:', data);
-      throw new Error('Restaurante não encontrado.');
-    }
-
-    // suporte a { data: {...} } ou resposta direta
-    return (data.data ?? data) as Restaurante;
-  } catch (e) {
-    console.error('Falha na API, usando mock como fallback.', e);
-    return mockRestaurants.find(r => r.id === id);
-  }
-  },
-
+  // ─── Busca horários disponíveis ─────────────────────────
+  // TODO: substituir por API real quando o backend tiver essa rota
   async getTimeSlots(_restaurantId: string, _date: string): Promise<TimeSlot[]> {
     return mockTimeSlots;
   },
