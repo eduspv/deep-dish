@@ -55,7 +55,23 @@ export const restaurantsService = {
   },
 
   async getRestaurantById(id: string): Promise<Restaurante | undefined> {
+    const url = `${BASE}/restaurante/${id}`;
+
+  try {
+    const res  = await fetch(url);
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || !data) {
+      console.error('Erro ao buscar restaurante:', data);
+      throw new Error('Restaurante não encontrado.');
+    }
+
+    // suporte a { data: {...} } ou resposta direta
+    return (data.data ?? data) as Restaurante;
+  } catch (e) {
+    console.error('Falha na API, usando mock como fallback.', e);
     return mockRestaurants.find(r => r.id === id);
+  }
   },
 
   async getTimeSlots(_restaurantId: string, _date: string): Promise<TimeSlot[]> {

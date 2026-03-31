@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/StatusBadge';
-import { mockRestaurants, mockTimeSlots, mockTables } from '@/mocks/restaurants';
+import { mockTimeSlots, mockTables } from '@/mocks/restaurants';
+import { restaurantsService } from '@/services/restaurants.service';
 import { Restaurante, TimeSlot } from '@/types';
 import { MapPin, Clock, Users, Phone, Star } from 'lucide-react';
 
@@ -18,15 +19,29 @@ const RestaurantDetail: React.FC = () => {
   const [partySize, setPartySize] = useState('2');
   const [selectedTime, setSelectedTime] = useState('');
 
+  
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setRestaurant(mockRestaurants.find(r => r.id === id) || null);
-      setTimeSlots(mockTimeSlots);
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [id]);
+  if (!id) return;
+  let cancelled = false;
 
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await restaurantsService.getRestaurantById(id);
+      if (!cancelled) {
+        setRestaurant(data ?? null);
+        setTimeSlots(mockTimeSlots);
+      }
+    } catch {
+      if (!cancelled) setRestaurant(null);
+    } finally {
+      if (!cancelled) setLoading(false);
+    }
+  };
+
+  load();
+  return () => { cancelled = true; };
+}, [id]);
   const availableTables = mockTables.filter(t => t.status === 'available');
 
   const handleQueue = () => {

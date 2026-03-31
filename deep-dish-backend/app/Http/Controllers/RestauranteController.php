@@ -37,5 +37,18 @@ class RestauranteController extends Controller
 
         return response()->json($restaurantes);
     }
+
+    public function show(string $id)
+    {
+        $restaurante = $this->service->findById($id);
+
+        if (!$restaurante) {
+            return response()->json(['message' => 'Restaurante não encontrado'], 404);
+        }
+
+        return response()->json($restaurante);
+
+    }
+
 }
 
