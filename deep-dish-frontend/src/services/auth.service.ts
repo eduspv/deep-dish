@@ -1,32 +1,87 @@
-import { User } from '@/types';
-import { mockUser, mockRestaurantUser } from '@/mocks/user';
+import { httpClient } from './httpClient';
+import { Cliente, Restaurante } from '@/types';
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// Tipos de resposta da API
+interface LoginResponse {
+  token: string;
+  type: 'cliente' | 'restaurante';
+}
+
+interface RegisterClienteResponse {
+  token: string;
+  type: 'cliente';
+  cliente: Cliente;
+}
+
+interface RegisterRestauranteResponse {
+  token: string;
+  type: 'restaurante';
+  restaurante: Restaurante;
+}
 
 export const authService = {
-  async login(email: string, _password: string): Promise<User> {
-    await delay(600);
-    if (email.includes('restaurant') || email.includes('admin')) return mockRestaurantUser;
-    return mockUser;
+
+  // ─── CLIENTE ────────────────────────────────────────────
+
+  // Faz login do cliente → recebe token
+  async loginCliente(email: string, password: string): Promise<LoginResponse> {
+    return httpClient.post<LoginResponse>('/cliente/login', { email, password });
   },
-  async register(name: string, email: string, _password: string): Promise<User> {
-    await delay(800);
-    return { ...mockUser, name, email };
+
+  // Cadastra novo cliente → recebe token + dados
+  async registerCliente(
+    name: string,
+    email: string,
+    cpf: string,
+    password: string
+  ): Promise<RegisterClienteResponse> {
+    return httpClient.post<RegisterClienteResponse>('/cliente/register', {
+      name, email, cpf, password,
+    });
   },
-  async restaurantLogin(email: string, _password: string): Promise<User> {
-    await delay(600);
-    void email;
-    return mockRestaurantUser;
+
+  // Busca dados do cliente logado
+  async getMeCliente(): Promise<Cliente> {
+    return httpClient.get<Cliente>('/cliente/me');
   },
-  async restaurantRegister(name: string, email: string, _password: string): Promise<User> {
-    await delay(800);
-    return { ...mockRestaurantUser, name, email };
+
+  // Desloga o cliente
+  async logoutCliente(): Promise<void> {
+    return httpClient.post('/cliente/logout');
   },
-  async logout(): Promise<void> {
-    await delay(300);
+
+  // ─── RESTAURANTE ────────────────────────────────────────
+
+  // Faz login do restaurante → recebe token
+  async loginRestaurante(email: string, password: string): Promise<LoginResponse> {
+    return httpClient.post<LoginResponse>('/restaurante/login', { email, password });
   },
-  async getCurrentUser(): Promise<User | null> {
-    await delay(200);
-    return mockUser;
+
+  // Cadastra novo restaurante → recebe token + dados
+  async registerRestaurante(data: {
+    name: string;
+    email: string;
+    password: string;
+    cnpj: string;
+    tipo: string;
+    logradouro: string;
+    numero: string;
+    complemento?: string;
+    bairro: string;
+    cidade: string;
+    estado: string;
+    cep: string;
+  }): Promise<RegisterRestauranteResponse> {
+    return httpClient.post<RegisterRestauranteResponse>('/restaurante/register', data);
+  },
+
+  // Busca dados do restaurante logado
+  async getMeRestaurante(): Promise<Restaurante> {
+    return httpClient.get<Restaurante>('/restaurante/me');
+  },
+
+  // Desloga o restaurante
+  async logoutRestaurante(): Promise<void> {
+    return httpClient.post('/restaurante/logout');
   },
 };
