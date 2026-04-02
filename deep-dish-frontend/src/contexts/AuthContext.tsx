@@ -27,6 +27,8 @@ interface AuthContextType {
   loginRestaurant: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, cpf: string, password: string) => Promise<void>;
   registerRestaurant: (data: RestaurantRegisterData) => Promise<void>;
+  updateRestaurant: (data: Partial<Restaurante>) => Promise<void>;           // ✅ novo
+  uploadImagemRestaurant: (file: File) => Promise<void>;                     // ✅ novo
   logout: () => Promise<void>;
 }
 
@@ -48,7 +50,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const restore = async () => {
       try {
-        // busca os dados do usuário logado conforme o tipo
         const data = tipo === "restaurante"
           ? await authService.getMeRestaurante()
           : await authService.getMeCliente();
@@ -56,7 +57,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(data);
         localStorage.setItem("user", JSON.stringify(data));
       } catch {
-        // token inválido ou expirado — limpa tudo
         localStorage.removeItem("jwt");
         localStorage.removeItem("tipo_usuario");
         localStorage.removeItem("user");
@@ -73,12 +73,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // 1. faz login → recebe token
       const { token } = await authService.loginCliente(email, password);
       localStorage.setItem("jwt", token);
       localStorage.setItem("tipo_usuario", "cliente");
-
-      // 2. busca dados do cliente
       const cliente = await authService.getMeCliente();
       setUser(cliente);
       localStorage.setItem("user", JSON.stringify(cliente));
@@ -91,12 +88,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginRestaurant = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // 1. faz login → recebe token
       const { token } = await authService.loginRestaurante(email, password);
       localStorage.setItem("jwt", token);
       localStorage.setItem("tipo_usuario", "restaurante");
-
-      // 2. busca dados do restaurante
       const restaurante = await authService.getMeRestaurante();
       setUser(restaurante);
       localStorage.setItem("user", JSON.stringify(restaurante));
@@ -117,8 +111,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await authService.registerCliente(name, email, cpf, password);
       localStorage.setItem("jwt", result.token);
       localStorage.setItem("tipo_usuario", "cliente");
-
-      // usa os dados que já vieram no register, sem precisar chamar /me
       const cliente = result.cliente ?? await authService.getMeCliente();
       setUser(cliente);
       localStorage.setItem("user", JSON.stringify(cliente));
@@ -134,8 +126,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await authService.registerRestaurante(data);
       localStorage.setItem("jwt", result.token);
       localStorage.setItem("tipo_usuario", "restaurante");
-
-      // usa os dados que já vieram no register, sem precisar chamar /me
       const restaurante = result.restaurante ?? await authService.getMeRestaurante();
       setUser(restaurante);
       localStorage.setItem("user", JSON.stringify(restaurante));
@@ -144,12 +134,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  // ─── UPDATE RESTAURANTE ──────────────────────────────────
+  const updateRestaurant = useCallback(async (data: Partial<Restaurante>) => {
+    setIsLoading(true);
+    try {
+      // envia os dados atualizados para o backend
+      const restaurante = await authService.updateRestaurante(data);
+
+      // atualiza o estado global e o localStorage
+      setUser(restaurante);
+      localStorage.setItem("user", JSON.stringify(restaurante));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // ─── UPLOAD IMAGEM RESTAURANTE ───────────────────────────
+  const uploadImagemRestaurant = useCallback(async (file: File) => {
+    setIsLoading(true);
+    try {
+      // faz upload e recebe a URL da imagem
+      const { imagem_url } = await authService.uploadImagemRestaurante(file);
+
+      // atualiza só o campo imagem_url no estado sem precisar chamar /me novamente
+      setUser(prev => {
+        if (!prev) return prev;
+        const updated = { ...prev, imagem_url };
+        localStorage.setItem("user", JSON.stringify(updated));
+        return updated;
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // ─── LOGOUT ──────────────────────────────────────────────
   const logout = useCallback(async () => {
     const tipo = localStorage.getItem("tipo_usuario");
-
     try {
-      // avisa o backend para invalidar o token
       if (tipo === "restaurante") {
         await authService.logoutRestaurante();
       } else {
@@ -174,6 +196,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loginRestaurant,
       register,
       registerRestaurant,
+      updateRestaurant,        // ✅ exposto
+      uploadImagemRestaurant,  // ✅ exposto
       logout,
     }}>
       {children}

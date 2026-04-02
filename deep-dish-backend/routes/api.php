@@ -43,6 +43,8 @@ Route::middleware(['auth:api', \App\Http\Middleware\VerifyJwtTokenVersion::class
 
 Route::prefix('restaurante')->middleware(['auth:restaurante', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
     Route::get('/me', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'me']);
+    Route::put('/me',         [App\Http\Controllers\Auth\RestauranteAuthController::class, 'update']);       
+    Route::post('/me/imagem', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'uploadImagem']);
     Route::post('/logout', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'logout']);
     Route::post('/refresh', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'refresh']);
 });
