@@ -1,7 +1,6 @@
 import { httpClient } from './httpClient';
 import { Cliente, Restaurante } from '@/types';
 
-// Tipos de resposta da API
 interface LoginResponse {
   token: string;
   type: 'cliente' | 'restaurante';
@@ -23,12 +22,10 @@ export const authService = {
 
   // ─── CLIENTE ────────────────────────────────────────────
 
-  // Faz login do cliente → recebe token
   async loginCliente(email: string, password: string): Promise<LoginResponse> {
     return httpClient.post<LoginResponse>('/cliente/login', { email, password });
   },
 
-  // Cadastra novo cliente → recebe token + dados
   async registerCliente(
     name: string,
     email: string,
@@ -40,24 +37,20 @@ export const authService = {
     });
   },
 
-  // Busca dados do cliente logado
   async getMeCliente(): Promise<Cliente> {
     return httpClient.get<Cliente>('/cliente/me');
   },
 
-  // Desloga o cliente
   async logoutCliente(): Promise<void> {
     return httpClient.post('/cliente/logout');
   },
 
   // ─── RESTAURANTE ────────────────────────────────────────
 
-  // Faz login do restaurante → recebe token
   async loginRestaurante(email: string, password: string): Promise<LoginResponse> {
     return httpClient.post<LoginResponse>('/restaurante/login', { email, password });
   },
 
-  // Cadastra novo restaurante → recebe token + dados
   async registerRestaurante(data: {
     name: string;
     email: string;
@@ -75,13 +68,36 @@ export const authService = {
     return httpClient.post<RegisterRestauranteResponse>('/restaurante/register', data);
   },
 
-  // Busca dados do restaurante logado
   async getMeRestaurante(): Promise<Restaurante> {
     return httpClient.get<Restaurante>('/restaurante/me');
   },
 
-  // Desloga o restaurante
   async logoutRestaurante(): Promise<void> {
     return httpClient.post('/restaurante/logout');
+  },
+
+  // ─── Atualiza perfil do restaurante ─────────────────────
+  async updateRestaurante(data: Partial<Restaurante>): Promise<Restaurante> {
+    return httpClient.put<Restaurante>('/restaurante/me', data);
+  },
+
+  // ─── Upload de imagem do restaurante ────────────────────
+  async uploadImagemRestaurante(file: File): Promise<{ imagem_url: string }> {
+    const token = localStorage.getItem('jwt');
+    const formData = new FormData();
+    formData.append('imagem', file);
+
+    // ⚠️ NÃO passa Content-Type — o browser define sozinho com o boundary
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/restaurante/me/imagem`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || 'Erro ao fazer upload da imagem.');
+    return data;
   },
 };

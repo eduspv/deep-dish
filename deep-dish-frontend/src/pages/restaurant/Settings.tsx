@@ -1,50 +1,205 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
-import { mockSettings } from '@/mocks/restaurants';
-import { RestaurantSettings } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { Restaurante } from '@/types';
 import { toast } from 'sonner';
+import { Camera, Loader2 } from 'lucide-react';
 
 const Settings: React.FC = () => {
-  const [settings, setSettings] = useState<RestaurantSettings | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { user, updateRestaurant, uploadImagemRestaurant } = useAuth();
+  const restaurante = user as Restaurante;
 
-  useEffect(() => {
-    const timer = setTimeout(() => { setSettings(mockSettings); setLoading(false); }, 400);
-    return () => clearTimeout(timer);
-  }, []);
+  const [saving, setSaving]               = useState(false);
+  const [uploadingImg, setUploadingImg]   = useState(false);
+  const [preview, setPreview]             = useState<string | null>(null);
+  const fileInputRef                      = useRef<HTMLInputElement>(null);
 
+  // ─── Campos do formulário ────────────────────────────────
+  const [name,                 setName]                = useState(restaurante?.name                  ?? '');
+  const [telefone,             setTelefone]            = useState(restaurante?.telefone              ?? '');
+  const [horario,              setHorario]             = useState(restaurante?.horario_funcionamento ?? '');
+  const [logradouro,           setLogradouro]          = useState(restaurante?.logradouro            ?? '');
+  const [numero,               setNumero]              = useState(restaurante?.numero                ?? '');
+  const [complemento,          setComplemento]         = useState(restaurante?.complemento           ?? '');
+  const [bairro,               setBairro]              = useState(restaurante?.bairro                ?? '');
+  const [cidade,               setCidade]              = useState(restaurante?.cidade                ?? '');
+  const [estado,               setEstado]              = useState(restaurante?.estado                ?? '');
+  const [cep,                  setCep]                 = useState(restaurante?.cep                   ?? '');
+
+  // ─── Salva os dados do perfil ────────────────────────────
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await new Promise(r => setTimeout(r, 600));
-    toast.success('Configurações salvas!');
-    setSaving(false);
+    try {
+      await updateRestaurant({
+        name,
+        telefone,
+        horario_funcionamento: horario,
+        logradouro,
+        numero,
+        complemento: complemento || undefined,
+        bairro,
+        cidade,
+        estado,
+        cep,
+      });
+      toast.success('Configurações salvas!');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao salvar configurações.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (loading) return <div className="space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-96 rounded-xl" /></div>;
-  if (!settings) return null;
+  // ─── Seleciona e faz preview da imagem ──────────────────
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // preview local antes do upload
+    const reader = new FileReader();
+    reader.onload = () => setPreview(reader.result as string);
+    reader.readAsDataURL(file);
+
+    // faz o upload automaticamente ao selecionar
+    handleImageUpload(file);
+  };
+
+  // ─── Faz upload da imagem ────────────────────────────────
+  const handleImageUpload = async (file: File) => {
+    setUploadingImg(true);
+    try {
+      await uploadImagemRestaurant(file);
+      toast.success('Imagem atualizada com sucesso!');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao fazer upload da imagem.');
+      setPreview(null);
+    } finally {
+      setUploadingImg(false);
+    }
+  };
+
+  const imagemAtual = preview || restaurante?.imagem_url;
 
   return (
     <div className="space-y-6 max-w-2xl">
       <h1 className="font-display text-2xl font-bold text-foreground">Configurações</h1>
-      <form onSubmit={handleSave} className="space-y-4 rounded-xl bg-card p-6 shadow-card">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div><Label>Nome</Label><Input value={settings.name} onChange={e => setSettings({ ...settings, name: e.target.value })} /></div>
-          <div><Label>Telefone</Label><Input value={settings.phone} onChange={e => setSettings({ ...settings, phone: e.target.value })} /></div>
-          <div><Label>Endereço</Label><Input value={settings.address} onChange={e => setSettings({ ...settings, address: e.target.value })} /></div>
-          <div><Label>Cidade</Label><Input value={settings.city} onChange={e => setSettings({ ...settings, city: e.target.value })} /></div>
-          <div><Label>Capacidade total</Label><Input type="number" value={settings.capacity} onChange={e => setSettings({ ...settings, capacity: Number(e.target.value) })} /></div>
-          <div><Label>Máx. pessoas por mesa</Label><Input type="number" value={settings.maxPartySize} onChange={e => setSettings({ ...settings, maxPartySize: Number(e.target.value) })} /></div>
-          <div><Label>Tolerância (min)</Label><Input type="number" value={settings.toleranceMinutes} onChange={e => setSettings({ ...settings, toleranceMinutes: Number(e.target.value) })} /></div>
-          <div><Label>Cancelamento (min antes)</Label><Input type="number" value={settings.cancellationPolicyMinutes} onChange={e => setSettings({ ...settings, cancellationPolicyMinutes: Number(e.target.value) })} /></div>
-          <div><Label>Abertura</Label><Input type="time" value={settings.openingTime} onChange={e => setSettings({ ...settings, openingTime: e.target.value })} /></div>
-          <div><Label>Fechamento</Label><Input type="time" value={settings.closingTime} onChange={e => setSettings({ ...settings, closingTime: e.target.value })} /></div>
+
+      {/* ─── Upload de imagem ─────────────────────────────── */}
+      <div className="rounded-xl bg-card p-6 shadow-card space-y-3">
+        <h2 className="font-display text-lg font-semibold text-foreground">
+          Foto do restaurante
+        </h2>
+
+        <div className="flex items-center gap-5">
+          {/* Preview da imagem */}
+          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-muted">
+            {imagemAtual ? (
+              <img
+                src={imagemAtual}
+                alt="Foto do restaurante"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <span className="text-3xl font-bold text-muted-foreground/30">
+                  {restaurante?.name?.charAt(0) ?? 'R'}
+                </span>
+              </div>
+            )}
+
+            {/* overlay de loading durante upload */}
+            {uploadingImg && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <Loader2 className="h-6 w-6 animate-spin text-white" />
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              JPG, PNG ou WEBP · máx. 2MB
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={uploadingImg}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Camera className="mr-2 h-4 w-4" />
+              {uploadingImg ? 'Enviando...' : 'Alterar foto'}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/jpg,image/webp"
+              className="hidden"
+              onChange={handleImageSelect}
+            />
+          </div>
         </div>
-        <Button type="submit" disabled={saving}>{saving ? 'Salvando...' : 'Salvar configurações'}</Button>
+      </div>
+
+      {/* ─── Formulário de dados ──────────────────────────── */}
+      <form onSubmit={handleSave} className="space-y-4 rounded-xl bg-card p-6 shadow-card">
+        <h2 className="font-display text-lg font-semibold text-foreground">
+          Dados do restaurante
+        </h2>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <Label>Nome</Label>
+            <Input value={name} onChange={e => setName(e.target.value)} />
+          </div>
+          <div>
+            <Label>Telefone</Label>
+            <Input value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(11) 99999-9999" />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Horário de funcionamento</Label>
+            <Input value={horario} onChange={e => setHorario(e.target.value)} placeholder="12:00 - 23:00" />
+          </div>
+          <div>
+            <Label>Logradouro</Label>
+            <Input value={logradouro} onChange={e => setLogradouro(e.target.value)} placeholder="Rua, avenida..." />
+          </div>
+          <div>
+            <Label>Número</Label>
+            <Input value={numero} onChange={e => setNumero(e.target.value)} placeholder="123" />
+          </div>
+          <div>
+            <Label>Complemento</Label>
+            <Input value={complemento} onChange={e => setComplemento(e.target.value)} placeholder="Sala, bloco..." />
+          </div>
+          <div>
+            <Label>Bairro</Label>
+            <Input value={bairro} onChange={e => setBairro(e.target.value)} />
+          </div>
+          <div>
+            <Label>Cidade</Label>
+            <Input value={cidade} onChange={e => setCidade(e.target.value)} />
+          </div>
+          <div>
+            <Label>Estado</Label>
+            <Input value={estado} onChange={e => setEstado(e.target.value)} maxLength={2} placeholder="SP" />
+          </div>
+          <div>
+            <Label>CEP</Label>
+            <Input value={cep} onChange={e => setCep(e.target.value)} placeholder="00000-000" />
+          </div>
+        </div>
+
+        <Button type="submit" disabled={saving}>
+          {saving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Salvando...
+            </>
+          ) : 'Salvar configurações'}
+        </Button>
       </form>
     </div>
   );
