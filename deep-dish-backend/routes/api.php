@@ -9,6 +9,10 @@ Route::get('/health', function () {
     ]);
 });
 
+// Horários configurados pelo restaurante (reservas e fila) - rota pública
+Route::get('/horarios', [App\Http\Controllers\HorariosController::class, 'show']);
+Route::get('/restaurante/{restaurante}/horarios', [App\Http\Controllers\HorariosController::class, 'show']);
+
 //Definindo as rotas publicas.
 Route::prefix('cliente')->group(function () {
     Route::post('/register', [App\Http\Controllers\Auth\ClienteAuthController::class, 'register']);
@@ -23,11 +27,18 @@ Route::prefix('restaurante')->group(function () {
          ->where('id', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'); 
 });
 
-//Definindo Rotas Protegidas
-Route::prefix('cliente')->middleware(['auth:cliente', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
+//Definindo Rotas Protegidas (JWT guard api — mesmo provider que cliente)
+Route::prefix('cliente')->middleware(['auth:api', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
     Route::get('/me', [App\Http\Controllers\Auth\ClienteAuthController::class, 'me']);
     Route::post('/logout', [App\Http\Controllers\Auth\ClienteAuthController::class, 'logout']);
     Route::post('/refresh', [App\Http\Controllers\Auth\ClienteAuthController::class, 'refresh']);
+});
+
+// Fila de espera (reservas por horário)
+Route::middleware(['auth:api', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
+    Route::post('/fila', [App\Http\Controllers\FilaController::class, 'store']);
+    Route::delete('/fila/{id}', [App\Http\Controllers\FilaController::class, 'destroy'])->whereNumber('id');
+    Route::get('/fila/posicao', [App\Http\Controllers\FilaController::class, 'consultarPosicao']);
 });
 
 Route::prefix('restaurante')->middleware(['auth:restaurante', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
