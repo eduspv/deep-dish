@@ -8,12 +8,18 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Fila por horário (`horario_reserva` em `fila`).
+     * Posição em `clientefila` é derivada de `created_at` (ver model ClienteFila).
+     * Remove a tabela duplicada `cliente_fila` caso exista.
      */
     public function up(): void
     {
+        Schema::dropIfExists('cliente_fila');
+
         Schema::table('fila', function (Blueprint $table) {
-            $table->dateTime('horario_reserva')->nullable();
+            if (! Schema::hasColumn('fila', 'horario_reserva')) {
+                $table->dateTime('horario_reserva')->nullable();
+            }
         });
 
         DB::table('fila')->whereIn('status', ['pendente', 'ativa'])->update(['status' => 'aberta']);
@@ -25,7 +31,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('fila', function (Blueprint $table) {
-            $table->dropColumn('horario_reserva');
+            if (Schema::hasColumn('fila', 'horario_reserva')) {
+                $table->dropColumn('horario_reserva');
+            }
         });
+
     }
 };

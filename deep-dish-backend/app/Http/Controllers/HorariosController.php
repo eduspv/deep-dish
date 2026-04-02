@@ -17,11 +17,7 @@ class HorariosController extends Controller
     {
         try {
             $id = $restaurante ?? $request->query('restaurante_id');
-            if ($id !== null) {
-                $id = (int) $id;
-            }
-
-            if (! $id) {
+            if ($id === null || $id === '') {
                 return response()->json([
                     'message' => 'O parâmetro restaurante_id é obrigatório.',
                 ], 422);
@@ -34,7 +30,7 @@ class HorariosController extends Controller
                 ], 422);
             }
 
-            $restaurante = Restaurante::find($id);
+            $restaurante = Restaurante::query()->find((string) $id);
 
             if (! $restaurante) {
                 return response()->json([
@@ -71,9 +67,6 @@ class HorariosController extends Controller
             if ($tipo === null || $tipo === 'fila') {
                 foreach ($restaurante->filas as $fila) {
                     foreach ($fila->clienteFilas as $clienteFila) {
-                        if ($clienteFila->status !== \App\Models\ClienteFila::STATUS_AGUARDANDO) {
-                            continue;
-                        }
                         $horariosFila[] = [
                             'horario_reserva' => $fila->horario_reserva?->format(\DateTimeInterface::ATOM),
                             'horario_entrada' => $clienteFila->created_at->format(\DateTimeInterface::ATOM),

@@ -2,25 +2,28 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ClienteFila extends Model
 {
-    public const STATUS_AGUARDANDO = 'aguardando';
+    use HasUuids;
 
-    public const STATUS_PROMOVIDO = 'promovido';
+    public $incrementing = false;
 
-    public const STATUS_CANCELADO = 'cancelado';
+    protected $keyType = 'string';
 
-    protected $table = 'cliente_fila';
+    protected $table = 'clientefila';
 
     protected $fillable = [
-        'id_fila',
-        'id_cliente',
+        'fila_id',
+        'cliente_id',
         'qntd_pessoas',
+    ];
+
+    protected $appends = [
         'posicao',
-        'status',
     ];
 
     protected function casts(): array
@@ -31,13 +34,30 @@ class ClienteFila extends Model
         ];
     }
 
+    /**
+     * Posição na fila: ordem por created_at (desempate por id). Só existe registro enquanto o cliente está na fila.
+     */
+    public function getPosicaoAttribute(): int
+    {
+        return 1 + (int) static::query()
+            ->where('fila_id', $this->fila_id)
+            ->where(function ($q) {
+                $q->where('created_at', '<', $this->created_at)
+                    ->orWhere(function ($q2) {
+                        $q2->where('created_at', '=', $this->created_at)
+                            ->where('id', '<', $this->id);
+                    });
+            })
+            ->count();
+    }
+
     public function fila(): BelongsTo
     {
-        return $this->belongsTo(Fila::class, 'id_fila');
+        return $this->belongsTo(Fila::class, 'fila_id');
     }
 
     public function cliente(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class, 'id_cliente');
+        return $this->belongsTo(Cliente::class, 'cliente_id');
     }
 }

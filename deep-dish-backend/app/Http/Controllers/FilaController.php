@@ -16,14 +16,14 @@ class FilaController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'restaurante_id' => ['required', 'integer', 'exists:restaurante,id'],
+            'restaurante_id' => ['required', 'string', 'uuid', 'exists:restaurante,id'],
             'horario_reserva' => ['required', 'date_format:Y-m-d H:i:s'],
             'qntd_pessoas' => ['required', 'integer', 'min:1'],
         ]);
 
         $clienteFila = $this->filaService->enfileirar(
-            (int) auth('api')->id(),
-            (int) $validated['restaurante_id'],
+            (string) auth('api')->id(),
+            $validated['restaurante_id'],
             $validated['horario_reserva'],
             (int) $validated['qntd_pessoas']
         );
@@ -34,10 +34,10 @@ class FilaController extends Controller
         ], 201);
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(string $id): JsonResponse
     {
         try {
-            $this->filaService->cancelarPosicao($id, (int) auth('api')->id());
+            $this->filaService->cancelarPosicao($id, (string) auth('api')->id());
         } catch (InvalidArgumentException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
@@ -52,13 +52,13 @@ class FilaController extends Controller
     public function consultarPosicao(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'restaurante_id' => ['required', 'integer', 'exists:restaurante,id'],
+            'restaurante_id' => ['required', 'string', 'uuid', 'exists:restaurante,id'],
             'horario_reserva' => ['required', 'date_format:Y-m-d H:i:s'],
         ]);
 
         $registro = $this->filaService->consultarPosicao(
-            (int) auth('api')->id(),
-            (int) $validated['restaurante_id'],
+            (string) auth('api')->id(),
+            $validated['restaurante_id'],
             $validated['horario_reserva']
         );
 

@@ -37,7 +37,8 @@ Route::prefix('cliente')->middleware(['auth:api', \App\Http\Middleware\VerifyJwt
 // Fila de espera (reservas por horário)
 Route::middleware(['auth:api', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
     Route::post('/fila', [App\Http\Controllers\FilaController::class, 'store']);
-    Route::delete('/fila/{id}', [App\Http\Controllers\FilaController::class, 'destroy'])->whereNumber('id');
+    Route::delete('/fila/{id}', [App\Http\Controllers\FilaController::class, 'destroy'])
+        ->where('id', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
     Route::get('/fila/posicao', [App\Http\Controllers\FilaController::class, 'consultarPosicao']);
 });
 
