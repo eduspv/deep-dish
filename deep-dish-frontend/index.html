@@ -1,24 +1,49 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+
+    <!-- Responsividade -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
+
+    <!-- Título da aplicação -->
     <title>Deep Dish</title>
-    <meta name="description" content="deep-dish project" />
-    <meta name="author" content="deep-dish" />
 
-    <!-- TODO: Update og:title to match your application name -->
-    <meta property="og:title" content="Deep-Dish" />
-    <meta property="og:description" content="deep-dish project" />
+    <!-- Descrição SEO -->
+    <meta
+      name="description"
+      content="Deep Dish é uma plataforma que permite reservar mesas em restaurantes e evitar filas, proporcionando uma experiência mais rápida e organizada."
+    />
+
+    <!-- Autor -->
+    <meta name="author" content="Deep Dish Team" />
+
+    <!-- Open Graph (para quando compartilhar link) -->
+    <meta property="og:title" content="Deep Dish - Reservas Inteligentes para Restaurantes" />
+    <meta
+      property="og:description"
+      content="Reserve mesas em restaurantes, evite filas e tenha uma experiência gastronômica mais prática com Deep Dish."
+    />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content="/og-image.png" />
 
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@deep-dish" />
+    <meta name="twitter:title" content="Deep Dish - Reservas Inteligentes para Restaurantes" />
+    <meta
+      name="twitter:description"
+      content="Evite filas em restaurantes com o Deep Dish. Faça reservas e aproveite sua experiência gastronômica."
+    />
+    <meta name="twitter:image" content="/og-image.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
   </head>
 
   <body>
     <div id="root"></div>
+
+    <!-- React / Vite -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

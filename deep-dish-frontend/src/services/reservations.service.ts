@@ -1,40 +1,76 @@
 import { Reservation } from '@/types';
-import { mockReservations } from '@/mocks/reservations';
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import { httpClient } from './httpClient';
 
 export const reservationsService = {
+
+  // ─── Lista reservas do usuário logado ───────────────────
+  // TODO: GET /reservas
   async listUserReservations(_userId: string): Promise<Reservation[]> {
-    await delay(500);
-    return mockReservations;
+    // return httpClient.get<Reservation[]>('/reservas');
+    return [];
   },
-  async getReservationById(id: string): Promise<Reservation | undefined> {
-    await delay(300);
-    return mockReservations.find(r => r.id === id);
+
+  // ─── Busca uma reserva pelo ID ──────────────────────────
+  // TODO: GET /reservas/:id
+  async getReservationById(id: string): Promise<Reservation | null> {
+    // return httpClient.get<Reservation>(`/reservas/${id}`);
+    return null;
   },
+
+  // ─── Cria uma nova reserva ──────────────────────────────
+  // TODO: POST /reservas
   async createReservation(payload: Partial<Reservation>): Promise<Reservation> {
-    await delay(700);
+    // return httpClient.post<Reservation>('/reservas', payload);
     return {
-      id: 'res-new-' + Date.now(),
-      userId: 'user-1',
-      restaurantId: payload.restaurantId || 'r1',
-      restaurantName: payload.restaurantName || 'Restaurante',
+      id:              'res-new-' + Date.now(),
+      userId:          '',
+      restaurantId:    payload.restaurantId    || '',
+      restaurantName:  payload.restaurantName  || '',
       restaurantImage: payload.restaurantImage || '',
-      date: payload.date || '2026-02-25',
-      time: payload.time || '20:00',
-      partySize: payload.partySize || 2,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
+      date:            payload.date            || new Date().toISOString(),
+      time:            payload.time            || '',
+      partySize:       payload.partySize       || 1,
+      status:          'pending',
+      createdAt:       new Date().toISOString(),
     };
   },
+
+  // ─── Cancela uma reserva ────────────────────────────────
+  // TODO: DELETE /reservas/:id
   async cancelReservation(id: string): Promise<Reservation> {
-    await delay(500);
-    const res = mockReservations.find(r => r.id === id);
-    return { ...res!, status: 'cancelled' };
+    // return httpClient.delete<Reservation>(`/reservas/${id}`);
+    return {
+      id,
+      userId:          '',
+      restaurantId:    '',
+      restaurantName:  '',
+      restaurantImage: '',
+      date:            '',
+      time:            '',
+      partySize:       1,
+      status:          'cancelled',
+      createdAt:       new Date().toISOString(),
+    };
   },
-  async updateReservationStatus(id: string, status: Reservation['status']): Promise<Reservation> {
-    await delay(400);
-    const res = mockReservations.find(r => r.id === id) || mockReservations[0];
-    return { ...res, status };
+
+  // ─── Atualiza status de uma reserva ─────────────────────
+  // TODO: PUT /reservas/:id/status
+  async updateReservationStatus(
+    id: string,
+    status: Reservation['status']
+  ): Promise<Reservation> {
+    // return httpClient.put<Reservation>(`/reservas/${id}/status`, { status });
+    return {
+      id,
+      userId:          '',
+      restaurantId:    '',
+      restaurantName:  '',
+      restaurantImage: '',
+      date:            '',
+      time:            '',
+      partySize:       1,
+      status,
+      createdAt:       new Date().toISOString(),
+    };
   },
 };

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Restaurante;
 use App\Repositories\RestauranteRepository;
 use Illuminate\Support\Facades\DB;
 
@@ -20,9 +21,20 @@ class RestauranteService
 
             return [
                 'restaurante' => $restaurante,
-                'token' => $token,
+                'token'       => $token,
             ];
         });
+    }
+
+    /**
+     * Busca um restaurante pelo ID.
+     *
+     * @param  string  $id
+     * @return Restaurante|null
+     */
+    public function findById(string $id): ?Restaurante
+    {
+        return $this->repo->findById($id);
     }
 
     /**

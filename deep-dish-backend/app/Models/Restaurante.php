@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -9,7 +10,10 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class Restaurante extends Authenticatable implements JWTSubject
 {
-    use HasFactory;
+    use HasFactory, HasUuids; // adicionado HasUuids
+
+    protected $keyType = 'string';   
+    public $incrementing = false;    
 
     protected $table = 'restaurante';
 
@@ -43,9 +47,9 @@ class Restaurante extends Authenticatable implements JWTSubject
     protected function casts(): array
     {
         return [
-            'password' => 'hashed',
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
+            'password'      => 'hashed',
+            'created_at'    => 'datetime',
+            'updated_at'    => 'datetime',
             'token_version' => 'integer',
         ];
     }
