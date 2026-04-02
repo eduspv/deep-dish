@@ -11,7 +11,9 @@ class VerifyJwtTokenVersion
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $user = auth()->user();
+        $user = auth('api')->user()
+            ?? auth('cliente')->user()
+            ?? auth('restaurante')->user();
 
         if ($user) {
             try {

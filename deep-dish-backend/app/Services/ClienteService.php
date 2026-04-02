@@ -15,7 +15,7 @@ class ClienteService
     {
         return DB::transaction(function () use ($validated) {
             $cliente = $this->repo->create($validated);
-            $token = auth('cliente')->login($cliente);
+            $token = auth('api')->login($cliente);
 
             return [
                 'cliente' => $cliente,

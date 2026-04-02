@@ -11,7 +11,7 @@ class ClienteOuRestaurante
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth('cliente')->check()) {
+        if (auth('api')->check() || auth('cliente')->check()) {
             return $next($request);
         }
         if (auth('restaurante')->check()) {

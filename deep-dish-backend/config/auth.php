@@ -42,6 +42,12 @@ return [
         'provider' => 'cliente',
     ],
 
+    // ✅ JWT API (mesmo provider que cliente — tokens emitidos no login de cliente)
+    'api' => [
+        'driver' => 'jwt',
+        'provider' => 'cliente',
+    ],
+
     // ✅ JWT para restaurante
     'restaurante' => [
         'driver' => 'jwt',

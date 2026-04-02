@@ -8,16 +8,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Fila extends Model
 {
+    public const STATUS_ABERTA = 'aberta';
+
+    public const STATUS_ENCERRADA = 'encerrada';
+
     protected $table = 'fila';
 
     protected $fillable = [
         'restaurante_id',
+        'horario_reserva',
         'status',
     ];
 
     protected function casts(): array
     {
         return [
+            'horario_reserva' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
@@ -30,6 +36,6 @@ class Fila extends Model
 
     public function clienteFilas(): HasMany
     {
-        return $this->hasMany(ClienteFila::class, 'fila_id');
+        return $this->hasMany(ClienteFila::class, 'id_fila');
     }
 }

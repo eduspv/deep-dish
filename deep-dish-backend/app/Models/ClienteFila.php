@@ -7,12 +7,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ClienteFila extends Model
 {
-    protected $table = 'clientefila';
+    public const STATUS_AGUARDANDO = 'aguardando';
+
+    public const STATUS_PROMOVIDO = 'promovido';
+
+    public const STATUS_CANCELADO = 'cancelado';
+
+    protected $table = 'cliente_fila';
 
     protected $fillable = [
-        'fila_id',
-        'cliente_id',
+        'id_fila',
+        'id_cliente',
         'qntd_pessoas',
+        'posicao',
+        'status',
     ];
 
     protected function casts(): array
@@ -25,11 +33,11 @@ class ClienteFila extends Model
 
     public function fila(): BelongsTo
     {
-        return $this->belongsTo(Fila::class, 'fila_id');
+        return $this->belongsTo(Fila::class, 'id_fila');
     }
 
     public function cliente(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class, 'cliente_id');
+        return $this->belongsTo(Cliente::class, 'id_cliente');
     }
 }
