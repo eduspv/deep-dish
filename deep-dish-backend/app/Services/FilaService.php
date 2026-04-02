@@ -12,7 +12,7 @@ use InvalidArgumentException;
 
 class FilaService
 {
-    public function enfileirar(int $clienteId, int $restauranteId, string $horarioReserva, int $qntdPessoas): ClienteFila
+    public function enfileirar(string $clienteId, string $restauranteId, string $horarioReserva, int $qntdPessoas): ClienteFila
     {
         return DB::transaction(function () use ($clienteId, $restauranteId, $horarioReserva, $qntdPessoas) {
             $horario = Carbon::parse($horarioReserva);
@@ -31,24 +31,15 @@ class FilaService
                 ]);
             }
 
-            $maxPosicao = (int) ClienteFila::query()
-                ->where('id_fila', $fila->id)
-                ->where('status', ClienteFila::STATUS_AGUARDANDO)
-                ->max('posicao');
-
-            $proximaPosicao = $maxPosicao > 0 ? $maxPosicao + 1 : 1;
-
             return ClienteFila::create([
-                'id_fila' => $fila->id,
-                'id_cliente' => $clienteId,
+                'fila_id' => $fila->id,
+                'cliente_id' => $clienteId,
                 'qntd_pessoas' => $qntdPessoas,
-                'posicao' => $proximaPosicao,
-                'status' => ClienteFila::STATUS_AGUARDANDO,
             ]);
         });
     }
 
-    public function promoverProximo(int $restauranteId, string $horarioReserva): ?ClienteMesa
+    public function promoverProximo(string $restauranteId, string $horarioReserva): ?ClienteMesa
     {
         return DB::transaction(function () use ($restauranteId, $horarioReserva) {
             $horario = Carbon::parse($horarioReserva);
@@ -64,9 +55,9 @@ class FilaService
             }
 
             $proximo = ClienteFila::query()
-                ->where('id_fila', $fila->id)
-                ->where('status', ClienteFila::STATUS_AGUARDANDO)
-                ->orderBy('posicao')
+                ->where('fila_id', $fila->id)
+                ->orderBy('created_at')
+                ->orderBy('id')
                 ->first();
 
             if (! $proximo) {
@@ -80,21 +71,13 @@ class FilaService
             }
 
             $clienteMesa = ClienteMesa::create([
-                'cliente_id' => $proximo->id_cliente,
+                'cliente_id' => $proximo->cliente_id,
                 'mesa_id' => $mesa->id,
                 'horario_reserva' => $horario,
                 'status' => 'pendente',
             ]);
 
-            $posicaoPromovido = $proximo->posicao;
-
-            $proximo->update(['status' => ClienteFila::STATUS_PROMOVIDO]);
-
-            ClienteFila::query()
-                ->where('id_fila', $fila->id)
-                ->where('status', ClienteFila::STATUS_AGUARDANDO)
-                ->where('posicao', '>', $posicaoPromovido)
-                ->decrement('posicao');
+            $proximo->delete();
 
             $this->encerrarFilaSeVazia($fila);
 
@@ -102,28 +85,21 @@ class FilaService
         });
     }
 
-    public function cancelarPosicao(int $clienteFilaId, int $clienteId): bool
+    public function cancelarPosicao(string $clienteFilaId, string $clienteId): bool
     {
         return DB::transaction(function () use ($clienteFilaId, $clienteId) {
             $registro = ClienteFila::query()
                 ->whereKey($clienteFilaId)
-                ->where('id_cliente', $clienteId)
+                ->where('cliente_id', $clienteId)
                 ->first();
 
-            if (! $registro || $registro->status !== ClienteFila::STATUS_AGUARDANDO) {
+            if (! $registro) {
                 throw new InvalidArgumentException('Posição não encontrada ou já processada.');
             }
 
             $fila = $registro->fila;
-            $posicaoCancelada = $registro->posicao;
 
-            $registro->update(['status' => ClienteFila::STATUS_CANCELADO]);
-
-            ClienteFila::query()
-                ->where('id_fila', $fila->id)
-                ->where('status', ClienteFila::STATUS_AGUARDANDO)
-                ->where('posicao', '>', $posicaoCancelada)
-                ->decrement('posicao');
+            $registro->delete();
 
             $this->encerrarFilaSeVazia($fila);
 
@@ -131,7 +107,7 @@ class FilaService
         });
     }
 
-    public function consultarPosicao(int $clienteId, int $restauranteId, string $horarioReserva): ?ClienteFila
+    public function consultarPosicao(string $clienteId, string $restauranteId, string $horarioReserva): ?ClienteFila
     {
         $horario = Carbon::parse($horarioReserva);
 
@@ -146,13 +122,12 @@ class FilaService
         }
 
         return ClienteFila::query()
-            ->where('id_fila', $fila->id)
-            ->where('id_cliente', $clienteId)
-            ->where('status', ClienteFila::STATUS_AGUARDANDO)
+            ->where('fila_id', $fila->id)
+            ->where('cliente_id', $clienteId)
             ->first();
     }
 
-    private function buscarMesaDisponivel(int $restauranteId, Carbon $horarioReserva, int $qntdPessoas): ?Mesa
+    private function buscarMesaDisponivel(string $restauranteId, Carbon $horarioReserva, int $qntdPessoas): ?Mesa
     {
         return Mesa::query()
             ->where('restaurante_id', $restauranteId)
@@ -171,12 +146,11 @@ class FilaService
 
     private function encerrarFilaSeVazia(Fila $fila): void
     {
-        $aguardando = ClienteFila::query()
-            ->where('id_fila', $fila->id)
-            ->where('status', ClienteFila::STATUS_AGUARDANDO)
+        $temNaFila = ClienteFila::query()
+            ->where('fila_id', $fila->id)
             ->exists();
 
-        if (! $aguardando) {
+        if (! $temNaFila) {
             $fila->update(['status' => Fila::STATUS_ENCERRADA]);
         }
     }
