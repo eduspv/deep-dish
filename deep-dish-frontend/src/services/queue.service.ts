@@ -1,28 +1,82 @@
 import { QueueEntry } from '@/types';
-import { mockUserQueue, mockQueueEntries } from '@/mocks/queue';
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import { httpClient } from './httpClient';
 
 export const queueService = {
-  async joinQueue(payload: { restaurantId: string; partySize: number }): Promise<QueueEntry> {
-    await delay(600);
-    return { ...mockUserQueue, restaurantId: payload.restaurantId, partySize: payload.partySize };
+
+  // ─── Entra na fila de um restaurante ────────────────────
+  // TODO: POST /fila/entrar
+  async joinQueue(payload: {
+    restaurantId: string;
+    partySize: number;
+  }): Promise<QueueEntry> {
+    // return httpClient.post<QueueEntry>('/fila/entrar', payload);
+    return {
+      id:                   'q-new-' + Date.now(),
+      userId:               '',
+      userName:             '',
+      userPhone:            '',
+      restaurantId:         payload.restaurantId,
+      restaurantName:       '',
+      partySize:            payload.partySize,
+      position:             1,
+      estimatedWaitMinutes: 15,
+      status:               'waiting',
+      joinedAt:             new Date().toISOString(),
+    };
   },
+
+  // ─── Busca status da fila do usuário logado ─────────────
+  // TODO: GET /fila/status
   async getUserQueueStatus(_userId: string): Promise<QueueEntry | null> {
-    await delay(400);
-    return mockUserQueue;
+    // return httpClient.get<QueueEntry | null>('/fila/status');
+    return null; // retorna null por padrão — sem fila ativa
   },
+
+  // ─── Cancela a entrada na fila ──────────────────────────
+  // TODO: DELETE /fila/:id
   async cancelQueue(entryId: string): Promise<QueueEntry> {
-    await delay(400);
-    return { ...mockUserQueue, id: entryId, status: 'cancelled' };
+    // return httpClient.delete<QueueEntry>(`/fila/${entryId}`);
+    return {
+      id:                   entryId,
+      userId:               '',
+      userName:             '',
+      userPhone:            '',
+      restaurantId:         '',
+      restaurantName:       '',
+      partySize:            1,
+      position:             0,
+      estimatedWaitMinutes: 0,
+      status:               'cancelled',
+      joinedAt:             new Date().toISOString(),
+    };
   },
+
+  // ─── Lista fila de um restaurante (lado restaurante) ────
+  // TODO: GET /fila/:restaurantId
   async getRestaurantQueue(_restaurantId: string): Promise<QueueEntry[]> {
-    await delay(500);
-    return mockQueueEntries;
+    // return httpClient.get<QueueEntry[]>(`/fila/${_restaurantId}`);
+    return [];
   },
-  async updateQueueEntryStatus(entryId: string, status: QueueEntry['status']): Promise<QueueEntry> {
-    await delay(400);
-    const entry = mockQueueEntries.find(e => e.id === entryId) || mockQueueEntries[0];
-    return { ...entry, status };
+
+  // ─── Atualiza status de uma entrada na fila ─────────────
+  // TODO: PUT /fila/:id/status
+  async updateQueueEntryStatus(
+    entryId: string,
+    status: QueueEntry['status']
+  ): Promise<QueueEntry> {
+    // return httpClient.put<QueueEntry>(`/fila/${entryId}/status`, { status });
+    return {
+      id:                   entryId,
+      userId:               '',
+      userName:             '',
+      userPhone:            '',
+      restaurantId:         '',
+      restaurantName:       '',
+      partySize:            1,
+      position:             0,
+      estimatedWaitMinutes: 0,
+      status,
+      joinedAt:             new Date().toISOString(),
+    };
   },
 };
