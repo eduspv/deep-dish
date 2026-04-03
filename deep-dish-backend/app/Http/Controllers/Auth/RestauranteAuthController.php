@@ -107,7 +107,8 @@ class RestauranteAuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name'                  => 'sometimes|string|max:255',
             'telefone'              => 'sometimes|nullable|string',
-            'horario_funcionamento' => 'sometimes|nullable|string',
+            'horario_abertura' => 'sometimes|required_with:horario_fechamento|date_format:H:i',
+            'horario_fechamento' => 'sometimes|required_with:horario_abertura|date_format:H:i|after:horario_abertura',
             'fila_ativa'            => 'sometimes|boolean',
             'logradouro'            => 'sometimes|string|max:255',
             'numero'                => 'sometimes|string|max:20',
