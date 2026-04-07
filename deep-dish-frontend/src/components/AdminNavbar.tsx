@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { LayoutDashboard, Settings, Grid3X3, Users, CalendarDays, UserCog, LogOut } from 'lucide-react';
+import logo from '@/assets/logo/logo-sem-fundo.png'; // importe a logo no topo do arquivo
 
 const sideLinks = [
   { to: '/restaurant/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -21,9 +22,13 @@ const AdminNavbar: React.FC = () => {
       {/* Desktop sidebar */}
       <aside className="fixed left-0 top-0 bottom-0 z-40 hidden w-60 flex-col bg-dark-surface text-dark-surface-foreground md:flex">
         <div className="flex h-16 items-center gap-2 px-5 border-b border-warm-brown/30">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <span className="text-lg font-bold text-primary-foreground">D</span>
-          </div>
+          <div className="h-8 w-8 rounded-lg overflow-hidden">
+              <img
+                src={logo} // importa a logo no topo do arquivo
+                alt="Logo Deep Dish"
+                className="h-full w-full object-cover"
+              />
+            </div>
           <span className="font-display text-lg font-bold">Deep Dish</span>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">

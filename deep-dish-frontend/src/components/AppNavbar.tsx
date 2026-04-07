@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Home, Search, CalendarDays, Users, LogOut } from 'lucide-react';
+import logo from '@/assets/logo/logo-sem-fundo.png'; // importe a logo no topo do arquivo
 
 const links = [
   { to: '/app', label: 'Início', icon: Home },
@@ -20,8 +21,12 @@ const AppNavbar: React.FC = () => {
       <header className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
           <Link to="/app" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-primary-foreground">D</span>
+            <div className="h-8 w-8 rounded-lg overflow-hidden">
+              <img
+                src={logo} // importa a logo no topo do arquivo
+                alt="Logo Deep Dish"
+                className="h-full w-full object-cover"
+              />
             </div>
             <span className="font-display text-lg font-bold text-foreground">Deep Dish</span>
           </Link>
