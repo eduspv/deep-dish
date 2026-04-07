@@ -23,7 +23,8 @@ export interface Restaurante {
   endereco_completo?: string;
   telefone: string;
   imagem_url: string;
-  horario_funcionamento: string;
+  horario_abertura?: string;
+  horario_fechamento?: string;
   fila_ativa: boolean;
   tamanho_fila_atual: number;
   // Campos extras usados na UI / mocks

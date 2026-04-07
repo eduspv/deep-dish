@@ -16,6 +16,7 @@ function mkRestaurante(
   const endereco_completo = [logradouro, numero, complemento, bairro, cidade, estado, cep]
     .filter(Boolean)
     .join(', ');
+
   return {
     id,
     name,
@@ -32,7 +33,8 @@ function mkRestaurante(
     endereco_completo,
     telefone: '',
     imagem_url: '',
-    horario_funcionamento: '',
+    horario_abertura: '',
+    horario_fechamento: '',
     fila_ativa: false,
     tamanho_fila_atual: 0,
     ...rest,
@@ -43,7 +45,8 @@ export const mockRestaurants: Restaurante[] = [
   mkRestaurante('r1', 'Trattoria Bella Notte', 'bifes', 'Rua Augusta', '1200', 'Consolação', 'São Paulo', 'SP', '01304-001', undefined, {
     telefone: '(11) 3333-1111',
     imagem_url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&h=400&fit=crop',
-    horario_funcionamento: '12:00 - 23:00',
+    horario_abertura: '12:00',
+    horario_fechamento: '23:00',
     fila_ativa: true,
     tamanho_fila_atual: 8,
     rating: 4.8,
@@ -55,7 +58,8 @@ export const mockRestaurants: Restaurante[] = [
   mkRestaurante('r2', 'Sakura Sushi House', 'frutos do mar', 'Av. Liberdade', '450', 'Liberdade', 'São Paulo', 'SP', '01502-001', undefined, {
     telefone: '(11) 3333-2222',
     imagem_url: 'https://images.unsplash.com/photo-1579027989536-b7b1f875659b?w=600&h=400&fit=crop',
-    horario_funcionamento: '11:30 - 22:30',
+    horario_abertura: '11:30',
+    horario_fechamento: '22:30',
     fila_ativa: true,
     tamanho_fila_atual: 12,
     rating: 4.7,
@@ -67,7 +71,8 @@ export const mockRestaurants: Restaurante[] = [
   mkRestaurante('r3', 'Churrascaria Fogo Nobre', 'churrasco', 'Rua Haddock Lobo', '800', 'Cerqueira César', 'São Paulo', 'SP', '01414-001', undefined, {
     telefone: '(11) 3333-3333',
     imagem_url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=400&fit=crop',
-    horario_funcionamento: '11:00 - 23:30',
+    horario_abertura: '11:00',
+    horario_fechamento: '23:30',
     fila_ativa: false,
     tamanho_fila_atual: 0,
     rating: 4.6,
@@ -79,7 +84,8 @@ export const mockRestaurants: Restaurante[] = [
   mkRestaurante('r4', 'Bistrô du Jardin', 'bifes', 'Alameda Santos', '1500', 'Cerqueira César', 'São Paulo', 'SP', '01418-100', undefined, {
     telefone: '(11) 3333-4444',
     imagem_url: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=400&fit=crop',
-    horario_funcionamento: '19:00 - 00:00',
+    horario_abertura: '19:00',
+    horario_fechamento: '00:00',
     fila_ativa: true,
     tamanho_fila_atual: 5,
     rating: 4.9,
@@ -91,7 +97,8 @@ export const mockRestaurants: Restaurante[] = [
   mkRestaurante('r5', 'Boteco do Zé', 'comida caseira', 'Rua dos Pinheiros', '300', 'Pinheiros', 'São Paulo', 'SP', '05422-001', undefined, {
     telefone: '(11) 3333-5555',
     imagem_url: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&h=400&fit=crop',
-    horario_funcionamento: '17:00 - 02:00',
+    horario_abertura: '17:00',
+    horario_fechamento: '02:00',
     fila_ativa: true,
     tamanho_fila_atual: 3,
     rating: 4.4,
@@ -103,7 +110,8 @@ export const mockRestaurants: Restaurante[] = [
   mkRestaurante('r6', 'Empório Vegano', 'vegetariano', 'Rua Oscar Freire', '200', 'Jardins', 'São Paulo', 'SP', '01426-001', undefined, {
     telefone: '(11) 3333-6666',
     imagem_url: 'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=600&h=400&fit=crop',
-    horario_funcionamento: '11:00 - 21:00',
+    horario_abertura: '11:00',
+    horario_fechamento: '21:00',
     fila_ativa: false,
     tamanho_fila_atual: 0,
     rating: 4.5,
