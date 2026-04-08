@@ -17,10 +17,11 @@ const Settings: React.FC = () => {
   const fileInputRef                      = useRef<HTMLInputElement>(null);
 
   // ─── Campos do formulário ────────────────────────────────
-  const [name,                 setName]                = useState(restaurante?.name                  ?? '');
-  const [telefone,             setTelefone]            = useState(restaurante?.telefone              ?? '');
-  const [horario,              setHorario]             = useState(restaurante?.horario_funcionamento ?? '');
-  const [logradouro,           setLogradouro]          = useState(restaurante?.logradouro            ?? '');
+  const [name,               setName]              = useState(restaurante?.name               ?? '');
+  const [telefone,           setTelefone]          = useState(restaurante?.telefone           ?? '');
+  const [horarioAbertura,    setHorarioAbertura]   = useState(restaurante?.horario_abertura   ?? '');
+  const [horarioFechamento,  setHorarioFechamento] = useState(restaurante?.horario_fechamento ?? '');
+  const [logradouro,         setLogradouro]        = useState(restaurante?.logradouro         ?? '');
   const [numero,               setNumero]              = useState(restaurante?.numero                ?? '');
   const [complemento,          setComplemento]         = useState(restaurante?.complemento           ?? '');
   const [bairro,               setBairro]              = useState(restaurante?.bairro                ?? '');
@@ -36,7 +37,8 @@ const Settings: React.FC = () => {
       await updateRestaurant({
         name,
         telefone,
-        horario_funcionamento: horario,
+        horario_abertura:   horarioAbertura   || null,
+        horario_fechamento: horarioFechamento || null,
         logradouro,
         numero,
         complemento: complemento || undefined,
@@ -160,7 +162,24 @@ const Settings: React.FC = () => {
           </div>
           <div className="md:col-span-2">
             <Label>Horário de funcionamento</Label>
-            <Input value={horario} onChange={e => setHorario(e.target.value)} placeholder="12:00 - 23:00" />
+            <div className="grid gap-4 md:grid-cols-2 mt-2">
+              <div>
+                <Label className="mb-1 block text-sm">Abertura</Label>
+                <Input
+                  type="time"
+                  value={horarioAbertura}
+                  onChange={e => setHorarioAbertura(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="mb-1 block text-sm">Fechamento</Label>
+                <Input
+                  type="time"
+                  value={horarioFechamento}
+                  onChange={e => setHorarioFechamento(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
           <div>
             <Label>Logradouro</Label>

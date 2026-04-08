@@ -105,17 +105,18 @@ class RestauranteAuthController extends Controller
     public function update(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name'                  => 'sometimes|string|max:255',
-            'telefone'              => 'sometimes|nullable|string',
-            'horario_funcionamento' => 'sometimes|nullable|string',
-            'fila_ativa'            => 'sometimes|boolean',
-            'logradouro'            => 'sometimes|string|max:255',
-            'numero'                => 'sometimes|string|max:20',
-            'complemento'           => 'sometimes|nullable|string|max:100',
-            'bairro'                => 'sometimes|string|max:100',
-            'cidade'                => 'sometimes|string|max:100',
-            'estado'                => 'sometimes|string|size:2',
-            'cep'                   => ['sometimes', 'string', 'regex:/^\d{5}-?\d{3}$/'],
+            'name'               => 'sometimes|string|max:255',
+            'telefone'           => 'sometimes|nullable|string',
+            'horario_abertura'   => 'sometimes|nullable|date_format:H:i',
+            'horario_fechamento' => 'sometimes|nullable|date_format:H:i',
+            'fila_ativa'         => 'sometimes|boolean',
+            'logradouro'         => 'sometimes|string|max:255',
+            'numero'             => 'sometimes|string|max:20',
+            'complemento'        => 'sometimes|nullable|string|max:100',
+            'bairro'             => 'sometimes|string|max:100',
+            'cidade'             => 'sometimes|string|max:100',
+            'estado'             => 'sometimes|string|size:2',
+            'cep'                => ['sometimes', 'string', 'regex:/^\d{5}-?\d{3}$/'],
         ]);
 
         if ($validator->fails()) {
@@ -125,10 +126,16 @@ class RestauranteAuthController extends Controller
             ], 422);
         }
 
-        $restaurante = auth('restaurante')->user();
-        $restaurante->update($validator->validated());
+        try {
+            $restaurante = auth('restaurante')->user();
+            $restaurante->update($validator->validated());
 
-        return response()->json($restaurante);
+            return response()->json($restaurante);
+        } catch (\Throwable $e) {
+            Log::error('Erro ao atualizar restaurante', ['message' => $e->getMessage()]);
+
+            return response()->json(['error' => 'Erro interno no servidor'], 500);
+        }
     }
 
     // ─── Upload de imagem do restaurante ────────────────────
