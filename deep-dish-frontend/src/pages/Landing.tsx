@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Clock, Users, CalendarCheck, ChevronRight, Utensils, Store, Smartphone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import heroBg from '@/assets/hero-bg.jpg';
+import logo from '@/assets/logo/logo-sem-fundo.png'; // <-- coloque aqui o caminho correto da sua logo
 
 const fadeUp = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0 } };
 
@@ -14,26 +15,91 @@ const Landing: React.FC = () => {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <img src={heroBg} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-dark-surface/70" />
+
         <div className="relative z-10 container mx-auto px-4 pt-20 pb-16 text-center">
+          {/* Espaço para logo */}
+          <motion.div
+            className="mb-8 flex justify-center"
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+            transition={{ duration: 0.6 }}
+          >
+          </motion.div>
+
           <motion.h1
             className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-dark-surface-foreground leading-tight"
-            initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.6 }}
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+            transition={{ duration: 0.6, delay: 0.1 }}
           >
             Sua mesa está <span className="text-gradient-brand bg-clip-text">esperando</span>
           </motion.h1>
+
           <motion.p
             className="mt-4 max-w-xl mx-auto text-lg md:text-xl text-dark-surface-foreground/80"
-            initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.6, delay: 0.15 }}
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+            transition={{ duration: 0.6, delay: 0.2 }}
           >
             Fila digital e reservas em tempo real nos melhores restaurantes. Sem esperar na porta, sem surpresas.
           </motion.p>
+
           <motion.div
             className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"
-            initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.6, delay: 0.3 }}
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+            transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <Link to="/register"><Button size="lg" className="text-base px-8">Criar conta</Button></Link>
-            <Link to="/login"><Button size="lg" variant="outline" className="text-base px-8 border-dark-surface-foreground/30 text-black-surface-foreground hover:bg-dark-surface-foreground/10">Entrar</Button></Link>
+            <Link to="/register">
+              <Button size="lg" className="text-base px-8">Criar conta</Button>
+            </Link>
+            <Link to="/login">
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-base px-8 border-dark-surface-foreground/30 text-black-surface-foreground hover:bg-dark-surface-foreground/10"
+              >
+                Entrar
+              </Button>
+            </Link>
           </motion.div>
+        </div>
+      </section>
+
+      {/* About */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="flex justify-center mb-6">
+              <div className="h-20 w-20 rounded-2xl bg-white p-2 shadow-sm flex items-center justify-center">
+                <img
+                  src={logo}
+                  alt="Logo Deep Dish"
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+            </div>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
+              Sobre o projeto
+            </h2>
+            <p className="mt-6 text-lg leading-8 text-muted-foreground">
+              O <span className="font-semibold text-foreground">Deep Dish</span> é um
+              projeto integrador desenvolvido no
+              <span className="font-semibold text-foreground"> UniCEUB</span>, como parte
+              das atividades da disciplina
+              <span className="font-semibold text-foreground"> PI3</span>.
+            </p>
+            <p className="mt-4 text-base leading-7 text-muted-foreground">
+              A proposta do projeto é unir tecnologia, experiência do usuário e solução
+              de problemas reais do setor de restaurantes, oferecendo uma plataforma para
+              gerenciamento de filas digitais e reservas em tempo real de forma prática,
+              moderna e acessível.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -107,7 +173,7 @@ const Landing: React.FC = () => {
               >
                 Já tenho conta
                 <ChevronRight className="ml-1 h-4 w-4 text-black" />
-            </Button>
+              </Button>
             </Link>
           </div>
         </div>
@@ -140,7 +206,13 @@ const Landing: React.FC = () => {
       <footer className="border-t border-border bg-card py-10">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary"><span className="text-xs font-bold text-primary-foreground">D</span></div>
+            <div className="h-10 w-10 rounded-lg bg-white p-1.5 flex items-center justify-center shadow-sm">
+              <img
+                src={logo}
+                alt="Logo Deep Dish"
+                className="max-h-full max-w-full object-contain"
+              />
+            </div>
             <span className="font-display font-semibold text-foreground">Deep Dish</span>
           </div>
           <p>&copy; {new Date().getFullYear()} Deep Dish. Todos os direitos reservados.</p>

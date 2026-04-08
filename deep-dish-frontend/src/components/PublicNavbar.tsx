@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
+import logo from '@/assets/logo/logo-sem-fundo.png'; // importe a logo no topo do arquivo
 
 const PublicNavbar: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
@@ -15,8 +16,12 @@ const PublicNavbar: React.FC = () => {
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-colors ${isLanding ? 'bg-dark-surface/90 backdrop-blur-md' : 'bg-card/95 backdrop-blur-md border-b border-border'}`}>
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <span className="text-lg font-bold text-primary-foreground">D</span>
+          <div className="h-12 w-12 rounded-xl bg-white p-2 flex items-center justify-center shadow-md">
+            <img
+              src={logo}
+              alt="Logo Deep Dish"
+              className="max-h-full max-w-full object-contain"
+            />
           </div>
           <span className={`font-display text-xl font-bold ${isLanding ? 'text-dark-surface-foreground' : 'text-foreground'}`}>
             Deep Dish

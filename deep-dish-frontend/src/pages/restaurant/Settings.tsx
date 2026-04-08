@@ -11,33 +11,36 @@ const Settings: React.FC = () => {
   const { user, updateRestaurant, uploadImagemRestaurant } = useAuth();
   const restaurante = user as Restaurante;
 
-  const [saving, setSaving]               = useState(false);
-  const [uploadingImg, setUploadingImg]   = useState(false);
-  const [preview, setPreview]             = useState<string | null>(null);
-  const fileInputRef                      = useRef<HTMLInputElement>(null);
+  const [saving, setSaving] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ─── Campos do formulário ────────────────────────────────
-  const [name,               setName]              = useState(restaurante?.name               ?? '');
-  const [telefone,           setTelefone]          = useState(restaurante?.telefone           ?? '');
-  const [horarioAbertura,    setHorarioAbertura]   = useState(restaurante?.horario_abertura   ?? '');
-  const [horarioFechamento,  setHorarioFechamento] = useState(restaurante?.horario_fechamento ?? '');
-  const [logradouro,         setLogradouro]        = useState(restaurante?.logradouro         ?? '');
-  const [numero,               setNumero]              = useState(restaurante?.numero                ?? '');
-  const [complemento,          setComplemento]         = useState(restaurante?.complemento           ?? '');
-  const [bairro,               setBairro]              = useState(restaurante?.bairro                ?? '');
-  const [cidade,               setCidade]              = useState(restaurante?.cidade                ?? '');
-  const [estado,               setEstado]              = useState(restaurante?.estado                ?? '');
-  const [cep,                  setCep]                 = useState(restaurante?.cep                   ?? '');
+  const [name, setName] = useState(restaurante?.name ?? '');
+  const [telefone, setTelefone] = useState(restaurante?.telefone ?? '');
+  const [horarioAbertura, setHorarioAbertura] = useState(
+    restaurante?.horario_abertura ?? ''
+  );
+  const [horarioFechamento, setHorarioFechamento] = useState(
+    restaurante?.horario_fechamento ?? ''
+  );
+  const [logradouro, setLogradouro] = useState(restaurante?.logradouro ?? '');
+  const [numero, setNumero] = useState(restaurante?.numero ?? '');
+  const [complemento, setComplemento] = useState(restaurante?.complemento ?? '');
+  const [bairro, setBairro] = useState(restaurante?.bairro ?? '');
+  const [cidade, setCidade] = useState(restaurante?.cidade ?? '');
+  const [estado, setEstado] = useState(restaurante?.estado ?? '');
+  const [cep, setCep] = useState(restaurante?.cep ?? '');
 
-  // ─── Salva os dados do perfil ────────────────────────────
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+
     try {
       await updateRestaurant({
         name,
         telefone,
-        horario_abertura:   horarioAbertura   || null,
+        horario_abertura: horarioAbertura || null,
         horario_fechamento: horarioFechamento || null,
         logradouro,
         numero,
@@ -47,36 +50,37 @@ const Settings: React.FC = () => {
         estado,
         cep,
       });
+
       toast.success('Configurações salvas!');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao salvar configurações.');
+      toast.error(
+        err instanceof Error ? err.message : 'Erro ao salvar configurações.'
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  // ─── Seleciona e faz preview da imagem ──────────────────
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // preview local antes do upload
     const reader = new FileReader();
     reader.onload = () => setPreview(reader.result as string);
     reader.readAsDataURL(file);
 
-    // faz o upload automaticamente ao selecionar
     handleImageUpload(file);
   };
 
-  // ─── Faz upload da imagem ────────────────────────────────
   const handleImageUpload = async (file: File) => {
     setUploadingImg(true);
     try {
       await uploadImagemRestaurant(file);
       toast.success('Imagem atualizada com sucesso!');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao fazer upload da imagem.');
+      toast.error(
+        err instanceof Error ? err.message : 'Erro ao fazer upload da imagem.'
+      );
       setPreview(null);
     } finally {
       setUploadingImg(false);
@@ -87,16 +91,16 @@ const Settings: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h1 className="font-display text-2xl font-bold text-foreground">Configurações</h1>
+      <h1 className="font-display text-2xl font-bold text-foreground">
+        Configurações
+      </h1>
 
-      {/* ─── Upload de imagem ─────────────────────────────── */}
       <div className="rounded-xl bg-card p-6 shadow-card space-y-3">
         <h2 className="font-display text-lg font-semibold text-foreground">
           Foto do restaurante
         </h2>
 
         <div className="flex items-center gap-5">
-          {/* Preview da imagem */}
           <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-muted">
             {imagemAtual ? (
               <img
@@ -112,7 +116,6 @@ const Settings: React.FC = () => {
               </div>
             )}
 
-            {/* overlay de loading durante upload */}
             {uploadingImg && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                 <Loader2 className="h-6 w-6 animate-spin text-white" />
@@ -145,8 +148,10 @@ const Settings: React.FC = () => {
         </div>
       </div>
 
-      {/* ─── Formulário de dados ──────────────────────────── */}
-      <form onSubmit={handleSave} className="space-y-4 rounded-xl bg-card p-6 shadow-card">
+      <form
+        onSubmit={handleSave}
+        className="space-y-4 rounded-xl bg-card p-6 shadow-card"
+      >
         <h2 className="font-display text-lg font-semibold text-foreground">
           Dados do restaurante
         </h2>
@@ -156,23 +161,31 @@ const Settings: React.FC = () => {
             <Label>Nome</Label>
             <Input value={name} onChange={e => setName(e.target.value)} />
           </div>
+
           <div>
             <Label>Telefone</Label>
-            <Input value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(11) 99999-9999" />
+            <Input
+              value={telefone}
+              onChange={e => setTelefone(e.target.value)}
+              placeholder="(11) 99999-9999"
+            />
           </div>
+
           <div className="md:col-span-2">
             <Label>Horário de funcionamento</Label>
-            <div className="grid gap-4 md:grid-cols-2 mt-2">
+
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label className="mb-1 block text-sm">Abertura</Label>
+                <Label className="mb-2 block text-sm">Abertura</Label>
                 <Input
                   type="time"
                   value={horarioAbertura}
                   onChange={e => setHorarioAbertura(e.target.value)}
                 />
               </div>
+
               <div>
-                <Label className="mb-1 block text-sm">Fechamento</Label>
+                <Label className="mb-2 block text-sm">Fechamento</Label>
                 <Input
                   type="time"
                   value={horarioFechamento}
@@ -181,33 +194,61 @@ const Settings: React.FC = () => {
               </div>
             </div>
           </div>
+
           <div>
             <Label>Logradouro</Label>
-            <Input value={logradouro} onChange={e => setLogradouro(e.target.value)} placeholder="Rua, avenida..." />
+            <Input
+              value={logradouro}
+              onChange={e => setLogradouro(e.target.value)}
+              placeholder="Rua, avenida..."
+            />
           </div>
+
           <div>
             <Label>Número</Label>
-            <Input value={numero} onChange={e => setNumero(e.target.value)} placeholder="123" />
+            <Input
+              value={numero}
+              onChange={e => setNumero(e.target.value)}
+              placeholder="123"
+            />
           </div>
+
           <div>
             <Label>Complemento</Label>
-            <Input value={complemento} onChange={e => setComplemento(e.target.value)} placeholder="Sala, bloco..." />
+            <Input
+              value={complemento}
+              onChange={e => setComplemento(e.target.value)}
+              placeholder="Sala, bloco..."
+            />
           </div>
+
           <div>
             <Label>Bairro</Label>
             <Input value={bairro} onChange={e => setBairro(e.target.value)} />
           </div>
+
           <div>
             <Label>Cidade</Label>
             <Input value={cidade} onChange={e => setCidade(e.target.value)} />
           </div>
+
           <div>
             <Label>Estado</Label>
-            <Input value={estado} onChange={e => setEstado(e.target.value)} maxLength={2} placeholder="SP" />
+            <Input
+              value={estado}
+              onChange={e => setEstado(e.target.value)}
+              maxLength={2}
+              placeholder="SP"
+            />
           </div>
+
           <div>
             <Label>CEP</Label>
-            <Input value={cep} onChange={e => setCep(e.target.value)} placeholder="00000-000" />
+            <Input
+              value={cep}
+              onChange={e => setCep(e.target.value)}
+              placeholder="00000-000"
+            />
           </div>
         </div>
 
@@ -217,7 +258,9 @@ const Settings: React.FC = () => {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Salvando...
             </>
-          ) : 'Salvar configurações'}
+          ) : (
+            'Salvar configurações'
+          )}
         </Button>
       </form>
     </div>
