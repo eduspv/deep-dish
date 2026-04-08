@@ -36,7 +36,6 @@ class RestauranteAuthController extends Controller
             'cep'                   => ['required', 'string', 'regex:/^\d{5}-?\d{3}$/'],
             'telefone'              => 'nullable|string',
             'imagem_url'            => 'nullable|string',
-            'horario_funcionamento' => 'nullable|string',
             'fila_ativa'            => 'nullable|boolean',
             'password'              => 'required|string|min:6',
         ]);
