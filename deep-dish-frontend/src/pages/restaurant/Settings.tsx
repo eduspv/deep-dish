@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Restaurante } from '@/types';
 import { toast } from 'sonner';
 import { Camera, Loader2 } from 'lucide-react';
+import { formatBrazilPhone } from '@/lib/phone';
 
 const Settings: React.FC = () => {
   const { user, updateRestaurant, uploadImagemRestaurant } = useAuth();
@@ -18,7 +19,9 @@ const Settings: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(restaurante?.name ?? '');
-  const [telefone, setTelefone] = useState(restaurante?.telefone ?? '');
+  const [telefone, setTelefone] = useState(() =>
+    formatBrazilPhone(restaurante?.telefone ?? '')
+  );
   const [horarioAbertura, setHorarioAbertura] = useState(
     (restaurante?.horario_abertura ?? '').slice(0, 5)
   );
@@ -172,9 +175,13 @@ const Settings: React.FC = () => {
           <div>
             <Label>Telefone</Label>
             <Input
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel"
               value={telefone}
-              onChange={e => setTelefone(e.target.value)}
+              onChange={e => setTelefone(formatBrazilPhone(e.target.value))}
               placeholder="(11) 99999-9999"
+              maxLength={16}
             />
           </div>
 
