@@ -39,7 +39,7 @@ class Restaurante extends Authenticatable implements JWTSubject
         'token_version',
     ];
 
-    protected $appends = ['endereco_completo'];
+    protected $appends = ['endereco_completo', 'tamanho_fila_atual'];
 
     protected $hidden = [
         'password',
@@ -53,6 +53,15 @@ class Restaurante extends Authenticatable implements JWTSubject
             'updated_at'    => 'datetime',
             'token_version' => 'integer',
         ];
+    }
+
+    public function getTamanhoFilaAtualAttribute(): int
+    {
+        return $this->filas()
+            ->where('status', Fila::STATUS_ABERTA)
+            ->withCount('clienteFilas')
+            ->get()
+            ->sum('cliente_filas_count');
     }
 
     public function getEnderecoCompletoAttribute(): string
