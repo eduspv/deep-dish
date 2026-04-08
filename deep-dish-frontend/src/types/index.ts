@@ -31,8 +31,7 @@ export interface Restaurante {
   rating?: number | null;
   price_range?: number | null;
   reservations_enabled?: boolean;
-  // Campos para implementação futura (tela de detalhe)
-  description?: string;
+  description?: string | null;
   averageWaitTime?: number;
 }
 

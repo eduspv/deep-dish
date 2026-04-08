@@ -34,6 +34,7 @@ const Settings: React.FC = () => {
   const [rating, setRating] = useState(restaurante?.rating?.toString() ?? '');
   const [priceRange, setPriceRange] = useState(restaurante?.price_range?.toString() ?? '');
   const [reservationsEnabled, setReservationsEnabled] = useState(restaurante?.reservations_enabled ?? false);
+  const [description, setDescription] = useState(restaurante?.description ?? '');
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +49,7 @@ const Settings: React.FC = () => {
         rating: rating ? parseFloat(rating) : null,
         price_range: priceRange ? parseInt(priceRange) : null,
         reservations_enabled: reservationsEnabled,
+        description: description || null,
         logradouro,
         numero,
         complemento: complemento || undefined,
@@ -256,6 +258,19 @@ const Settings: React.FC = () => {
               placeholder="00000-000"
             />
           </div>
+          <div className="md:col-span-2">
+            <Label>Descrição</Label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              maxLength={500}
+              rows={3}
+              placeholder="Conte um pouco sobre o seu restaurante..."
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+            />
+            <p className="text-xs text-muted-foreground mt-1">{description.length}/500</p>
+          </div>
+
           <div>
             <Label>Nota (rating)</Label>
             <Input

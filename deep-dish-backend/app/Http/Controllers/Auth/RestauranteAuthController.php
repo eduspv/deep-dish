@@ -119,6 +119,7 @@ class RestauranteAuthController extends Controller
             'rating'               => 'sometimes|nullable|numeric|min:0|max:5',
             'price_range'          => 'sometimes|nullable|integer|min:1|max:4',
             'reservations_enabled' => 'sometimes|boolean',
+            'description'          => 'sometimes|nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
