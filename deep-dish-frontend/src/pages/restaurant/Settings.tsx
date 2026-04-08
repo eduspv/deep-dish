@@ -2,10 +2,12 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { TimePicker } from '@/components/ui/time-picker';
 import { useAuth } from '@/contexts/AuthContext';
 import { Restaurante } from '@/types';
 import { toast } from 'sonner';
 import { Camera, Loader2 } from 'lucide-react';
+import { formatBrazilPhone } from '@/lib/phone';
 
 const Settings: React.FC = () => {
   const { user, updateRestaurant, uploadImagemRestaurant } = useAuth();
@@ -17,12 +19,14 @@ const Settings: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(restaurante?.name ?? '');
-  const [telefone, setTelefone] = useState(restaurante?.telefone ?? '');
+  const [telefone, setTelefone] = useState(() =>
+    formatBrazilPhone(restaurante?.telefone ?? '')
+  );
   const [horarioAbertura, setHorarioAbertura] = useState(
-    restaurante?.horario_abertura ?? ''
+    (restaurante?.horario_abertura ?? '').slice(0, 5)
   );
   const [horarioFechamento, setHorarioFechamento] = useState(
-    restaurante?.horario_fechamento ?? ''
+    (restaurante?.horario_fechamento ?? '').slice(0, 5)
   );
   const [logradouro, setLogradouro] = useState(restaurante?.logradouro ?? '');
   const [numero, setNumero] = useState(restaurante?.numero ?? '');
@@ -171,33 +175,32 @@ const Settings: React.FC = () => {
           <div>
             <Label>Telefone</Label>
             <Input
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel"
               value={telefone}
-              onChange={e => setTelefone(e.target.value)}
+              onChange={e => setTelefone(formatBrazilPhone(e.target.value))}
               placeholder="(11) 99999-9999"
+              maxLength={16}
             />
           </div>
 
           <div className="md:col-span-2">
-            <Label>Horário de funcionamento</Label>
+            <Label className="mb-2 block">Horário de funcionamento</Label>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label className="mb-2 block text-sm">Abertura</Label>
-                <Input
-                  type="time"
-                  value={horarioAbertura}
-                  onChange={e => setHorarioAbertura(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label className="mb-2 block text-sm">Fechamento</Label>
-                <Input
-                  type="time"
-                  value={horarioFechamento}
-                  onChange={e => setHorarioFechamento(e.target.value)}
-                />
-              </div>
+              <TimePicker
+                label="Abertura"
+                value={horarioAbertura}
+                onChange={setHorarioAbertura}
+                placeholder="--:--"
+              />
+              <TimePicker
+                label="Fechamento"
+                value={horarioFechamento}
+                onChange={setHorarioFechamento}
+                placeholder="--:--"
+              />
             </div>
           </div>
 
