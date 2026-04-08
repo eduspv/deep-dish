@@ -115,7 +115,10 @@ class RestauranteAuthController extends Controller
             'bairro'             => 'sometimes|string|max:100',
             'cidade'             => 'sometimes|string|max:100',
             'estado'             => 'sometimes|string|size:2',
-            'cep'                => ['sometimes', 'string', 'regex:/^\d{5}-?\d{3}$/'],
+            'cep'                  => ['sometimes', 'string', 'regex:/^\d{5}-?\d{3}$/'],
+            'rating'               => 'sometimes|nullable|numeric|min:0|max:5',
+            'price_range'          => 'sometimes|nullable|integer|min:1|max:4',
+            'reservations_enabled' => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {

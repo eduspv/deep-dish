@@ -31,6 +31,9 @@ const Settings: React.FC = () => {
   const [cidade, setCidade] = useState(restaurante?.cidade ?? '');
   const [estado, setEstado] = useState(restaurante?.estado ?? '');
   const [cep, setCep] = useState(restaurante?.cep ?? '');
+  const [rating, setRating] = useState(restaurante?.rating?.toString() ?? '');
+  const [priceRange, setPriceRange] = useState(restaurante?.price_range?.toString() ?? '');
+  const [reservationsEnabled, setReservationsEnabled] = useState(restaurante?.reservations_enabled ?? false);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +45,9 @@ const Settings: React.FC = () => {
         telefone,
         horario_abertura: horarioAbertura || null,
         horario_fechamento: horarioFechamento || null,
+        rating: rating ? parseFloat(rating) : null,
+        price_range: priceRange ? parseInt(priceRange) : null,
+        reservations_enabled: reservationsEnabled,
         logradouro,
         numero,
         complemento: complemento || undefined,
@@ -249,6 +255,46 @@ const Settings: React.FC = () => {
               onChange={e => setCep(e.target.value)}
               placeholder="00000-000"
             />
+          </div>
+          <div>
+            <Label>Nota (rating)</Label>
+            <Input
+              type="number"
+              min="0"
+              max="5"
+              step="0.1"
+              value={rating}
+              onChange={e => setRating(e.target.value)}
+              placeholder="4.5"
+            />
+          </div>
+
+          <div>
+            <Label>Faixa de preço</Label>
+            <select
+              value={priceRange}
+              onChange={e => setPriceRange(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="">Selecione...</option>
+              <option value="1">R$ — Econômico</option>
+              <option value="2">R$$ — Moderado</option>
+              <option value="3">R$$$ — Caro</option>
+              <option value="4">R$$$$ — Luxo</option>
+            </select>
+          </div>
+
+          <div className="md:col-span-2 flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="reservationsEnabled"
+              checked={reservationsEnabled}
+              onChange={e => setReservationsEnabled(e.target.checked)}
+              className="h-4 w-4 rounded border-input"
+            />
+            <Label htmlFor="reservationsEnabled" className="cursor-pointer">
+              Aceita reservas
+            </Label>
           </div>
         </div>
 

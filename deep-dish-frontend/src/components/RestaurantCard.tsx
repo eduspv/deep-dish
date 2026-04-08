@@ -20,6 +20,7 @@ const RestaurantCard = ({ restaurant }: { restaurant: Restaurante }) => {
           />
           <div className="absolute top-3 right-3 flex gap-1.5">
             {!!restaurant.fila_ativa && <StatusBadge status="waiting" />}
+            {!!restaurant.reservations_enabled && <StatusBadge status="available" />}
           </div>
         </div>
         <div className="p-4">
@@ -28,13 +29,13 @@ const RestaurantCard = ({ restaurant }: { restaurant: Restaurante }) => {
               {restaurant.name}
             </h3>
             <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-              {restaurant.priceRange && (
-                <span className="font-medium">{PRICE_LABELS[restaurant.priceRange]}</span>
+              {restaurant.price_range && (
+                <span className="font-medium">{PRICE_LABELS[restaurant.price_range]}</span>
               )}
               {restaurant.rating && (
                 <span className="inline-flex items-center gap-0.5 font-medium text-amber-500">
                   <Star className="h-3.5 w-3.5 fill-amber-500" />
-                  {restaurant.rating.toFixed(1)}
+                  {Number(restaurant.rating).toFixed(1)}
                 </span>
               )}
             </div>
@@ -48,7 +49,7 @@ const RestaurantCard = ({ restaurant }: { restaurant: Restaurante }) => {
                 {restaurant.horario_abertura.slice(0, 5)} – {restaurant.horario_fechamento.slice(0, 5)}
               </span>
             )}
-            {restaurant.fila_ativa && restaurant.tamanho_fila_atual > 0 && (
+            {!!restaurant.fila_ativa && restaurant.tamanho_fila_atual > 0 && (
               <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" />{restaurant.tamanho_fila_atual} na fila</span>
             )}
           </div>

@@ -34,6 +34,9 @@ class Restaurante extends Authenticatable implements JWTSubject
         'horario_abertura',
         'horario_fechamento',
         'fila_ativa',
+        'rating',
+        'price_range',
+        'reservations_enabled',
         'tipo_usuario',
         'password',
         'token_version',
@@ -51,7 +54,10 @@ class Restaurante extends Authenticatable implements JWTSubject
             'password'      => 'hashed',
             'created_at'    => 'datetime',
             'updated_at'    => 'datetime',
-            'token_version' => 'integer',
+            'token_version'       => 'integer',
+            'rating'              => 'decimal:1',
+            'price_range'         => 'integer',
+            'reservations_enabled' => 'boolean',
         ];
     }
 
