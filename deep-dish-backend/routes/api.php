@@ -24,7 +24,9 @@ Route::prefix('restaurante')->group(function () {
     Route::post('/login',    [App\Http\Controllers\Auth\RestauranteAuthController::class, 'login']);
     Route::get('/',          [App\Http\Controllers\RestauranteController::class, 'index']);
     Route::get('/{id}',      [App\Http\Controllers\RestauranteController::class, 'show'])
-         ->where('id', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'); 
+         ->where('id', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+    Route::get('/{id}/slots', [App\Http\Controllers\SlotController::class, 'index'])
+         ->where('id', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
 });
 
 //Definindo Rotas Protegidas (JWT guard api — mesmo provider que cliente)

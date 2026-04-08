@@ -120,6 +120,7 @@ class RestauranteAuthController extends Controller
             'price_range'          => 'sometimes|nullable|integer|min:1|max:4',
             'reservations_enabled' => 'sometimes|boolean',
             'description'          => 'sometimes|nullable|string|max:500',
+            'intervalo_reserva'    => 'sometimes|nullable|integer|min:15|max:120',
         ]);
 
         if ($validator->fails()) {
