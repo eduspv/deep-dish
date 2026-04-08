@@ -35,6 +35,7 @@ const Settings: React.FC = () => {
   const [priceRange, setPriceRange] = useState(restaurante?.price_range?.toString() ?? '');
   const [reservationsEnabled, setReservationsEnabled] = useState(restaurante?.reservations_enabled ?? false);
   const [description, setDescription] = useState(restaurante?.description ?? '');
+  const [intervaloReserva, setIntervaloReserva] = useState(restaurante?.intervalo_reserva?.toString() ?? '');
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +51,7 @@ const Settings: React.FC = () => {
         price_range: priceRange ? parseInt(priceRange) : null,
         reservations_enabled: reservationsEnabled,
         description: description || null,
+        intervalo_reserva: intervaloReserva ? parseInt(intervaloReserva) : null,
         logradouro,
         numero,
         complemento: complemento || undefined,
@@ -311,6 +313,25 @@ const Settings: React.FC = () => {
               Aceita reservas
             </Label>
           </div>
+
+          {reservationsEnabled && (
+            <div>
+              <Label>Intervalo entre reservas (minutos)</Label>
+              <select
+                value={intervaloReserva}
+                onChange={e => setIntervaloReserva(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">Selecione...</option>
+                <option value="15">15 minutos</option>
+                <option value="30">30 minutos</option>
+                <option value="45">45 minutos</option>
+                <option value="60">1 hora</option>
+                <option value="90">1h30</option>
+                <option value="120">2 horas</option>
+              </select>
+            </div>
+          )}
         </div>
 
         <Button type="submit" disabled={saving}>

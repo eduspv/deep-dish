@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/StatusBadge';
-import { restaurantsService } from '@/services/restaurants.service';
+import { restaurantsService, Slot } from '@/services/restaurants.service';
 import { Restaurante } from '@/types';
 import { ArrowLeft, MapPin, Clock, Users, Phone, Star } from 'lucide-react';
 
@@ -15,6 +15,7 @@ const RestaurantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [restaurant, setRestaurant] = useState<Restaurante | null>(null);
+  const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [partySize, setPartySize] = useState('2');
   const [selectedTime, setSelectedTime] = useState('');
@@ -29,6 +30,16 @@ const RestaurantDetail: React.FC = () => {
         const data = await restaurantsService.getRestaurantById(id);
         if (!cancelled) {
           setRestaurant(data ?? null);
+
+          // Buscar slots se restaurante aceita reservas
+          if (data?.reservations_enabled) {
+            try {
+              const slotsData = await restaurantsService.getSlots(id);
+              if (!cancelled) setSlots(slotsData.slots);
+            } catch {
+              // Restaurante sem horários/mesas configurados — sem slots
+            }
+          }
         }
       } catch {
         if (!cancelled) setRestaurant(null);
@@ -155,15 +166,33 @@ const RestaurantDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* Horários disponíveis — aguardando endpoint do backend */}
-          {!!restaurant.reservations_enabled && (
+          {/* Horários disponíveis */}
+          {!!restaurant.reservations_enabled && slots.length > 0 && (
             <div className="rounded-xl bg-card p-5 shadow-card">
               <h2 className="font-display text-lg font-semibold text-foreground mb-3">
                 Horários disponíveis
               </h2>
-              <p className="text-sm text-muted-foreground">
-                Em breve você poderá escolher horários para reserva.
-              </p>
+              <div className="flex flex-wrap gap-2">
+                {slots.map(slot => (
+                  <button
+                    key={slot.horario}
+                    disabled={!slot.disponivel}
+                    onClick={() => setSelectedTime(slot.horario)}
+                    className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors
+                      ${selectedTime === slot.horario
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : slot.disponivel
+                          ? 'bg-card text-foreground border-border hover:border-primary/50'
+                          : 'bg-muted text-muted-foreground cursor-not-allowed'
+                      }`}
+                  >
+                    {slot.horario}
+                    {slot.disponivel && (
+                      <span className="ml-1 text-xs opacity-60">({slot.vagas})</span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
