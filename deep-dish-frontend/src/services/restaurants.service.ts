@@ -35,7 +35,7 @@ export const restaurantsService = {
     if (filters?.tipo)   params.set('tipo',   filters.tipo);
 
     const query = params.toString();
-    const path  = query ? `/restaurante?${query}` : '/restaurante';
+    const path  = query ? `/restaurantes?${query}` : '/restaurantes';
 
     // backend retorna paginado: { data: [...], total, per_page... }
     const res = await httpClient.get<{ data: Restaurante[] } | Restaurante[]>(path);
@@ -49,7 +49,7 @@ export const restaurantsService = {
   // ─── Busca um restaurante pelo ID ───────────────────────
   async getRestaurantById(id: string): Promise<Restaurante | null> {
     try {
-      return await httpClient.get<Restaurante>(`/restaurante/${id}`);
+      return await httpClient.get<Restaurante>(`/restaurantes/${id}`);
     } catch {
       return null;
     }
@@ -58,6 +58,6 @@ export const restaurantsService = {
   // ─── Busca horários disponíveis para reserva ────────────
   async getSlots(restaurantId: string, data?: string): Promise<SlotsResponse> {
     const query = data ? `?data=${data}` : '';
-    return httpClient.get<SlotsResponse>(`/restaurante/${restaurantId}/slots${query}`);
+    return httpClient.get<SlotsResponse>(`/restaurantes/${restaurantId}/slots${query}`);
   },
 };
