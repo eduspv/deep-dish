@@ -10,6 +10,7 @@ import PublicLayout from "@/components/layouts/PublicLayout";
 import AppLayout from "@/components/layouts/AppLayout";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import GuestRoute from "@/components/GuestRoute";
 
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -46,13 +47,10 @@ const App = () => (
             {/* Public */}
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Landing />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/restaurant/login" element={<RestaurantLogin />} />
-              <Route
-                path="/restaurant/register"
-                element={<RestaurantRegister />}
-              />
+              <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+              <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
+              <Route path="/restaurant/login" element={<GuestRoute><RestaurantLogin /></GuestRoute>} />
+              <Route path="/restaurant/register" element={<GuestRoute><RestaurantRegister /></GuestRoute>} />
             </Route>
 
             {/* Client App (cliente E restaurante podem acessar) */}

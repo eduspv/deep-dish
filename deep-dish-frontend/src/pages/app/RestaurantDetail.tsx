@@ -5,16 +5,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/StatusBadge';
-import { mockTimeSlots } from '@/mocks/restaurants';
-import { restaurantsService } from '@/services/restaurants.service';
-import { Restaurante, TimeSlot } from '@/types';
-import { MapPin, Clock, Users, Phone, Star } from 'lucide-react';
+import { restaurantsService, Slot } from '@/services/restaurants.service';
+import { Restaurante } from '@/types';
+import { ArrowLeft, MapPin, Clock, Users, Phone, Star } from 'lucide-react';
+
+const PRICE_LABELS: Record<number, string> = { 1: 'R$', 2: 'R$$', 3: 'R$$$', 4: 'R$$$$' };
 
 const RestaurantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [restaurant, setRestaurant] = useState<Restaurante | null>(null);
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [partySize, setPartySize] = useState('2');
   const [selectedTime, setSelectedTime] = useState('');
@@ -29,7 +30,16 @@ const RestaurantDetail: React.FC = () => {
         const data = await restaurantsService.getRestaurantById(id);
         if (!cancelled) {
           setRestaurant(data ?? null);
-          setTimeSlots(mockTimeSlots);
+
+          // Buscar slots se restaurante aceita reservas
+          if (data?.reservations_enabled) {
+            try {
+              const slotsData = await restaurantsService.getSlots(id);
+              if (!cancelled) setSlots(slotsData.slots);
+            } catch {
+              // Restaurante sem horários/mesas configurados — sem slots
+            }
+          }
         }
       } catch {
         if (!cancelled) setRestaurant(null);
@@ -79,6 +89,15 @@ const RestaurantDetail: React.FC = () => {
   return (
     <div className="space-y-6">
 
+      {/* Voltar */}
+      <button
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Voltar
+      </button>
+
       {/* Banner */}
       <div className="relative h-56 md:h-72 overflow-hidden rounded-xl">
         {restaurant.imagem_url ? (
@@ -100,17 +119,15 @@ const RestaurantDetail: React.FC = () => {
             {restaurant.name}
           </h1>
           <div className="flex items-center gap-3 mt-1 text-sm text-dark-surface-foreground/80">
-            {/* rating — campo futuro */}
-            {typeof restaurant.rating === 'number' && (
+            {restaurant.rating && (
               <span className="flex items-center gap-1">
                 <Star className="h-4 w-4 fill-gold-accent text-gold-accent" />
-                {restaurant.rating.toFixed(1)}
+                {Number(restaurant.rating).toFixed(1)}
               </span>
             )}
             <span className="capitalize">{restaurant.tipo}</span>
-            {/* priceRange — campo futuro */}
-            {typeof restaurant.priceRange === 'number' && restaurant.priceRange > 0 && (
-              <span>{'€'.repeat(restaurant.priceRange)}</span>
+            {restaurant.price_range && (
+              <span className="font-medium">{PRICE_LABELS[restaurant.price_range]}</span>
             )}
           </div>
         </div>
@@ -134,10 +151,10 @@ const RestaurantDetail: React.FC = () => {
                   {endereco}
                 </span>
               )}
-              {restaurant.horario_funcionamento && (
+              {restaurant.horario_abertura && restaurant.horario_fechamento && (
                 <span className="flex items-center gap-2">
                   <Clock className="h-4 w-4 shrink-0" />
-                  {restaurant.horario_funcionamento}
+                  {restaurant.horario_abertura.slice(0, 5)} – {restaurant.horario_fechamento.slice(0, 5)}
                 </span>
               )}
               {restaurant.telefone && (
@@ -149,27 +166,30 @@ const RestaurantDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* Horários disponíveis — mock até backend ter a rota */}
-          {restaurant.reservationsEnabled && (
+          {/* Horários disponíveis */}
+          {!!restaurant.reservations_enabled && slots.length > 0 && (
             <div className="rounded-xl bg-card p-5 shadow-card">
               <h2 className="font-display text-lg font-semibold text-foreground mb-3">
                 Horários disponíveis
               </h2>
               <div className="flex flex-wrap gap-2">
-                {timeSlots.map(ts => (
+                {slots.map(slot => (
                   <button
-                    key={ts.id}
-                    disabled={!ts.available}
-                    onClick={() => setSelectedTime(ts.time)}
+                    key={slot.horario}
+                    disabled={!slot.disponivel}
+                    onClick={() => setSelectedTime(slot.horario)}
                     className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors
-                      ${selectedTime === ts.time
+                      ${selectedTime === slot.horario
                         ? 'bg-primary text-primary-foreground border-primary'
-                        : ts.available
+                        : slot.disponivel
                           ? 'bg-card text-foreground border-border hover:border-primary/50'
                           : 'bg-muted text-muted-foreground cursor-not-allowed'
                       }`}
                   >
-                    {ts.time}
+                    {slot.horario}
+                    {slot.disponivel && (
+                      <span className="ml-1 text-xs opacity-60">({slot.vagas})</span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -193,7 +213,7 @@ const RestaurantDetail: React.FC = () => {
             </div>
 
             {/* Fila ativa */}
-            {restaurant.fila_ativa && (
+            {!!restaurant.fila_ativa && (
               <div className="rounded-lg border border-border p-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">Fila ativa</span>
@@ -210,7 +230,7 @@ const RestaurantDetail: React.FC = () => {
             )}
 
             {/* Reserva */}
-            {restaurant.reservationsEnabled && (
+            {restaurant.reservations_enabled && (
               <Button
                 onClick={handleReserve}
                 disabled={!selectedTime}
@@ -222,7 +242,7 @@ const RestaurantDetail: React.FC = () => {
             )}
 
             {/* Nenhuma ação disponível */}
-            {!restaurant.fila_ativa && !restaurant.reservationsEnabled && (
+            {!restaurant.fila_ativa && !restaurant.reservations_enabled && (
               <p className="text-sm text-muted-foreground text-center py-2">
                 Este restaurante não possui fila ou reservas ativas no momento.
               </p>

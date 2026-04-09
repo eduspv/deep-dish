@@ -52,7 +52,7 @@ class RestauranteAuthController extends Controller
 
             return response()->json([
                 'message'     => 'Restaurante cadastrado com sucesso!',
-                'restaurante' => $result['restaurante'],
+                'restaurante' => $result['restaurante']->makeVisible(['email', 'cnpj']),
                 'type'        => 'restaurante',
                 'token'       => $result['token'],
             ], 201);
@@ -97,7 +97,9 @@ class RestauranteAuthController extends Controller
 
     public function me()
     {
-        return response()->json(auth('restaurante')->user());
+        $restaurante = auth('restaurante')->user();
+
+        return response()->json($restaurante->makeVisible(['email', 'cnpj']));
     }
 
     // ─── Atualiza perfil do restaurante ─────────────────────
@@ -119,6 +121,8 @@ class RestauranteAuthController extends Controller
             'rating'               => 'sometimes|nullable|numeric|min:0|max:5',
             'price_range'          => 'sometimes|nullable|integer|min:1|max:4',
             'reservations_enabled' => 'sometimes|boolean',
+            'description'          => 'sometimes|nullable|string|max:500',
+            'intervalo_reserva'    => 'sometimes|nullable|integer|min:15|max:120',
         ]);
 
         if ($validator->fails()) {
@@ -132,7 +136,7 @@ class RestauranteAuthController extends Controller
             $restaurante = auth('restaurante')->user();
             $restaurante->update($validator->validated());
 
-            return response()->json($restaurante);
+            return response()->json($restaurante->makeVisible(['email', 'cnpj']));
         } catch (\Throwable $e) {
             Log::error('Erro ao atualizar restaurante', ['message' => $e->getMessage()]);
 

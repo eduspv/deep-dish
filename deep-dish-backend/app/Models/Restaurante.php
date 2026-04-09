@@ -37,6 +37,8 @@ class Restaurante extends Authenticatable implements JWTSubject
         'rating',
         'price_range',
         'reservations_enabled',
+        'description',
+        'intervalo_reserva',
         'tipo_usuario',
         'password',
         'token_version',
@@ -46,6 +48,9 @@ class Restaurante extends Authenticatable implements JWTSubject
 
     protected $hidden = [
         'password',
+        'email',
+        'cnpj',
+        'token_version',
     ];
 
     protected function casts(): array

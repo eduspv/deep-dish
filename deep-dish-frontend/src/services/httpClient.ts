@@ -68,6 +68,56 @@ function extrairMensagem(data: Record<string, unknown>, status: number): string 
   return msg ? traduzir(msg) : `Erro ${status}`;
 }
 
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+async function tryRefreshToken(): Promise<string | null> {
+  const userType = localStorage.getItem('userType');
+  const endpoint = userType === 'restaurante' ? '/restaurante/refresh' : '/cliente/refresh';
+
+  try {
+    const res = await fetch(`${BASE}${endpoint}`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (data?.token) {
+      localStorage.setItem('jwt', data.token);
+      return data.token;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function refreshOnce(): Promise<string | null> {
+  if (isRefreshing) return refreshPromise;
+  isRefreshing = true;
+  refreshPromise = tryRefreshToken().finally(() => {
+    isRefreshing = false;
+    refreshPromise = null;
+  });
+  return refreshPromise;
+}
+
+async function fetchWithRefresh(path: string, init: RequestInit): Promise<Response> {
+  const res = await fetch(`${BASE}${path}`, init);
+
+  if (res.status === 401 && localStorage.getItem('jwt')) {
+    const newToken = await refreshOnce();
+    if (newToken) {
+      const retryHeaders = { ...init.headers, Authorization: `Bearer ${newToken}` } as HeadersInit;
+      return fetch(`${BASE}${path}`, { ...init, headers: retryHeaders });
+    }
+  }
+
+  return res;
+}
+
 async function handleResponse<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}));
 
@@ -80,7 +130,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 export const httpClient = {
   async get<T>(path: string): Promise<T> {
-    const res = await fetch(`${BASE}${path}`, {
+    const res = await fetchWithRefresh(path, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
@@ -88,7 +138,7 @@ export const httpClient = {
   },
 
   async post<T>(path: string, body?: unknown): Promise<T> {
-    const res = await fetch(`${BASE}${path}`, {
+    const res = await fetchWithRefresh(path, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: body ? JSON.stringify(body) : undefined,
@@ -97,7 +147,7 @@ export const httpClient = {
   },
 
   async put<T>(path: string, body?: unknown): Promise<T> {
-    const res = await fetch(`${BASE}${path}`, {
+    const res = await fetchWithRefresh(path, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: body ? JSON.stringify(body) : undefined,
@@ -106,7 +156,7 @@ export const httpClient = {
   },
 
   async delete<T>(path: string): Promise<T> {
-    const res = await fetch(`${BASE}${path}`, {
+    const res = await fetchWithRefresh(path, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });

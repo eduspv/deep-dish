@@ -1,6 +1,18 @@
-import { Restaurante, TimeSlot } from '@/types';
-import { mockTimeSlots } from '@/mocks/restaurants';
+import { Restaurante } from '@/types';
 import { httpClient } from './httpClient';
+
+export interface Slot {
+  horario: string;
+  disponivel: boolean;
+  vagas: number;
+}
+
+export interface SlotsResponse {
+  restaurante_id: string;
+  data: string;
+  total_mesas: number;
+  slots: Slot[];
+}
 
 export const restaurantsService = {
 
@@ -23,7 +35,7 @@ export const restaurantsService = {
     if (filters?.tipo)   params.set('tipo',   filters.tipo);
 
     const query = params.toString();
-    const path  = query ? `/restaurante?${query}` : '/restaurante';
+    const path  = query ? `/restaurantes?${query}` : '/restaurantes';
 
     // backend retorna paginado: { data: [...], total, per_page... }
     const res = await httpClient.get<{ data: Restaurante[] } | Restaurante[]>(path);
@@ -37,15 +49,15 @@ export const restaurantsService = {
   // ─── Busca um restaurante pelo ID ───────────────────────
   async getRestaurantById(id: string): Promise<Restaurante | null> {
     try {
-      return await httpClient.get<Restaurante>(`/restaurante/${id}`);
+      return await httpClient.get<Restaurante>(`/restaurantes/${id}`);
     } catch {
       return null;
     }
   },
 
-  // ─── Busca horários disponíveis ─────────────────────────
-  // TODO: substituir por API real quando o backend tiver essa rota
-  async getTimeSlots(_restaurantId: string, _date: string): Promise<TimeSlot[]> {
-    return mockTimeSlots;
+  // ─── Busca horários disponíveis para reserva ────────────
+  async getSlots(restaurantId: string, data?: string): Promise<SlotsResponse> {
+    const query = data ? `?data=${data}` : '';
+    return httpClient.get<SlotsResponse>(`/restaurantes/${restaurantId}/slots${query}`);
   },
 };
