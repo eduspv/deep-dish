@@ -5,20 +5,45 @@ import StatusBadge from './StatusBadge';
 
 const PRICE_LABELS: Record<number, string> = { 1: 'R$', 2: 'R$$', 3: 'R$$$', 4: 'R$$$$' };
 
+const isOpen = (abertura?: string | null, fechamento?: string | null): boolean | null => {
+  if (!abertura || !fechamento) return null;
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  return hhmm >= abertura.slice(0, 5) && hhmm < fechamento.slice(0, 5);
+};
+
 const RestaurantCard = ({ restaurant }: { restaurant: Restaurante }) => {
   const endereco = restaurant.endereco_completo || [restaurant.logradouro, restaurant.numero, restaurant.bairro, restaurant.cidade, restaurant.estado].filter(Boolean).join(', ');
+  const open = isOpen(restaurant.horario_abertura, restaurant.horario_fechamento);
 
   return (
     <Link to={`/app/restaurants/${restaurant.id}`} className="group block">
       <div className="overflow-hidden rounded-lg bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
         <div className="relative h-44 overflow-hidden">
-          <img
-            src={restaurant.imagem_url || ''}
-            alt={restaurant.name}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
+          {restaurant.imagem_url ? (
+            <img
+              src={restaurant.imagem_url}
+              alt={restaurant.name}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+            />
+          ) : (
+            <div className="h-full w-full bg-muted flex items-center justify-center">
+              <span className="text-5xl font-bold text-muted-foreground/20">
+                {restaurant.name.charAt(0)}
+              </span>
+            </div>
+          )}
           <div className="absolute top-3 right-3 flex gap-1.5">
+            {open !== null && (
+              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                open
+                  ? 'bg-emerald-500/90 text-white'
+                  : 'bg-red-500/90 text-white'
+              }`}>
+                {open ? 'Aberto' : 'Fechado'}
+              </span>
+            )}
             {!!restaurant.fila_ativa && <StatusBadge status="waiting" />}
             {!!restaurant.reservations_enabled && <StatusBadge status="available" />}
           </div>
