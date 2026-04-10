@@ -11,6 +11,20 @@ use Illuminate\Validation\Rule;
 
 class MesaController extends Controller
 {
+    // ─── Rota pública: mesas disponíveis de um restaurante ──
+    public function disponiveis(Request $request, string $id): JsonResponse
+    {
+        $query = Mesa::where('restaurante_id', $id)
+            ->where('status', 'livre')
+            ->orderBy('capacidade', 'asc');
+
+        if ($request->has('capacidade_min')) {
+            $query->where('capacidade', '>=', (int) $request->query('capacidade_min'));
+        }
+
+        return response()->json($query->get());
+    }
+
     // ─── Lista mesas do restaurante logado ──────────────────
     public function index(): JsonResponse
     {

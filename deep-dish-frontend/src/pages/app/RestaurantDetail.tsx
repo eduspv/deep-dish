@@ -5,10 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/StatusBadge';
-import { restaurantsService, Slot } from '@/services/restaurants.service';
+import { restaurantsService } from '@/services/restaurants.service';
 import { ApiError } from '@/services/httpClient';
-import { Restaurante } from '@/types';
-import { ArrowLeft, MapPin, Clock, Phone, Star } from 'lucide-react';
+import { Restaurante, Mesa } from '@/types';
+import { ArrowLeft, MapPin, Clock, Phone, Star, Users } from 'lucide-react';
 
 const PRICE_LABELS: Record<number, string> = { 1: 'R$', 2: 'R$$', 3: 'R$$$', 4: 'R$$$$' };
 
@@ -16,11 +16,11 @@ const RestaurantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [restaurant, setRestaurant] = useState<Restaurante | null>(null);
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [slotsError, setSlotsError] = useState<string | null>(null);
+  const [mesas, setMesas] = useState<Mesa[]>([]);
+  const [mesasError, setMesasError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [partySize, setPartySize] = useState('2');
-  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedMesa, setSelectedMesa] = useState<Mesa | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -28,23 +28,22 @@ const RestaurantDetail: React.FC = () => {
 
     const load = async () => {
       setLoading(true);
-      setSlotsError(null);
+      setMesasError(null);
       try {
         const data = await restaurantsService.getRestaurantById(id);
         if (!cancelled) {
           setRestaurant(data ?? null);
 
-          // Buscar slots se restaurante aceita reservas
           if (data?.reservations_enabled) {
             try {
-              const slotsData = await restaurantsService.getSlots(id);
-              if (!cancelled) setSlots(slotsData.slots);
+              const mesasData = await restaurantsService.getMesasDisponiveis(id);
+              if (!cancelled) setMesas(mesasData);
             } catch (err) {
               if (!cancelled) {
                 const msg = err instanceof ApiError
                   ? err.message
-                  : 'Não foi possível carregar os horários disponíveis.';
-                setSlotsError(msg);
+                  : 'Não foi possível carregar as mesas disponíveis.';
+                setMesasError(msg);
               }
             }
           }
@@ -60,16 +59,23 @@ const RestaurantDetail: React.FC = () => {
     return () => { cancelled = true; };
   }, [id]);
 
+  // Filtra mesas pela quantidade de pessoas
+  const partySizeNum = Math.max(1, Number(partySize) || 1);
+  const mesasFiltradas = mesas.filter(m => m.capacidade >= partySizeNum);
+
   const handleQueue = () => navigate('/app/queue');
 
   const handleReserve = () => {
+    if (!selectedMesa) return;
     navigate('/app/confirm', {
       state: {
         restaurantId:    id,
         restaurantName:  restaurant?.name,
         restaurantImage: restaurant?.imagem_url,
-        time:            selectedTime,
-        partySize:       Number(partySize),
+        mesaId:          String(selectedMesa.id),
+        mesaNumero:      selectedMesa.numero,
+        mesaCapacidade:  selectedMesa.capacidade,
+        partySize:       partySizeNum,
       },
     });
   };
@@ -148,7 +154,6 @@ const RestaurantDetail: React.FC = () => {
 
           {/* Informações */}
           <div className="rounded-xl bg-card p-5 shadow-card">
-            {/* description — campo futuro */}
             <p className="text-foreground">
               {restaurant.description || `Restaurante especializado em ${restaurant.tipo}.`}
             </p>
@@ -174,68 +179,79 @@ const RestaurantDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* Horários disponíveis + reserva */}
+          {/* Mesas disponíveis + reserva */}
           {!!restaurant.reservations_enabled && (
             <div className="rounded-xl bg-card p-5 shadow-card space-y-4">
               <h2 className="font-display text-lg font-semibold text-foreground">
-                Horários disponíveis
+                Mesas disponíveis
               </h2>
 
-              {slotsError ? (
-                <p className="text-sm text-destructive">{slotsError}</p>
-              ) : slots.length === 0 ? (
+              {/* Filtro de pessoas */}
+              <div className="flex items-end gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Quantas pessoas?</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={partySize}
+                    onChange={e => { setPartySize(e.target.value); setSelectedMesa(null); }}
+                    className="mt-1 w-24"
+                  />
+                </div>
+              </div>
+
+              {mesasError ? (
+                <p className="text-sm text-destructive">{mesasError}</p>
+              ) : mesas.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Nenhum horário disponível para hoje.
+                  Nenhuma mesa disponível no momento.
+                </p>
+              ) : mesasFiltradas.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma mesa disponível para {partySizeNum} pessoas. Tente um número menor.
                 </p>
               ) : (
                 <>
                   <p className="text-xs text-muted-foreground">
-                    Selecione um horário para reservar:
+                    Selecione uma mesa para reservar:
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    {slots.map(slot => (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {mesasFiltradas.map(mesa => (
                       <button
-                        key={slot.horario}
-                        disabled={!slot.disponivel}
-                        onClick={() => setSelectedTime(slot.horario)}
-                        className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors
-                          ${selectedTime === slot.horario
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : slot.disponivel
-                              ? 'bg-card text-foreground border-border hover:border-primary/50'
-                              : 'bg-muted text-muted-foreground cursor-not-allowed'
+                        key={mesa.id}
+                        onClick={() => setSelectedMesa(mesa)}
+                        className={`rounded-lg border p-3 text-left transition-colors
+                          ${selectedMesa?.id === mesa.id
+                            ? 'bg-primary/10 border-primary ring-1 ring-primary'
+                            : 'bg-card border-border hover:border-primary/50'
                           }`}
                       >
-                        {slot.horario}
-                        {slot.disponivel && (
-                          <span className="ml-1 text-xs opacity-60">({slot.vagas})</span>
-                        )}
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-foreground">Mesa {mesa.numero}</span>
+                          <StatusBadge status={mesa.status} />
+                        </div>
+                        <span className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                          <Users className="h-3.5 w-3.5" />
+                          {mesa.capacidade} lugares
+                        </span>
                       </button>
                     ))}
                   </div>
                 </>
               )}
 
-              {/* Quantidade de pessoas + botão reservar */}
-              <div className="flex items-end gap-3 pt-2 border-t border-border">
-                <div className="flex-1">
-                  <Label className="text-xs text-muted-foreground">Pessoas</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="20"
-                    value={partySize}
-                    onChange={e => setPartySize(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
+              {/* Botão reservar */}
+              <div className="pt-2 border-t border-border">
                 <Button
                   onClick={handleReserve}
-                  disabled={!selectedTime}
+                  disabled={!selectedMesa}
                   size="lg"
-                  className="shrink-0"
+                  className="w-full"
                 >
-                  {selectedTime ? `Reservar para ${selectedTime}` : 'Reservar mesa'}
+                  {selectedMesa
+                    ? `Reservar Mesa ${selectedMesa.numero}`
+                    : 'Selecione uma mesa'}
                 </Button>
               </div>
             </div>

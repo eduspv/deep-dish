@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { CalendarDays, Clock, Users, MapPin } from 'lucide-react';
+import { Users, MapPin, Hash } from 'lucide-react';
 import { toast } from 'sonner';
 import { reservationsService } from '@/services/reservations.service';
 import { ApiError } from '@/services/httpClient';
@@ -14,11 +14,13 @@ const Confirm: React.FC = () => {
     restaurantId?:    string;
     restaurantName?:  string;
     restaurantImage?: string;
-    time?:            string;
+    mesaId?:          string;
+    mesaNumero?:      number;
+    mesaCapacidade?:  number;
     partySize?:       number;
   } | null;
 
-  if (!state || !state.restaurantId || !state.time || !state.partySize) {
+  if (!state || !state.restaurantId || !state.mesaId || !state.partySize) {
     return (
       <p className="py-20 text-center text-muted-foreground">
         Nenhuma reserva para confirmar.{' '}
@@ -32,15 +34,9 @@ const Confirm: React.FC = () => {
   const handleConfirm = async () => {
     setLoading(true);
     try {
-      // Combina a data de hoje com o horário escolhido (formato HH:mm)
-      const [h, m] = state.time!.split(':').map(Number);
-      const horario = new Date();
-      horario.setHours(h, m, 0, 0);
-
       await reservationsService.createReservation({
-        restaurante_id:  state.restaurantId!,
-        horario_reserva: horario.toISOString(),
-        party_size:      state.partySize!,
+        mesa_id:    state.mesaId!,
+        party_size: state.partySize!,
       });
 
       toast.success('Reserva criada com sucesso!');
@@ -62,10 +58,9 @@ const Confirm: React.FC = () => {
         )}
         <h2 className="font-display text-xl font-semibold text-foreground">{state.restaurantName}</h2>
         <div className="space-y-2 text-sm text-muted-foreground">
-          <p className="flex items-center gap-2"><CalendarDays className="h-4 w-4" />Hoje</p>
-          <p className="flex items-center gap-2"><Clock className="h-4 w-4" />{state.time}</p>
+          <p className="flex items-center gap-2"><Hash className="h-4 w-4" />Mesa {state.mesaNumero} ({state.mesaCapacidade} lugares)</p>
           <p className="flex items-center gap-2"><Users className="h-4 w-4" />{state.partySize} pessoas</p>
-          <p className="flex items-center gap-2"><MapPin className="h-4 w-4" />Mesa será atribuída automaticamente</p>
+          <p className="flex items-center gap-2"><MapPin className="h-4 w-4" />Reserva imediata</p>
         </div>
         <div className="rounded-lg bg-secondary/50 border border-border p-3 text-xs text-muted-foreground">
           Ao chegar, confirme sua presença com o restaurante para liberar sua mesa.

@@ -23,13 +23,12 @@ class ReservaController extends Controller
     /** Status considerados "ativos" (bloqueia mesa no horário). */
     private const STATUS_ATIVOS = ['confirmada', 'em_andamento'];
 
-    // ─── Cliente: cria nova reserva ─────────────────────────
+    // ─── Cliente: cria nova reserva (escolha direta da mesa) ─
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'restaurante_id'  => 'required|string|uuid|exists:restaurante,id',
-            'horario_reserva' => 'required|date|after:now',
-            'party_size'      => 'required|integer|min:1|max:20',
+            'mesa_id'    => 'required|string|uuid|exists:mesa,id',
+            'party_size' => 'required|integer|min:1|max:20',
         ]);
 
         if ($validator->fails()) {
@@ -39,78 +38,55 @@ class ReservaController extends Controller
             ], 422);
         }
 
-        $clienteId      = auth('api')->id();
-        $restauranteId  = $request->input('restaurante_id');
-        $horarioReserva = Carbon::parse($request->input('horario_reserva'));
-        $partySize      = (int) $request->input('party_size');
-        $fimReserva     = $horarioReserva->copy()->addMinutes(self::DURACAO_RESERVA_MINUTOS);
-
-        $restaurante = Restaurante::find($restauranteId);
-
-        if (! $restaurante->reservations_enabled) {
-            return response()->json(['error' => 'Este restaurante não aceita reservas.'], 422);
-        }
+        $clienteId = auth('api')->id();
+        $mesaId    = $request->input('mesa_id');
+        $partySize = (int) $request->input('party_size');
 
         try {
-            return DB::transaction(function () use ($clienteId, $restauranteId, $horarioReserva, $fimReserva, $partySize) {
-                // Cliente já tem reserva ativa nesse restaurante e horário?
+            return DB::transaction(function () use ($clienteId, $mesaId, $partySize) {
+                $mesa = Mesa::lockForUpdate()->find($mesaId);
+
+                if (! $mesa) {
+                    return response()->json(['error' => 'Mesa não encontrada.'], 404);
+                }
+
+                $restaurante = Restaurante::find($mesa->restaurante_id);
+                if (! $restaurante->reservations_enabled) {
+                    return response()->json(['error' => 'Este restaurante não aceita reservas.'], 422);
+                }
+
+                if ($mesa->status !== 'livre') {
+                    return response()->json(['error' => 'Esta mesa não está disponível no momento.'], 422);
+                }
+
+                if ($mesa->capacidade < $partySize) {
+                    return response()->json([
+                        'error' => "Esta mesa comporta apenas {$mesa->capacidade} pessoas.",
+                    ], 422);
+                }
+
+                // Cliente já tem reserva ativa nesse restaurante?
                 $duplicada = ClienteMesa::where('cliente_id', $clienteId)
-                    ->whereHas('mesa', fn ($q) => $q->where('restaurante_id', $restauranteId))
-                    ->where('horario_reserva', $horarioReserva)
+                    ->whereHas('mesa', fn ($q) => $q->where('restaurante_id', $mesa->restaurante_id))
                     ->whereIn('status', self::STATUS_ATIVOS)
                     ->exists();
 
                 if ($duplicada) {
                     return response()->json([
-                        'error' => 'Você já possui uma reserva neste restaurante neste horário.',
-                    ], 422);
-                }
-
-                // Mesas com capacidade suficiente, NÃO bloqueadas, ordenadas pela menor
-                $mesasCandidatas = Mesa::where('restaurante_id', $restauranteId)
-                    ->where('capacidade', '>=', $partySize)
-                    ->where('status', '!=', 'bloqueada')
-                    ->orderBy('capacidade', 'asc')
-                    ->lockForUpdate()
-                    ->get();
-
-                if ($mesasCandidatas->isEmpty()) {
-                    return response()->json([
-                        'error' => "Não há mesas com capacidade para {$partySize} pessoas neste restaurante.",
-                    ], 422);
-                }
-
-                // Encontra a primeira mesa sem reserva ativa sobreposta
-                $mesaEscolhida = null;
-                foreach ($mesasCandidatas as $mesa) {
-                    $ocupada = ClienteMesa::where('mesa_id', $mesa->id)
-                        ->whereIn('status', self::STATUS_ATIVOS)
-                        ->where('horario_reserva', '<', $fimReserva)
-                        ->whereRaw("datetime(horario_reserva, '+' || ? || ' minutes') > ?", [self::DURACAO_RESERVA_MINUTOS, $horarioReserva])
-                        ->exists();
-
-                    if (! $ocupada) {
-                        $mesaEscolhida = $mesa;
-                        break;
-                    }
-                }
-
-                if (! $mesaEscolhida) {
-                    return response()->json([
-                        'error' => 'Não há mesas disponíveis com capacidade suficiente neste horário.',
+                        'error' => 'Você já possui uma reserva ativa neste restaurante.',
                     ], 422);
                 }
 
                 // Cria a reserva
                 $reserva = ClienteMesa::create([
                     'cliente_id'      => $clienteId,
-                    'mesa_id'         => $mesaEscolhida->id,
-                    'horario_reserva' => $horarioReserva,
+                    'mesa_id'         => $mesa->id,
+                    'horario_reserva' => now(),
                     'status'          => 'confirmada',
                 ]);
 
                 // Marca a mesa como reservada
-                $mesaEscolhida->update(['status' => 'reservada']);
+                $mesa->update(['status' => 'reservada']);
 
                 $reserva->load(['mesa.restaurante']);
 
