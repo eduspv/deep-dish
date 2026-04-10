@@ -1,4 +1,4 @@
-import { Restaurante, Table, TimeSlot, StaffMember, RestaurantSettings } from '@/types';
+import { Restaurante, TimeSlot, StaffMember, RestaurantSettings } from '@/types';
 
 function mkRestaurante(
   id: string,
@@ -122,16 +122,6 @@ export const mockRestaurants: Restaurante[] = [
   }),
 ];
 
-export const mockTables: Table[] = [
-  { id: 't1', restaurantId: 'r1', number: 1, capacity: 2, status: 'available' },
-  { id: 't2', restaurantId: 'r1', number: 2, capacity: 2, status: 'occupied' },
-  { id: 't3', restaurantId: 'r1', number: 3, capacity: 4, status: 'available' },
-  { id: 't4', restaurantId: 'r1', number: 4, capacity: 4, status: 'reserved' },
-  { id: 't5', restaurantId: 'r1', number: 5, capacity: 6, status: 'available' },
-  { id: 't6', restaurantId: 'r1', number: 6, capacity: 6, status: 'occupied' },
-  { id: 't7', restaurantId: 'r1', number: 7, capacity: 8, status: 'available' },
-  { id: 't8', restaurantId: 'r1', number: 8, capacity: 8, status: 'inactive' },
-];
 
 export const mockTimeSlots: TimeSlot[] = [
   { id: 'ts1', time: '12:00', available: true },

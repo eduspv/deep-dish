@@ -155,6 +155,15 @@ export const httpClient = {
     return handleResponse<T>(res);
   },
 
+  async patch<T>(path: string, body?: unknown): Promise<T> {
+    const res = await fetchWithRefresh(path, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return handleResponse<T>(res);
+  },
+
   async delete<T>(path: string): Promise<T> {
     const res = await fetchWithRefresh(path, {
       method: 'DELETE',

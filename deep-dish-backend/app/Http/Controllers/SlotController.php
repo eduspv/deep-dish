@@ -12,9 +12,15 @@ use Illuminate\Http\Request;
 class SlotController extends Controller
 {
     /**
+     * Duração padrão de uma reserva (em minutos). Mantida em sincronia
+     * com ReservaController::DURACAO_RESERVA_MINUTOS.
+     */
+    private const DURACAO_RESERVA_MINUTOS = 60;
+
+    /**
      * Retorna os horários disponíveis para reserva em um restaurante em uma data.
      *
-     * GET /restaurante/{id}/slots?data=2026-04-08
+     * GET /restaurantes/{id}/slots?data=2026-04-08
      */
     public function index(Request $request, string $id): JsonResponse
     {
@@ -34,7 +40,9 @@ class SlotController extends Controller
 
         $data = $request->query('data', now()->toDateString());
 
-        $totalMesas = Mesa::where('restaurante_id', $id)->count();
+        $totalMesas = Mesa::where('restaurante_id', $id)
+            ->where('status', '!=', 'bloqueada')
+            ->count();
 
         if ($totalMesas === 0) {
             return response()->json(['message' => 'Restaurante sem mesas cadastradas.'], 422);
@@ -54,13 +62,14 @@ class SlotController extends Controller
             }
 
             $inicioSlot = $hora->copy();
-            $fimSlot = $hora->copy()->addMinutes($intervalo);
+            $fimSlot = $hora->copy()->addMinutes(self::DURACAO_RESERVA_MINUTOS);
 
-            // Conta quantas mesas estão reservadas neste slot
+            // Conta mesas com reserva ativa que se sobrepõem à janela [inicio, inicio + 1h)
+            // Sobreposição: reserva.inicio < slot.fim  AND  reserva.inicio + 1h > slot.inicio
             $reservadas = ClienteMesa::whereHas('mesa', fn ($q) => $q->where('restaurante_id', $id))
-                ->where('horario_reserva', '>=', $inicioSlot)
+                ->whereIn('status', ['confirmada', 'em_andamento'])
                 ->where('horario_reserva', '<', $fimSlot)
-                ->whereNotIn('status', ['cancelada', 'concluida'])
+                ->whereRaw("datetime(horario_reserva, '+' || ? || ' minutes') > ?", [self::DURACAO_RESERVA_MINUTOS, $inicioSlot])
                 ->count();
 
             $disponivel = $totalMesas - $reservadas;

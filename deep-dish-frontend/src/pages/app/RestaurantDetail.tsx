@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/StatusBadge';
 import { restaurantsService, Slot } from '@/services/restaurants.service';
+import { ApiError } from '@/services/httpClient';
 import { Restaurante } from '@/types';
-import { ArrowLeft, MapPin, Clock, Users, Phone, Star } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Phone, Star } from 'lucide-react';
 
 const PRICE_LABELS: Record<number, string> = { 1: 'R$', 2: 'R$$', 3: 'R$$$', 4: 'R$$$$' };
 
@@ -16,6 +17,7 @@ const RestaurantDetail: React.FC = () => {
   const navigate = useNavigate();
   const [restaurant, setRestaurant] = useState<Restaurante | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [partySize, setPartySize] = useState('2');
   const [selectedTime, setSelectedTime] = useState('');
@@ -26,6 +28,7 @@ const RestaurantDetail: React.FC = () => {
 
     const load = async () => {
       setLoading(true);
+      setSlotsError(null);
       try {
         const data = await restaurantsService.getRestaurantById(id);
         if (!cancelled) {
@@ -36,8 +39,13 @@ const RestaurantDetail: React.FC = () => {
             try {
               const slotsData = await restaurantsService.getSlots(id);
               if (!cancelled) setSlots(slotsData.slots);
-            } catch {
-              // Restaurante sem horários/mesas configurados — sem slots
+            } catch (err) {
+              if (!cancelled) {
+                const msg = err instanceof ApiError
+                  ? err.message
+                  : 'Não foi possível carregar os horários disponíveis.';
+                setSlotsError(msg);
+              }
             }
           }
         }
@@ -166,32 +174,69 @@ const RestaurantDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* Horários disponíveis */}
-          {!!restaurant.reservations_enabled && slots.length > 0 && (
-            <div className="rounded-xl bg-card p-5 shadow-card">
-              <h2 className="font-display text-lg font-semibold text-foreground mb-3">
+          {/* Horários disponíveis + reserva */}
+          {!!restaurant.reservations_enabled && (
+            <div className="rounded-xl bg-card p-5 shadow-card space-y-4">
+              <h2 className="font-display text-lg font-semibold text-foreground">
                 Horários disponíveis
               </h2>
-              <div className="flex flex-wrap gap-2">
-                {slots.map(slot => (
-                  <button
-                    key={slot.horario}
-                    disabled={!slot.disponivel}
-                    onClick={() => setSelectedTime(slot.horario)}
-                    className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors
-                      ${selectedTime === slot.horario
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : slot.disponivel
-                          ? 'bg-card text-foreground border-border hover:border-primary/50'
-                          : 'bg-muted text-muted-foreground cursor-not-allowed'
-                      }`}
-                  >
-                    {slot.horario}
-                    {slot.disponivel && (
-                      <span className="ml-1 text-xs opacity-60">({slot.vagas})</span>
-                    )}
-                  </button>
-                ))}
+
+              {slotsError ? (
+                <p className="text-sm text-destructive">{slotsError}</p>
+              ) : slots.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhum horário disponível para hoje.
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    Selecione um horário para reservar:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {slots.map(slot => (
+                      <button
+                        key={slot.horario}
+                        disabled={!slot.disponivel}
+                        onClick={() => setSelectedTime(slot.horario)}
+                        className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors
+                          ${selectedTime === slot.horario
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : slot.disponivel
+                              ? 'bg-card text-foreground border-border hover:border-primary/50'
+                              : 'bg-muted text-muted-foreground cursor-not-allowed'
+                          }`}
+                      >
+                        {slot.horario}
+                        {slot.disponivel && (
+                          <span className="ml-1 text-xs opacity-60">({slot.vagas})</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Quantidade de pessoas + botão reservar */}
+              <div className="flex items-end gap-3 pt-2 border-t border-border">
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground">Pessoas</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={partySize}
+                    onChange={e => setPartySize(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <Button
+                  onClick={handleReserve}
+                  disabled={!selectedTime}
+                  size="lg"
+                  className="shrink-0"
+                >
+                  {selectedTime ? `Reservar para ${selectedTime}` : 'Reservar mesa'}
+                </Button>
               </div>
             </div>
           )}
@@ -200,17 +245,6 @@ const RestaurantDetail: React.FC = () => {
         {/* Coluna lateral */}
         <div className="space-y-4">
           <div className="rounded-xl bg-card p-5 shadow-card space-y-4">
-
-            <div>
-              <Label>Quantidade de pessoas</Label>
-              <Input
-                type="number"
-                min="1"
-                max="20"
-                value={partySize}
-                onChange={e => setPartySize(e.target.value)}
-              />
-            </div>
 
             {/* Fila ativa */}
             {!!restaurant.fila_ativa && (
@@ -227,18 +261,6 @@ const RestaurantDetail: React.FC = () => {
                   Entrar na fila
                 </Button>
               </div>
-            )}
-
-            {/* Reserva */}
-            {restaurant.reservations_enabled && (
-              <Button
-                onClick={handleReserve}
-                disabled={!selectedTime}
-                className="w-full"
-                size="lg"
-              >
-                Reservar mesa
-              </Button>
             )}
 
             {/* Nenhuma ação disponível */}

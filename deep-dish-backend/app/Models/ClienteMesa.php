@@ -13,6 +13,7 @@ class ClienteMesa extends Model
         'cliente_id',
         'mesa_id',
         'horario_reserva',
+        'horario_checkin',
         'status',
     ];
 
@@ -20,6 +21,7 @@ class ClienteMesa extends Model
     {
         return [
             'horario_reserva' => 'datetime',
+            'horario_checkin' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

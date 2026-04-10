@@ -47,12 +47,31 @@ Route::middleware(['auth:api', \App\Http\Middleware\VerifyJwtTokenVersion::class
     Route::get('/fila/posicao', [App\Http\Controllers\FilaController::class, 'consultarPosicao']);
 });
 
+// Reservas — cliente
+Route::middleware(['auth:api', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
+    Route::post('/reservas',        [App\Http\Controllers\ReservaController::class, 'store']);
+    Route::get('/reservas',         [App\Http\Controllers\ReservaController::class, 'index']);
+    Route::get('/reservas/{id}',    [App\Http\Controllers\ReservaController::class, 'show']);
+    Route::delete('/reservas/{id}', [App\Http\Controllers\ReservaController::class, 'destroy']);
+});
+
 Route::prefix('restaurante')->middleware(['auth:restaurante', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
     Route::get('/me', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'me']);
-    Route::put('/me',         [App\Http\Controllers\Auth\RestauranteAuthController::class, 'update']);       
+    Route::put('/me',         [App\Http\Controllers\Auth\RestauranteAuthController::class, 'update']);
     Route::post('/me/imagem', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'uploadImagem']);
     Route::post('/logout', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'logout']);
     Route::post('/refresh', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'refresh']);
+
+    // Reservas — restaurante
+    Route::get('/reservas', [App\Http\Controllers\ReservaController::class, 'indexRestaurante']);
+    Route::patch('/reservas/{id}/checkin', [App\Http\Controllers\ReservaController::class, 'checkin']);
+    Route::patch('/reservas/{id}/liberar', [App\Http\Controllers\ReservaController::class, 'liberar']);
+
+    // Mesas — restaurante
+    Route::get('/mesas',         [App\Http\Controllers\MesaController::class, 'index']);
+    Route::post('/mesas',        [App\Http\Controllers\MesaController::class, 'store']);
+    Route::put('/mesas/{id}',    [App\Http\Controllers\MesaController::class, 'update']);
+    Route::delete('/mesas/{id}', [App\Http\Controllers\MesaController::class, 'destroy']);
 });
 
 Route::prefix('cliente')->middleware('cliente.or.restaurante')->group(function(){
