@@ -49,6 +49,7 @@ const traducoes: Record<string, string> = {
   'Erro interno no servidor' : 'Erro interno no servidor. Tente novamente.',
   'Server Error'             : 'Erro interno no servidor. Tente novamente.',
   'Unauthenticated.'         : 'Sessão expirada. Faça login novamente.',
+  'Não autenticado.'         : 'Sessão expirada. Faça login novamente.',
 };
 
 function traduzir(msg: string): string {

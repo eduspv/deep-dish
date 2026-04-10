@@ -157,25 +157,27 @@ const RestaurantDetail: React.FC = () => {
             <p className="text-foreground">
               {restaurant.description || `Restaurante especializado em ${restaurant.tipo}.`}
             </p>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-muted-foreground">
+            <div className="mt-4 space-y-2 text-sm text-muted-foreground">
               {endereco && (
                 <span className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 shrink-0" />
                   {endereco}
                 </span>
               )}
-              {restaurant.horario_abertura && restaurant.horario_fechamento && (
-                <span className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 shrink-0" />
-                  {restaurant.horario_abertura.slice(0, 5)} – {restaurant.horario_fechamento.slice(0, 5)}
-                </span>
-              )}
-              {restaurant.telefone && (
-                <span className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 shrink-0" />
-                  {restaurant.telefone}
-                </span>
-              )}
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
+                {restaurant.horario_abertura && restaurant.horario_fechamento && (
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 shrink-0" />
+                    {restaurant.horario_abertura.slice(0, 5)} – {restaurant.horario_fechamento.slice(0, 5)}
+                  </span>
+                )}
+                {restaurant.telefone && (
+                  <span className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 shrink-0" />
+                    {restaurant.telefone}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

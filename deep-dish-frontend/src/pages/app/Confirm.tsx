@@ -59,7 +59,7 @@ const Confirm: React.FC = () => {
         <h2 className="font-display text-xl font-semibold text-foreground">{state.restaurantName}</h2>
         <div className="space-y-2 text-sm text-muted-foreground">
           <p className="flex items-center gap-2"><Hash className="h-4 w-4" />Mesa {state.mesaNumero} ({state.mesaCapacidade} lugares)</p>
-          <p className="flex items-center gap-2"><Users className="h-4 w-4" />{state.partySize} pessoas</p>
+          <p className="flex items-center gap-2"><Users className="h-4 w-4" />{state.partySize} {state.partySize === 1 ? 'pessoa' : 'pessoas'}</p>
           <p className="flex items-center gap-2"><MapPin className="h-4 w-4" />Reserva imediata</p>
         </div>
         <div className="rounded-lg bg-secondary/50 border border-border p-3 text-xs text-muted-foreground">
