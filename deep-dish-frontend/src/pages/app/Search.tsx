@@ -6,8 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Search as SearchIcon } from 'lucide-react';
 import { TIPOS_RESTAURANTE } from '@/constants/tipos';
 
-
-
 const ESTADOS = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA',
   'MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN',
@@ -41,12 +39,11 @@ const Search: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <h1 className="font-display text-2xl font-bold text-foreground">Buscar restaurantes</h1>
-      <form onSubmit={handleSearch} className="space-y-4 rounded-xl bg-card p-6 shadow-card">
+      <form onSubmit={handleSearch} className="space-y-5 rounded-2xl bg-card p-6 shadow-card">
 
-        {/* Busca livre */}
-        <div>
+        <div className="space-y-1.5">
           <Label>Busca livre</Label>
           <Input
             placeholder="Nome, bairro, cidade…"
@@ -55,9 +52,8 @@ const Search: React.FC = () => {
           />
         </div>
 
-        {/* Grid de campos */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
             <Label>Cidade</Label>
             <Input
               placeholder="Ex: São Paulo"
@@ -66,12 +62,12 @@ const Search: React.FC = () => {
             />
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label>Estado</Label>
             <select
               value={estado}
               onChange={e => setEstado(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
             >
               <option value="">Selecione</option>
               {ESTADOS.map(uf => (
@@ -80,7 +76,7 @@ const Search: React.FC = () => {
             </select>
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label>Bairro</Label>
             <Input
               placeholder="Ex: Vila Madalena"
@@ -89,7 +85,7 @@ const Search: React.FC = () => {
             />
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label>CEP</Label>
             <Input
               placeholder="00000-000"
@@ -99,19 +95,19 @@ const Search: React.FC = () => {
           </div>
         </div>
 
-        {/* Tipo de culinária */}
-        <div>
+        <div className="space-y-2">
           <Label>Tipo do Restaurante</Label>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             {TIPOS_RESTAURANTE.map(t => (
               <button
                 key={t.value}
                 type="button"
                 onClick={() => setTipo(tipo === t.value ? '' : t.value)}
-                className={`rounded-full border px-3 py-1 text-xs transition-colors
-                  ${tipo === t.value
-                    ? 'border-primary bg-primary/10 text-primary font-medium'
-                    : 'bg-background hover:bg-muted text-muted-foreground'}`}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-200 min-h-[32px] ${
+                  tipo === t.value
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
               >
                 {t.label}
               </button>
@@ -119,7 +115,7 @@ const Search: React.FC = () => {
           </div>
         </div>
 
-        <Button type="submit" className="w-full md:w-auto">
+        <Button type="submit" className="w-full sm:w-auto min-h-[44px]">
           <SearchIcon className="mr-2 h-4 w-4" />
           Buscar
         </Button>

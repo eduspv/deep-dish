@@ -122,16 +122,16 @@ const RestaurantRegister: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background pt-16 px-4">
-      <div className="w-full max-w-md space-y-6 rounded-xl bg-card p-8 shadow-card">
+    <div className="flex min-h-screen items-center justify-center bg-background pt-16 px-4 pb-8">
+      <div className="w-full max-w-md space-y-6 rounded-2xl bg-card p-8 shadow-card animate-fade-in-up">
         <div className="text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-accent">
-            <span className="text-xl font-bold text-accent-foreground">R</span>
+            <span className="text-xl font-bold text-accent-foreground font-display">R</span>
           </div>
-          <h1 className="mt-4 font-display text-2xl font-bold text-foreground">
+          <h1 className="mt-5 font-display text-2xl font-bold text-foreground">
             Cadastrar restaurante
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1.5 text-sm text-muted-foreground">
             Comece a gerenciar filas e reservas
           </p>
         </div>
@@ -301,12 +301,12 @@ const RestaurantRegister: React.FC = () => {
           </div>
 
           {error && (
-            <p className="text-sm text-destructive" role="alert">
+            <div className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive animate-fade-in" role="alert">
               {error}
-            </p>
+            </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full min-h-[44px]" disabled={loading}>
             {loading ? "Cadastrando..." : "Cadastrar"}
           </Button>
         </form>
@@ -315,7 +315,7 @@ const RestaurantRegister: React.FC = () => {
           Já tem conta?{" "}
           <Link
             to="/restaurant/login"
-            className="font-medium !text-black hover:underline"
+            className="font-medium text-primary hover:text-primary/80 transition-colors"
           >
             Entrar
           </Link>
