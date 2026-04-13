@@ -17,6 +17,7 @@ class ClienteMesa extends Model
         'mesa_id',
         'horario_reserva',
         'horario_checkin',
+        'party_size',
         'status',
     ];
 

@@ -6,13 +6,13 @@ import StatusBadge from '@/components/StatusBadge';
 import EmptyState from '@/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { reservationsService } from '@/services/reservations.service';
+import { ApiError } from '@/services/httpClient';
 import { Reserva } from '@/types';
+import { toast } from 'sonner';
+import { formatBRT } from '@/lib/utils';
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const formatDate = (iso: string) => formatBRT(iso, { day: '2-digit', month: '2-digit', year: 'numeric' });
+const formatTime = (iso: string) => formatBRT(iso, { hour: '2-digit', minute: '2-digit' });
 
 const AppHome: React.FC = () => {
   const [reservations, setReservations] = useState<Reserva[]>([]);
@@ -23,7 +23,12 @@ const AppHome: React.FC = () => {
     try {
       const data = await reservationsService.listUserReservations();
       setReservations(data);
-    } catch { /* silencioso */ } finally {
+    } catch (err) {
+      if (!silent) {
+        const msg = err instanceof ApiError ? err.message : 'Erro ao carregar reservas';
+        toast.error(msg);
+      }
+    } finally {
       if (!silent) setLoading(false);
     }
   }, []);
@@ -61,7 +66,9 @@ const AppHome: React.FC = () => {
           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
             <CalendarDays className="h-3.5 w-3.5" />{formatDate(r.horario_reserva)}
             <Clock className="h-3.5 w-3.5 ml-1" />{formatTime(r.horario_reserva)}
-            {r.mesa && <span>· {r.mesa.capacidade}p</span>}
+            {r.mesa && (
+              <span>· {r.party_size ?? r.mesa.capacidade}/{r.mesa.capacidade} pessoas</span>
+            )}
           </div>
         </div>
         <StatusBadge status={r.status} />

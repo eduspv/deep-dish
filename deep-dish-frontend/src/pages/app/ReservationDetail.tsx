@@ -9,12 +9,10 @@ import { reservationsService } from '@/services/reservations.service';
 import { ApiError } from '@/services/httpClient';
 import { CalendarDays, Clock, Users, MapPin, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatBRT } from '@/lib/utils';
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-
-const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const formatDate = (iso: string) => formatBRT(iso, { day: '2-digit', month: 'long', year: 'numeric' });
+const formatTime = (iso: string) => formatBRT(iso, { hour: '2-digit', minute: '2-digit' });
 
 const ACTIVE_STATUSES = ['confirmada', 'em_andamento'] as const;
 const POLL_INTERVAL_MS = 30_000;
@@ -131,7 +129,7 @@ const ReservationDetail: React.FC = () => {
             {reservation.mesa && (
               <p className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Mesa {reservation.mesa.numero} · {reservation.mesa.capacidade} pessoas
+                Mesa {reservation.mesa.numero} · {reservation.party_size ?? reservation.mesa.capacidade}/{reservation.mesa.capacidade} pessoas
               </p>
             )}
             {restaurante?.endereco_completo && (

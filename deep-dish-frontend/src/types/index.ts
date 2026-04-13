@@ -90,6 +90,7 @@ export interface Reserva {
   mesa_id: number | string;
   horario_reserva: string; // ISO datetime
   horario_checkin?: string | null; // ISO datetime — preenchido no check-in
+  party_size?: number;
   status: ReservaStatus;
   created_at?: string;
   updated_at?: string;
