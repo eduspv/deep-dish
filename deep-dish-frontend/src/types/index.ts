@@ -81,7 +81,7 @@ export interface Reservation {
 }
 
 // Status real vindo do backend (clientemesa.status)
-export type ReservaStatus = 'confirmada' | 'em_andamento' | 'cancelada' | 'liberada';
+export type ReservaStatus = 'confirmada' | 'em_andamento' | 'cancelada' | 'liberada' | 'expirada';
 
 // Reserva conforme retornada pelo backend (Eloquent ClienteMesa)
 export interface Reserva {
@@ -96,6 +96,7 @@ export interface Reserva {
   mesa?: {
     id: number | string;
     restaurante_id: string;
+    numero: number;
     capacidade: number;
     status: string;
     restaurante?: Restaurante;

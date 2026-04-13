@@ -131,8 +131,13 @@ const ReservationDetail: React.FC = () => {
               Check-in realizado! Aproveite sua refeição.
             </div>
           )}
+          {reservation.status === 'expirada' && (
+            <div className="rounded-lg bg-muted border border-border p-3 text-xs text-muted-foreground">
+              Esta reserva expirou porque o check-in não foi realizado dentro de 1 hora após o horário marcado. A mesa foi liberada.
+            </div>
+          )}
           <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => navigate('/app/reservations')}>
+            <Button variant="outline" className="flex-1" onClick={() => navigate('/app')}>
               Voltar
             </Button>
             {canCancel && (

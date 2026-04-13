@@ -120,7 +120,7 @@ const Reservations: React.FC = () => {
                     {r.mesa && (
                       <span className="flex items-center gap-1">
                         <Users className="h-3.5 w-3.5" />
-                        Mesa {r.mesa.id} ({r.mesa.capacidade}p)
+                        Mesa {r.mesa.numero} ({r.mesa.capacidade}p)
                       </span>
                     )}
                   </div>

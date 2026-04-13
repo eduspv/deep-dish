@@ -26,7 +26,6 @@ import RestaurantDetail from "@/pages/app/RestaurantDetail";
 import Confirm from "@/pages/app/Confirm";
 import Queue from "@/pages/app/Queue";
 import ReservationDetail from "@/pages/app/ReservationDetail";
-import MyReservations from "@/pages/app/MyReservations";
 
 import Dashboard from "@/pages/restaurant/Dashboard";
 import Settings from "@/pages/restaurant/Settings";
@@ -68,7 +67,6 @@ const App = () => (
               <Route path="/app/restaurants/:id" element={<RestaurantDetail />} />
               <Route path="/app/confirm" element={<Confirm />} />
               <Route path="/app/queue" element={<Queue />} />
-              <Route path="/app/reservations" element={<MyReservations />} />
               <Route
                 path="/app/reservations/:id"
                 element={<ReservationDetail />}

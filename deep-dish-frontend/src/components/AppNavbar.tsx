@@ -1,14 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Home, Search, CalendarDays, Users, LogOut, BookMarked } from 'lucide-react';
+import { Home, Search, CalendarDays, Users, LogOut } from 'lucide-react';
 import logo from '@/assets/logo/logo-sem-fundo.png'; // importe a logo no topo do arquivo
 
 const links = [
   { to: '/app', label: 'Início', icon: Home },
   { to: '/app/search', label: 'Buscar', icon: Search },
   { to: '/app/restaurants', label: 'Restaurantes', icon: Users },
-  { to: '/app/reservations', label: 'Reservas', icon: BookMarked },
   { to: '/app/queue', label: 'Fila', icon: CalendarDays },
 ];
 

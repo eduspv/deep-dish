@@ -20,8 +20,43 @@ class ReservaController extends Controller
      */
     private const DURACAO_RESERVA_MINUTOS = 60;
 
+    /**
+     * Tolerância para no-show: após esse tempo sem check-in,
+     * a reserva expira automaticamente e a mesa é liberada.
+     */
+    private const TOLERANCIA_NO_SHOW_MINUTOS = 60;
+
     /** Status considerados "ativos" (bloqueia mesa no horário). */
     private const STATUS_ATIVOS = ['confirmada', 'em_andamento'];
+
+    /**
+     * Expira reservas com status 'confirmada' cujo horário + tolerância já passou.
+     * Libera a mesa associada. Retorna a quantidade de reservas expiradas.
+     */
+    public static function expirarReservasVencidas(): int
+    {
+        $limite = Carbon::now()->subMinutes(self::TOLERANCIA_NO_SHOW_MINUTOS);
+
+        $vencidas = ClienteMesa::where('status', 'confirmada')
+            ->where('horario_reserva', '<', $limite)
+            ->get();
+
+        if ($vencidas->isEmpty()) {
+            return 0;
+        }
+
+        DB::transaction(function () use ($vencidas) {
+            foreach ($vencidas as $reserva) {
+                $reserva->update(['status' => 'expirada']);
+                $mesa = Mesa::find($reserva->mesa_id);
+                if ($mesa && $mesa->status === 'reservada') {
+                    $mesa->update(['status' => 'livre']);
+                }
+            }
+        });
+
+        return $vencidas->count();
+    }
 
     // ─── Cliente: cria nova reserva (escolha direta da mesa) ─
     public function store(Request $request): JsonResponse
@@ -104,6 +139,8 @@ class ReservaController extends Controller
     // ─── Cliente: lista suas reservas ───────────────────────
     public function index(): JsonResponse
     {
+        self::expirarReservasVencidas();
+
         $clienteId = auth('api')->id();
 
         $reservas = ClienteMesa::with(['mesa.restaurante'])
@@ -165,6 +202,8 @@ class ReservaController extends Controller
     // ─── Restaurante: lista reservas das suas mesas ─────────
     public function indexRestaurante(): JsonResponse
     {
+        self::expirarReservasVencidas();
+
         $restauranteId = auth('restaurante')->id();
 
         $reservas = ClienteMesa::with(['mesa', 'cliente'])

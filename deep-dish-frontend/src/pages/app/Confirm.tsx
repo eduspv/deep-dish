@@ -40,7 +40,7 @@ const Confirm: React.FC = () => {
       });
 
       toast.success('Reserva criada com sucesso!');
-      navigate('/app/reservations');
+      navigate('/app');
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Erro ao criar reserva';
       toast.error(msg);

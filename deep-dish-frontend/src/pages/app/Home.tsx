@@ -28,7 +28,7 @@ const AppHome: React.FC = () => {
   }, []);
 
   const upcoming = reservations.filter(r => r.status === 'confirmada' || r.status === 'em_andamento');
-  const past = reservations.filter(r => r.status === 'cancelada' || r.status === 'liberada');
+  const finalizadas = reservations.filter(r => r.status === 'liberada' || r.status === 'expirada' || r.status === 'cancelada');
 
   const restaurantName = (r: Reserva) => r.mesa?.restaurante?.nome ?? 'Restaurante';
   const restaurantInitial = (r: Reserva) => restaurantName(r).charAt(0).toUpperCase();
@@ -61,7 +61,7 @@ const AppHome: React.FC = () => {
 
       {loading ? (
         <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
-      ) : upcoming.length === 0 && past.length === 0 ? (
+      ) : upcoming.length === 0 && finalizadas.length === 0 ? (
         <EmptyState
           icon={<CalendarDays className="h-7 w-7" />}
           title="Nenhuma reserva"
@@ -78,11 +78,11 @@ const AppHome: React.FC = () => {
               </div>
             </div>
           )}
-          {past.length > 0 && (
+          {finalizadas.length > 0 && (
             <div>
-              <h2 className="text-sm font-medium text-muted-foreground mb-3">Anteriores</h2>
+              <h2 className="text-sm font-medium text-muted-foreground mb-3">Finalizadas</h2>
               <div className="space-y-3">
-                {past.map(r => <ReservaCard key={r.id} r={r} faded />)}
+                {finalizadas.map(r => <ReservaCard key={r.id} r={r} faded />)}
               </div>
             </div>
           )}

@@ -9,7 +9,7 @@ type StatusType =
   // Mesa (pt-BR — backend)
   | 'livre' | 'reservada' | 'ocupada' | 'bloqueada'
   // Reserva (pt-BR — backend)
-  | 'confirmada' | 'em_andamento' | 'cancelada' | 'liberada';
+  | 'confirmada' | 'em_andamento' | 'cancelada' | 'liberada' | 'expirada';
 
 const statusConfig: Record<StatusType, { label: string; className: string }> = {
   // Fila / legado
@@ -36,6 +36,7 @@ const statusConfig: Record<StatusType, { label: string; className: string }> = {
   em_andamento:  { label: 'Em andamento', className: 'bg-accent text-accent-foreground' },
   cancelada:     { label: 'Cancelada', className: 'bg-muted text-muted-foreground line-through' },
   liberada:      { label: 'Liberada', className: 'bg-muted text-muted-foreground' },
+  expirada:      { label: 'Expirada', className: 'bg-muted text-muted-foreground line-through' },
 };
 
 const StatusBadge = ({ status }: { status: StatusType }) => {
