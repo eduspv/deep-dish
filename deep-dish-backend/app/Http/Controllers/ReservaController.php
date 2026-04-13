@@ -46,6 +46,7 @@ class ReservaController extends Controller
         }
 
         DB::transaction(function () use ($vencidas) {
+            /** @var ClienteMesa $reserva */
             foreach ($vencidas as $reserva) {
                 $reserva->update(['status' => 'expirada']);
                 $mesa = Mesa::find($reserva->mesa_id);

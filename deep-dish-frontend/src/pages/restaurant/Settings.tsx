@@ -44,7 +44,6 @@ const Settings: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-
     try {
       await updateRestaurant({
         name,
@@ -64,12 +63,9 @@ const Settings: React.FC = () => {
         estado,
         cep,
       });
-
       toast.success('Configurações salvas!');
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : 'Erro ao salvar configurações.'
-      );
+      toast.error(err instanceof Error ? err.message : 'Erro ao salvar configurações.');
     } finally {
       setSaving(false);
     }
@@ -78,11 +74,9 @@ const Settings: React.FC = () => {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = () => setPreview(reader.result as string);
     reader.readAsDataURL(file);
-
     handleImageUpload(file);
   };
 
@@ -92,9 +86,7 @@ const Settings: React.FC = () => {
       await uploadImagemRestaurant(file);
       toast.success('Imagem atualizada com sucesso!');
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : 'Erro ao fazer upload da imagem.'
-      );
+      toast.error(err instanceof Error ? err.message : 'Erro ao fazer upload da imagem.');
       setPreview(null);
     } finally {
       setUploadingImg(false);
@@ -103,50 +95,45 @@ const Settings: React.FC = () => {
 
   const imagemAtual = preview || restaurante?.imagem_url;
 
-  return (
-    <div className="space-y-6 max-w-2xl">
-      <h1 className="font-display text-2xl font-bold text-foreground">
-        Configurações
-      </h1>
+  const selectClass = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors";
 
-      <div className="rounded-xl bg-card p-6 shadow-card space-y-3">
+  return (
+    <div className="space-y-6 max-w-2xl animate-fade-in">
+      <h1 className="font-display text-2xl font-bold text-foreground">Configurações</h1>
+
+      {/* Photo */}
+      <div className="rounded-2xl bg-card p-6 shadow-card space-y-4">
         <h2 className="font-display text-lg font-semibold text-foreground">
           Foto do restaurante
         </h2>
 
         <div className="flex items-center gap-5">
-          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-muted">
+          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-muted">
             {imagemAtual ? (
-              <img
-                src={imagemAtual}
-                alt="Foto do restaurante"
-                className="h-full w-full object-cover"
-              />
+              <img src={imagemAtual} alt="Foto do restaurante" className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
-                <span className="text-3xl font-bold text-muted-foreground/30">
+                <span className="text-3xl font-bold text-muted-foreground/20 font-display">
                   {restaurante?.name?.charAt(0) ?? 'R'}
                 </span>
               </div>
             )}
-
             {uploadingImg && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
                 <Loader2 className="h-6 w-6 animate-spin text-white" />
               </div>
             )}
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              JPG, PNG ou WEBP · máx. 2MB
-            </p>
+            <p className="text-sm text-muted-foreground">JPG, PNG ou WEBP · máx. 2MB</p>
             <Button
               type="button"
               variant="outline"
               size="sm"
               disabled={uploadingImg}
               onClick={() => fileInputRef.current?.click()}
+              className="min-h-[36px]"
             >
               <Camera className="mr-2 h-4 w-4" />
               {uploadingImg ? 'Enviando...' : 'Alterar foto'}
@@ -162,21 +149,19 @@ const Settings: React.FC = () => {
         </div>
       </div>
 
-      <form
-        onSubmit={handleSave}
-        className="space-y-4 rounded-xl bg-card p-6 shadow-card"
-      >
+      {/* Form */}
+      <form onSubmit={handleSave} className="space-y-5 rounded-2xl bg-card p-6 shadow-card">
         <h2 className="font-display text-lg font-semibold text-foreground">
           Dados do restaurante
         </h2>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
             <Label>Nome</Label>
             <Input value={name} onChange={e => setName(e.target.value)} />
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label>Telefone</Label>
             <Input
               type="tel"
@@ -189,81 +174,50 @@ const Settings: React.FC = () => {
             />
           </div>
 
-          <div className="md:col-span-2">
-            <Label className="mb-2 block">Horário de funcionamento</Label>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <TimePicker
-                label="Abertura"
-                value={horarioAbertura}
-                onChange={setHorarioAbertura}
-                placeholder="--:--"
-              />
-              <TimePicker
-                label="Fechamento"
-                value={horarioFechamento}
-                onChange={setHorarioFechamento}
-                placeholder="--:--"
-              />
+          <div className="sm:col-span-2 space-y-2">
+            <Label>Horário de funcionamento</Label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TimePicker label="Abertura" value={horarioAbertura} onChange={setHorarioAbertura} placeholder="--:--" />
+              <TimePicker label="Fechamento" value={horarioFechamento} onChange={setHorarioFechamento} placeholder="--:--" />
             </div>
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label>Logradouro</Label>
-            <Input
-              value={logradouro}
-              onChange={e => setLogradouro(e.target.value)}
-              placeholder="Rua, avenida..."
-            />
+            <Input value={logradouro} onChange={e => setLogradouro(e.target.value)} placeholder="Rua, avenida..." />
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label>Número</Label>
-            <Input
-              value={numero}
-              onChange={e => setNumero(e.target.value)}
-              placeholder="123"
-            />
+            <Input value={numero} onChange={e => setNumero(e.target.value)} placeholder="123" />
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label>Complemento</Label>
-            <Input
-              value={complemento}
-              onChange={e => setComplemento(e.target.value)}
-              placeholder="Sala, bloco..."
-            />
+            <Input value={complemento} onChange={e => setComplemento(e.target.value)} placeholder="Sala, bloco..." />
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label>Bairro</Label>
             <Input value={bairro} onChange={e => setBairro(e.target.value)} />
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label>Cidade</Label>
             <Input value={cidade} onChange={e => setCidade(e.target.value)} />
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label>Estado</Label>
-            <Input
-              value={estado}
-              onChange={e => setEstado(e.target.value)}
-              maxLength={2}
-              placeholder="SP"
-            />
+            <Input value={estado} onChange={e => setEstado(e.target.value)} maxLength={2} placeholder="SP" />
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label>CEP</Label>
-            <Input
-              value={cep}
-              onChange={e => setCep(e.target.value)}
-              placeholder="00000-000"
-            />
+            <Input value={cep} onChange={e => setCep(e.target.value)} placeholder="00000-000" />
           </div>
-          <div className="md:col-span-2">
+
+          <div className="sm:col-span-2 space-y-1.5">
             <Label>Descrição</Label>
             <textarea
               value={description}
@@ -271,31 +225,19 @@ const Settings: React.FC = () => {
               maxLength={500}
               rows={3}
               placeholder="Conte um pouco sobre o seu restaurante..."
-              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none transition-colors"
             />
-            <p className="text-xs text-muted-foreground mt-1">{description.length}/500</p>
+            <p className="text-xs text-muted-foreground">{description.length}/500</p>
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label>Nota (rating)</Label>
-            <Input
-              type="number"
-              min="0"
-              max="5"
-              step="0.1"
-              value={rating}
-              onChange={e => setRating(e.target.value)}
-              placeholder="4.5"
-            />
+            <Input type="number" min="0" max="5" step="0.1" value={rating} onChange={e => setRating(e.target.value)} placeholder="4.5" />
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label>Faixa de preço</Label>
-            <select
-              value={priceRange}
-              onChange={e => setPriceRange(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
+            <select value={priceRange} onChange={e => setPriceRange(e.target.value)} className={selectClass}>
               <option value="">Selecione...</option>
               <option value="1">R$ — Econômico</option>
               <option value="2">R$$ — Moderado</option>
@@ -304,13 +246,13 @@ const Settings: React.FC = () => {
             </select>
           </div>
 
-          <div className="md:col-span-2 flex items-center gap-3">
+          <div className="sm:col-span-2 flex items-center gap-3">
             <input
               type="checkbox"
               id="reservationsEnabled"
               checked={reservationsEnabled}
               onChange={e => setReservationsEnabled(e.target.checked)}
-              className="h-4 w-4 rounded border-input"
+              className="h-4 w-4 rounded border-input accent-primary"
             />
             <Label htmlFor="reservationsEnabled" className="cursor-pointer">
               Aceita reservas
@@ -318,13 +260,9 @@ const Settings: React.FC = () => {
           </div>
 
           {reservationsEnabled && (
-            <div>
+            <div className="space-y-1.5">
               <Label>Intervalo entre reservas (minutos)</Label>
-              <select
-                value={intervaloReserva}
-                onChange={e => setIntervaloReserva(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
+              <select value={intervaloReserva} onChange={e => setIntervaloReserva(e.target.value)} className={selectClass}>
                 <option value="">Selecione...</option>
                 <option value="15">15 minutos</option>
                 <option value="30">30 minutos</option>
@@ -337,12 +275,9 @@ const Settings: React.FC = () => {
           )}
         </div>
 
-        <Button type="submit" disabled={saving}>
+        <Button type="submit" disabled={saving} className="min-h-[44px]">
           {saving ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Salvando...
-            </>
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</>
           ) : (
             'Salvar configurações'
           )}
