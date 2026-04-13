@@ -44,12 +44,18 @@ export interface AuthSession {
   restaurant: Restaurante; 
 }
 
-export interface Table {
-  id: string;
-  restaurantId: string;
-  number: number;
-  capacity: number;
-  status: 'available' | 'occupied' | 'reserved' | 'inactive';
+// Mesa conforme retornada pelo backend (máquina de estados: livre → reservada → ocupada → livre)
+export type MesaStatus = 'livre' | 'reservada' | 'ocupada' | 'bloqueada';
+
+export interface Mesa {
+  id: number | string;
+  restaurante_id: string;
+  numero: number;
+  capacidade: number;
+  status: MesaStatus;
+  confirmacao?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface TimeSlot {
@@ -58,6 +64,7 @@ export interface TimeSlot {
   available: boolean;
 }
 
+// Tipo legado mantido para o admin de reservas/queue (mocks ainda em uso em outras telas)
 export interface Reservation {
   id: string;
   userId: string;
@@ -71,6 +78,30 @@ export interface Reservation {
   tableNumber?: number;
   createdAt: string;
   notes?: string;
+}
+
+// Status real vindo do backend (clientemesa.status)
+export type ReservaStatus = 'confirmada' | 'em_andamento' | 'cancelada' | 'liberada' | 'expirada';
+
+// Reserva conforme retornada pelo backend (Eloquent ClienteMesa)
+export interface Reserva {
+  id: number | string;
+  cliente_id: number | string;
+  mesa_id: number | string;
+  horario_reserva: string; // ISO datetime
+  horario_checkin?: string | null; // ISO datetime — preenchido no check-in
+  status: ReservaStatus;
+  created_at?: string;
+  updated_at?: string;
+  mesa?: {
+    id: number | string;
+    restaurante_id: string;
+    numero: number;
+    capacidade: number;
+    status: string;
+    restaurante?: Restaurante;
+  };
+  cliente?: Cliente;
 }
 
 export interface QueueEntry {

@@ -9,17 +9,21 @@ const RestaurantLogin: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { loginRestaurant, isLoading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { loginRestaurant } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     try {
       await loginRestaurant(email, password);
       navigate('/restaurant/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao entrar. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,7 +41,7 @@ const RestaurantLogin: React.FC = () => {
           {error && (
             <p className="text-sm text-destructive" role="alert">{error}</p>
           )}
-          <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'Entrando...' : 'Entrar'}</Button>
+          <Button type="submit" className="w-full" disabled={loading}>{loading ? 'Entrando...' : 'Entrar'}</Button>
         </form>
         <p className="text-center text-sm text-muted-foreground">
           Não tem conta? <Link to="/restaurant/register" className="font-medium text-primary hover:underline">Cadastrar restaurante</Link>

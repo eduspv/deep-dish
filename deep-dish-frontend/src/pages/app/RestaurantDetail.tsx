@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/StatusBadge';
-import { restaurantsService, Slot } from '@/services/restaurants.service';
-import { Restaurante } from '@/types';
-import { ArrowLeft, MapPin, Clock, Users, Phone, Star } from 'lucide-react';
+import { restaurantsService } from '@/services/restaurants.service';
+import { ApiError } from '@/services/httpClient';
+import { Restaurante, Mesa } from '@/types';
+import { ArrowLeft, MapPin, Clock, Phone, Star, Users } from 'lucide-react';
 
 const PRICE_LABELS: Record<number, string> = { 1: 'R$', 2: 'R$$', 3: 'R$$$', 4: 'R$$$$' };
 
@@ -15,10 +16,11 @@ const RestaurantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [restaurant, setRestaurant] = useState<Restaurante | null>(null);
-  const [slots, setSlots] = useState<Slot[]>([]);
+  const [mesas, setMesas] = useState<Mesa[]>([]);
+  const [mesasError, setMesasError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [partySize, setPartySize] = useState('2');
-  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedMesa, setSelectedMesa] = useState<Mesa | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -26,18 +28,23 @@ const RestaurantDetail: React.FC = () => {
 
     const load = async () => {
       setLoading(true);
+      setMesasError(null);
       try {
         const data = await restaurantsService.getRestaurantById(id);
         if (!cancelled) {
           setRestaurant(data ?? null);
 
-          // Buscar slots se restaurante aceita reservas
           if (data?.reservations_enabled) {
             try {
-              const slotsData = await restaurantsService.getSlots(id);
-              if (!cancelled) setSlots(slotsData.slots);
-            } catch {
-              // Restaurante sem horários/mesas configurados — sem slots
+              const mesasData = await restaurantsService.getMesasDisponiveis(id);
+              if (!cancelled) setMesas(mesasData);
+            } catch (err) {
+              if (!cancelled) {
+                const msg = err instanceof ApiError
+                  ? err.message
+                  : 'Não foi possível carregar as mesas disponíveis.';
+                setMesasError(msg);
+              }
             }
           }
         }
@@ -52,16 +59,23 @@ const RestaurantDetail: React.FC = () => {
     return () => { cancelled = true; };
   }, [id]);
 
+  // Filtra mesas pela quantidade de pessoas
+  const partySizeNum = Math.max(1, Number(partySize) || 1);
+  const mesasFiltradas = mesas.filter(m => m.capacidade >= partySizeNum);
+
   const handleQueue = () => navigate('/app/queue');
 
   const handleReserve = () => {
+    if (!selectedMesa) return;
     navigate('/app/confirm', {
       state: {
         restaurantId:    id,
         restaurantName:  restaurant?.name,
         restaurantImage: restaurant?.imagem_url,
-        time:            selectedTime,
-        partySize:       Number(partySize),
+        mesaId:          String(selectedMesa.id),
+        mesaNumero:      selectedMesa.numero,
+        mesaCapacidade:  selectedMesa.capacidade,
+        partySize:       partySizeNum,
       },
     });
   };
@@ -140,58 +154,107 @@ const RestaurantDetail: React.FC = () => {
 
           {/* Informações */}
           <div className="rounded-xl bg-card p-5 shadow-card">
-            {/* description — campo futuro */}
             <p className="text-foreground">
               {restaurant.description || `Restaurante especializado em ${restaurant.tipo}.`}
             </p>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-muted-foreground">
+            <div className="mt-4 space-y-2 text-sm text-muted-foreground">
               {endereco && (
                 <span className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 shrink-0" />
                   {endereco}
                 </span>
               )}
-              {restaurant.horario_abertura && restaurant.horario_fechamento && (
-                <span className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 shrink-0" />
-                  {restaurant.horario_abertura.slice(0, 5)} – {restaurant.horario_fechamento.slice(0, 5)}
-                </span>
-              )}
-              {restaurant.telefone && (
-                <span className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 shrink-0" />
-                  {restaurant.telefone}
-                </span>
-              )}
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
+                {restaurant.horario_abertura && restaurant.horario_fechamento && (
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 shrink-0" />
+                    {restaurant.horario_abertura.slice(0, 5)} – {restaurant.horario_fechamento.slice(0, 5)}
+                  </span>
+                )}
+                {restaurant.telefone && (
+                  <span className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 shrink-0" />
+                    {restaurant.telefone}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Horários disponíveis */}
-          {!!restaurant.reservations_enabled && slots.length > 0 && (
-            <div className="rounded-xl bg-card p-5 shadow-card">
-              <h2 className="font-display text-lg font-semibold text-foreground mb-3">
-                Horários disponíveis
+          {/* Mesas disponíveis + reserva */}
+          {!!restaurant.reservations_enabled && (
+            <div className="rounded-xl bg-card p-5 shadow-card space-y-4">
+              <h2 className="font-display text-lg font-semibold text-foreground">
+                Mesas disponíveis
               </h2>
-              <div className="flex flex-wrap gap-2">
-                {slots.map(slot => (
-                  <button
-                    key={slot.horario}
-                    disabled={!slot.disponivel}
-                    onClick={() => setSelectedTime(slot.horario)}
-                    className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors
-                      ${selectedTime === slot.horario
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : slot.disponivel
-                          ? 'bg-card text-foreground border-border hover:border-primary/50'
-                          : 'bg-muted text-muted-foreground cursor-not-allowed'
-                      }`}
-                  >
-                    {slot.horario}
-                    {slot.disponivel && (
-                      <span className="ml-1 text-xs opacity-60">({slot.vagas})</span>
-                    )}
-                  </button>
-                ))}
+
+              {/* Filtro de pessoas */}
+              <div className="flex items-end gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Quantas pessoas?</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={partySize}
+                    onChange={e => { setPartySize(e.target.value); setSelectedMesa(null); }}
+                    className="mt-1 w-24"
+                  />
+                </div>
+              </div>
+
+              {mesasError ? (
+                <p className="text-sm text-destructive">{mesasError}</p>
+              ) : mesas.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma mesa disponível no momento.
+                </p>
+              ) : mesasFiltradas.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma mesa disponível para {partySizeNum} pessoas. Tente um número menor.
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    Selecione uma mesa para reservar:
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {mesasFiltradas.map(mesa => (
+                      <button
+                        key={mesa.id}
+                        onClick={() => setSelectedMesa(mesa)}
+                        className={`rounded-lg border p-3 text-left transition-colors
+                          ${selectedMesa?.id === mesa.id
+                            ? 'bg-primary/10 border-primary ring-1 ring-primary'
+                            : 'bg-card border-border hover:border-primary/50'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-foreground">Mesa {mesa.numero}</span>
+                          <StatusBadge status={mesa.status} />
+                        </div>
+                        <span className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                          <Users className="h-3.5 w-3.5" />
+                          {mesa.capacidade} lugares
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Botão reservar */}
+              <div className="pt-2 border-t border-border">
+                <Button
+                  onClick={handleReserve}
+                  disabled={!selectedMesa}
+                  size="lg"
+                  className="w-full"
+                >
+                  {selectedMesa
+                    ? `Reservar Mesa ${selectedMesa.numero}`
+                    : 'Selecione uma mesa'}
+                </Button>
               </div>
             </div>
           )}
@@ -200,17 +263,6 @@ const RestaurantDetail: React.FC = () => {
         {/* Coluna lateral */}
         <div className="space-y-4">
           <div className="rounded-xl bg-card p-5 shadow-card space-y-4">
-
-            <div>
-              <Label>Quantidade de pessoas</Label>
-              <Input
-                type="number"
-                min="1"
-                max="20"
-                value={partySize}
-                onChange={e => setPartySize(e.target.value)}
-              />
-            </div>
 
             {/* Fila ativa */}
             {!!restaurant.fila_ativa && (
@@ -227,18 +279,6 @@ const RestaurantDetail: React.FC = () => {
                   Entrar na fila
                 </Button>
               </div>
-            )}
-
-            {/* Reserva */}
-            {restaurant.reservations_enabled && (
-              <Button
-                onClick={handleReserve}
-                disabled={!selectedTime}
-                className="w-full"
-                size="lg"
-              >
-                Reservar mesa
-              </Button>
             )}
 
             {/* Nenhuma ação disponível */}

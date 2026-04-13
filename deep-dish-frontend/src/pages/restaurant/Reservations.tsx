@@ -2,62 +2,156 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/StatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { mockAdminReservations } from '@/mocks/reservations';
-import { Reservation } from '@/types';
-import { CalendarDays, Clock, Users } from 'lucide-react';
+import { Reserva } from '@/types';
+import { reservationsService } from '@/services/reservations.service';
+import { ApiError } from '@/services/httpClient';
+import { Clock, Users, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
 const Reservations: React.FC = () => {
-  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [reservations, setReservations] = useState<Reserva[]>([]);
   const [loading, setLoading] = useState(true);
+  const [checkinId, setCheckinId] = useState<string | null>(null);
+  const [liberandoId, setLiberandoId] = useState<string | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => { setReservations(mockAdminReservations); setLoading(false); }, 400);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await reservationsService.listRestaurantReservations();
+        if (!cancelled) setReservations(data);
+      } catch (err) {
+        if (!cancelled) {
+          const msg = err instanceof ApiError ? err.message : 'Erro ao carregar reservas';
+          toast.error(msg);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
   }, []);
 
-  const updateStatus = (id: string, status: Reservation['status'], msg: string) => {
-    setReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
-    toast.success(msg);
+  const handleCheckin = async (id: string) => {
+    setCheckinId(id);
+    try {
+      const updated = await reservationsService.checkin(id);
+      setReservations(prev => prev.map(r => (String(r.id) === id ? updated : r)));
+      toast.success('Check-in realizado!');
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao fazer check-in';
+      toast.error(msg);
+    } finally {
+      setCheckinId(null);
+    }
   };
 
-  if (loading) return <div className="space-y-4"><Skeleton className="h-8 w-48" />{[1,2,3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>;
+  const handleLiberar = async (id: string) => {
+    setLiberandoId(id);
+    try {
+      const updated = await reservationsService.liberarMesa(id);
+      setReservations(prev => prev.map(r => (String(r.id) === id ? updated : r)));
+      toast.success('Mesa liberada.');
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao liberar mesa';
+      toast.error(msg);
+    } finally {
+      setLiberandoId(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-48" />
+        {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-2xl font-bold text-foreground">Reservas de hoje</h1>
-      <div className="space-y-3">
-        {reservations.map(r => (
-          <div key={r.id} className="rounded-xl bg-card p-4 shadow-card flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground">Reserva #{r.id.slice(-4)}</span>
-                <StatusBadge status={r.status} />
+      <h1 className="font-display text-2xl font-bold text-foreground">Reservas</h1>
+
+      {reservations.length === 0 ? (
+        <p className="text-center text-muted-foreground py-12">
+          Nenhuma reserva encontrada.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {reservations.map(r => {
+            const id = String(r.id);
+            const isCheckin = checkinId === id;
+            const isLiberando = liberandoId === id;
+            const podeCheckin = r.status === 'confirmada';
+            const podeLiberar = r.status === 'em_andamento';
+
+            return (
+              <div
+                key={id}
+                className="rounded-xl bg-card p-4 shadow-card flex flex-col sm:flex-row sm:items-center gap-3"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-foreground">
+                      {r.cliente?.name ?? `Reserva #${id.slice(-4)}`}
+                    </span>
+                    <StatusBadge status={r.status} />
+                  </div>
+                  <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {formatDate(r.horario_reserva)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      {formatTime(r.horario_reserva)}
+                    </span>
+                    {r.mesa && (
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3.5 w-3.5" />
+                        Mesa {r.mesa.numero} ({r.mesa.capacidade}p)
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {podeCheckin && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => handleCheckin(id)}
+                      disabled={isCheckin}
+                    >
+                      {isCheckin ? 'Registrando...' : 'Check-in'}
+                    </Button>
+                  )}
+                  {podeLiberar && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleLiberar(id)}
+                      disabled={isLiberando}
+                    >
+                      {isLiberando ? 'Liberando...' : 'Liberar mesa'}
+                    </Button>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{r.time}</span>
-                <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{r.partySize}p</span>
-                {r.tableNumber && <span>Mesa {r.tableNumber}</span>}
-                {r.notes && <span className="italic">"{r.notes}"</span>}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {r.status === 'pending' && (
-                <>
-                  <Button size="sm" onClick={() => updateStatus(r.id, 'confirmed', 'Reserva confirmada!')}>Confirmar</Button>
-                  <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, 'cancelled', 'Reserva cancelada.')}>Cancelar</Button>
-                </>
-              )}
-              {r.status === 'confirmed' && (
-                <>
-                  <Button size="sm" onClick={() => updateStatus(r.id, 'seated', 'Cliente sentado!')}>Mesa pronta</Button>
-                  <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, 'cancelled', 'Reserva cancelada.')}>Cancelar</Button>
-                </>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

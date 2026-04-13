@@ -49,6 +49,7 @@ const traducoes: Record<string, string> = {
   'Erro interno no servidor' : 'Erro interno no servidor. Tente novamente.',
   'Server Error'             : 'Erro interno no servidor. Tente novamente.',
   'Unauthenticated.'         : 'Sessão expirada. Faça login novamente.',
+  'Não autenticado.'         : 'Sessão expirada. Faça login novamente.',
 };
 
 function traduzir(msg: string): string {
@@ -149,6 +150,15 @@ export const httpClient = {
   async put<T>(path: string, body?: unknown): Promise<T> {
     const res = await fetchWithRefresh(path, {
       method: 'PUT',
+      headers: getAuthHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return handleResponse<T>(res);
+  },
+
+  async patch<T>(path: string, body?: unknown): Promise<T> {
+    const res = await fetchWithRefresh(path, {
+      method: 'PATCH',
       headers: getAuthHeaders(),
       body: body ? JSON.stringify(body) : undefined,
     });

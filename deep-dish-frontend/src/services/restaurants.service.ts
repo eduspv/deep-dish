@@ -1,18 +1,5 @@
-import { Restaurante } from '@/types';
+import { Restaurante, Mesa } from '@/types';
 import { httpClient } from './httpClient';
-
-export interface Slot {
-  horario: string;
-  disponivel: boolean;
-  vagas: number;
-}
-
-export interface SlotsResponse {
-  restaurante_id: string;
-  data: string;
-  total_mesas: number;
-  slots: Slot[];
-}
 
 export const restaurantsService = {
 
@@ -37,10 +24,8 @@ export const restaurantsService = {
     const query = params.toString();
     const path  = query ? `/restaurantes?${query}` : '/restaurantes';
 
-    // backend retorna paginado: { data: [...], total, per_page... }
     const res = await httpClient.get<{ data: Restaurante[] } | Restaurante[]>(path);
 
-    // suporte aos dois formatos de resposta
     if (Array.isArray(res))      return res;
     if (Array.isArray(res.data)) return res.data;
     return [];
@@ -55,9 +40,9 @@ export const restaurantsService = {
     }
   },
 
-  // ─── Busca horários disponíveis para reserva ────────────
-  async getSlots(restaurantId: string, data?: string): Promise<SlotsResponse> {
-    const query = data ? `?data=${data}` : '';
-    return httpClient.get<SlotsResponse>(`/restaurantes/${restaurantId}/slots${query}`);
+  // ─── Busca mesas disponíveis (status = livre) ──────────
+  async getMesasDisponiveis(restaurantId: string, capacidadeMin?: number): Promise<Mesa[]> {
+    const query = capacidadeMin ? `?capacidade_min=${capacidadeMin}` : '';
+    return httpClient.get<Mesa[]>(`/restaurantes/${restaurantId}/mesas/disponiveis${query}`);
   },
 };

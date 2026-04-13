@@ -2,16 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Mesa extends Model
 {
+    use HasUuids;
+
     protected $table = 'mesa';
 
     protected $fillable = [
         'restaurante_id',
+        'numero',
         'status',
         'capacidade',
         'confirmacao',

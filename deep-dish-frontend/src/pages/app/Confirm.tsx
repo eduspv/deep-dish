@@ -1,25 +1,52 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { CalendarDays, Clock, Users, MapPin } from 'lucide-react';
+import { Users, MapPin, Hash } from 'lucide-react';
 import { toast } from 'sonner';
+import { reservationsService } from '@/services/reservations.service';
+import { ApiError } from '@/services/httpClient';
 
 const Confirm: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const state = location.state as { restaurantId?: string; restaurantName?: string; restaurantImage?: string; time?: string; partySize?: number } | null;
+  const state = location.state as {
+    restaurantId?:    string;
+    restaurantName?:  string;
+    restaurantImage?: string;
+    mesaId?:          string;
+    mesaNumero?:      number;
+    mesaCapacidade?:  number;
+    partySize?:       number;
+  } | null;
 
-  if (!state) {
-    return <p className="py-20 text-center text-muted-foreground">Nenhuma reserva para confirmar. <button onClick={() => navigate('/app/search')} className="text-primary hover:underline">Buscar restaurante</button></p>;
+  if (!state || !state.restaurantId || !state.mesaId || !state.partySize) {
+    return (
+      <p className="py-20 text-center text-muted-foreground">
+        Nenhuma reserva para confirmar.{' '}
+        <button onClick={() => navigate('/app/search')} className="text-primary hover:underline">
+          Buscar restaurante
+        </button>
+      </p>
+    );
   }
 
   const handleConfirm = async () => {
     setLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-    toast.success('Reserva criada com sucesso!');
-    setLoading(false);
-    navigate('/app');
+    try {
+      await reservationsService.createReservation({
+        mesa_id:    state.mesaId!,
+        party_size: state.partySize!,
+      });
+
+      toast.success('Reserva criada com sucesso!');
+      navigate('/app');
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Erro ao criar reserva';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -31,14 +58,21 @@ const Confirm: React.FC = () => {
         )}
         <h2 className="font-display text-xl font-semibold text-foreground">{state.restaurantName}</h2>
         <div className="space-y-2 text-sm text-muted-foreground">
-          <p className="flex items-center gap-2"><CalendarDays className="h-4 w-4" />Hoje</p>
-          <p className="flex items-center gap-2"><Clock className="h-4 w-4" />{state.time}</p>
-          <p className="flex items-center gap-2"><Users className="h-4 w-4" />{state.partySize} pessoas</p>
-          <p className="flex items-center gap-2"><MapPin className="h-4 w-4" />Mesa será atribuída pelo restaurante</p>
+          <p className="flex items-center gap-2"><Hash className="h-4 w-4" />Mesa {state.mesaNumero} ({state.mesaCapacidade} lugares)</p>
+          <p className="flex items-center gap-2"><Users className="h-4 w-4" />{state.partySize} {state.partySize === 1 ? 'pessoa' : 'pessoas'}</p>
+          <p className="flex items-center gap-2"><MapPin className="h-4 w-4" />Reserva imediata</p>
+        </div>
+        <div className="rounded-lg bg-secondary/50 border border-border p-3 text-xs text-muted-foreground">
+          Ao chegar, confirme sua presença com o restaurante para liberar sua mesa.
+          Recomendamos chegar com 5-10 minutos de antecedência.
         </div>
         <div className="flex gap-3 pt-2">
-          <Button variant="outline" className="flex-1" onClick={() => navigate(-1)}>Voltar</Button>
-          <Button className="flex-1" onClick={handleConfirm} disabled={loading}>{loading ? 'Confirmando...' : 'Confirmar reserva'}</Button>
+          <Button variant="outline" className="flex-1" onClick={() => navigate(-1)} disabled={loading}>
+            Voltar
+          </Button>
+          <Button className="flex-1" onClick={handleConfirm} disabled={loading}>
+            {loading ? 'Confirmando...' : 'Confirmar reserva'}
+          </Button>
         </div>
       </div>
     </div>

@@ -71,32 +71,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // ─── LOGIN CLIENTE ───────────────────────────────────────
   const login = useCallback(async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const { token } = await authService.loginCliente(email, password);
-      localStorage.setItem("jwt", token);
-      localStorage.setItem("tipo_usuario", "cliente");
-      const cliente = await authService.getMeCliente();
-      setUser(cliente);
-      localStorage.setItem("user", JSON.stringify(cliente));
-    } finally {
-      setIsLoading(false);
-    }
+    const { token } = await authService.loginCliente(email, password);
+    localStorage.setItem("jwt", token);
+    localStorage.setItem("tipo_usuario", "cliente");
+    const cliente = await authService.getMeCliente();
+    setUser(cliente);
+    localStorage.setItem("user", JSON.stringify(cliente));
   }, []);
 
   // ─── LOGIN RESTAURANTE ───────────────────────────────────
   const loginRestaurant = useCallback(async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const { token } = await authService.loginRestaurante(email, password);
-      localStorage.setItem("jwt", token);
-      localStorage.setItem("tipo_usuario", "restaurante");
-      const restaurante = await authService.getMeRestaurante();
-      setUser(restaurante);
-      localStorage.setItem("user", JSON.stringify(restaurante));
-    } finally {
-      setIsLoading(false);
-    }
+    const { token } = await authService.loginRestaurante(email, password);
+    localStorage.setItem("jwt", token);
+    localStorage.setItem("tipo_usuario", "restaurante");
+    const restaurante = await authService.getMeRestaurante();
+    setUser(restaurante);
+    localStorage.setItem("user", JSON.stringify(restaurante));
   }, []);
 
   // ─── REGISTER CLIENTE ────────────────────────────────────
@@ -106,32 +96,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     cpf: string,
     password: string
   ) => {
-    setIsLoading(true);
-    try {
-      const result = await authService.registerCliente(name, email, cpf, password);
-      localStorage.setItem("jwt", result.token);
-      localStorage.setItem("tipo_usuario", "cliente");
-      const cliente = result.cliente ?? await authService.getMeCliente();
-      setUser(cliente);
-      localStorage.setItem("user", JSON.stringify(cliente));
-    } finally {
-      setIsLoading(false);
-    }
+    const result = await authService.registerCliente(name, email, cpf, password);
+    localStorage.setItem("jwt", result.token);
+    localStorage.setItem("tipo_usuario", "cliente");
+    const cliente = result.cliente ?? await authService.getMeCliente();
+    setUser(cliente);
+    localStorage.setItem("user", JSON.stringify(cliente));
   }, []);
 
   // ─── REGISTER RESTAURANTE ────────────────────────────────
   const registerRestaurant = useCallback(async (data: RestaurantRegisterData) => {
-    setIsLoading(true);
-    try {
-      const result = await authService.registerRestaurante(data);
-      localStorage.setItem("jwt", result.token);
-      localStorage.setItem("tipo_usuario", "restaurante");
-      const restaurante = result.restaurante ?? await authService.getMeRestaurante();
-      setUser(restaurante);
-      localStorage.setItem("user", JSON.stringify(restaurante));
-    } finally {
-      setIsLoading(false);
-    }
+    const result = await authService.registerRestaurante(data);
+    localStorage.setItem("jwt", result.token);
+    localStorage.setItem("tipo_usuario", "restaurante");
+    const restaurante = result.restaurante ?? await authService.getMeRestaurante();
+    setUser(restaurante);
+    localStorage.setItem("user", JSON.stringify(restaurante));
   }, []);
 
   // ─── UPDATE RESTAURANTE ──────────────────────────────────

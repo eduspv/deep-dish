@@ -51,7 +51,8 @@ const RestaurantRegister: React.FC = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const { registerRestaurant, isLoading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { registerRestaurant } = useAuth();
   const navigate = useNavigate();
 
   const cepValue = formatCep(cepDigits);
@@ -96,6 +97,7 @@ const RestaurantRegister: React.FC = () => {
       return;
     }
 
+    setLoading(true);
     try {
       await registerRestaurant({
         name,
@@ -114,6 +116,8 @@ const RestaurantRegister: React.FC = () => {
       navigate("/restaurant/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao cadastrar restaurante. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -302,8 +306,8 @@ const RestaurantRegister: React.FC = () => {
             </p>
           )}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Cadastrando..." : "Cadastrar"}
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Cadastrando..." : "Cadastrar"}
           </Button>
         </form>
 

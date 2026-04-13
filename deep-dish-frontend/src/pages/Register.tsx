@@ -21,17 +21,21 @@ const Register: React.FC = () => {
   const [cpfDigits, setCpfDigits] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { register, isLoading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     try {
       await register(name, email, cpfDigits, password);
       navigate('/app');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar conta. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,7 +69,7 @@ const Register: React.FC = () => {
           {error && (
             <p className="text-sm text-destructive" role="alert">{error}</p>
           )}
-          <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'Criando...' : 'Criar conta'}</Button>
+          <Button type="submit" className="w-full" disabled={loading}>{loading ? 'Criando...' : 'Criar conta'}</Button>
         </form>
         <div className="space-y-1 text-center text-sm text-muted-foreground">
           <p>
