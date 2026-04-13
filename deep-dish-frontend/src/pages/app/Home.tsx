@@ -18,26 +18,43 @@ const AppHome: React.FC = () => {
   const [reservations, setReservations] = useState<Reserva[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    reservationsService.listUserReservations()
-      .then(data => { if (!cancelled) setReservations(data); })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+  const fetchReservations = React.useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const data = await reservationsService.listUserReservations();
+      setReservations(data);
+    } catch { /* silencioso */ } finally {
+      if (!silent) setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchReservations();
+  }, [fetchReservations]);
+
+  // Refetch silencioso ao voltar para a aba
+  useEffect(() => {
+    const onFocus = () => fetchReservations(true);
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [fetchReservations]);
 
   const upcoming = reservations.filter(r => r.status === 'confirmada' || r.status === 'em_andamento');
   const finalizadas = reservations.filter(r => r.status === 'liberada' || r.status === 'expirada' || r.status === 'cancelada');
 
-  const restaurantName = (r: Reserva) => r.mesa?.restaurante?.nome ?? 'Restaurante';
+  const restaurantName = (r: Reserva) => r.mesa?.restaurante?.name ?? 'Restaurante';
   const restaurantInitial = (r: Reserva) => restaurantName(r).charAt(0).toUpperCase();
 
-  const ReservaCard = ({ r, faded }: { r: Reserva; faded?: boolean }) => (
+  const ReservaCard = ({ r, faded }: { r: Reserva; faded?: boolean }) => {
+    const imagem = r.mesa?.restaurante?.imagem_url;
+    return (
     <Link key={r.id} to={`/app/reservations/${r.id}`} className="block">
       <div className={`flex items-center gap-4 rounded-xl bg-card p-4 shadow-card hover:shadow-card-hover transition-shadow ${faded ? 'opacity-70' : ''}`}>
-        <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <span className="text-xl font-bold text-primary">{restaurantInitial(r)}</span>
+        <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+          {imagem
+            ? <img src={imagem} alt="" className="h-full w-full object-cover" />
+            : <span className="text-xl font-bold text-primary">{restaurantInitial(r)}</span>
+          }
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-foreground truncate">{restaurantName(r)}</p>
@@ -51,6 +68,7 @@ const AppHome: React.FC = () => {
       </div>
     </Link>
   );
+  };
 
   return (
     <div className="space-y-6">

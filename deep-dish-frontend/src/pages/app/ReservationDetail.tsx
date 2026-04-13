@@ -16,6 +16,9 @@ const formatDate = (iso: string) =>
 const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+const ACTIVE_STATUSES = ['confirmada', 'em_andamento'] as const;
+const POLL_INTERVAL_MS = 30_000;
+
 const ReservationDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -28,21 +31,38 @@ const ReservationDetail: React.FC = () => {
     if (!id) return;
     let cancelled = false;
 
-    const load = async () => {
-      setLoading(true);
+    const load = async (silent = false) => {
+      if (!silent) setLoading(true);
       try {
         const data = await reservationsService.getReservationById(id);
         if (!cancelled) setReservation(data);
       } catch {
-        if (!cancelled) setReservation(null);
+        if (!cancelled && !silent) setReservation(null);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && !silent) setLoading(false);
       }
     };
 
     load();
     return () => { cancelled = true; };
   }, [id]);
+
+  // Polling silencioso enquanto reserva está ativa
+  useEffect(() => {
+    if (!id || !reservation) return;
+    const isActive = ACTIVE_STATUSES.includes(reservation.status as typeof ACTIVE_STATUSES[number]);
+    if (!isActive) return;
+
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      try {
+        const data = await reservationsService.getReservationById(id);
+        if (!cancelled && data) setReservation(data);
+      } catch { /* silencioso */ }
+    }, POLL_INTERVAL_MS);
+
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [id, reservation?.status]);
 
   const handleCancel = async () => {
     if (!id) return;
@@ -111,7 +131,7 @@ const ReservationDetail: React.FC = () => {
             {reservation.mesa && (
               <p className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Mesa para {reservation.mesa.capacidade} pessoas
+                Mesa {reservation.mesa.numero} · {reservation.mesa.capacidade} pessoas
               </p>
             )}
             {restaurante?.endereco_completo && (
