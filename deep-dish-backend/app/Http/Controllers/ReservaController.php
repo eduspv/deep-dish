@@ -46,6 +46,7 @@ class ReservaController extends Controller
         }
 
         DB::transaction(function () use ($vencidas) {
+            /** @var ClienteMesa $reserva */
             foreach ($vencidas as $reserva) {
                 $reserva->update(['status' => 'expirada']);
                 // Mesa só precisa ser resetada se estiver ocupada (check-in foi feito mas não liberada)

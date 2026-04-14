@@ -20,7 +20,6 @@ const Reservations: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-
     const load = async () => {
       setLoading(true);
       try {
@@ -35,7 +34,6 @@ const Reservations: React.FC = () => {
         if (!cancelled) setLoading(false);
       }
     };
-
     load();
     return () => { cancelled = true; };
   }, []);
@@ -72,21 +70,21 @@ const Reservations: React.FC = () => {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
-        {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
+        {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <h1 className="font-display text-2xl font-bold text-foreground">Reservas</h1>
 
       {reservations.length === 0 ? (
-        <p className="text-center text-muted-foreground py-12">
+        <p className="text-center text-muted-foreground py-14">
           Nenhuma reserva encontrada.
         </p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5 animate-stagger">
           {reservations.map(r => {
             const id = String(r.id);
             const isCheckin = checkinId === id;
@@ -97,7 +95,7 @@ const Reservations: React.FC = () => {
             return (
               <div
                 key={id}
-                className="rounded-xl bg-card p-4 shadow-card flex flex-col sm:flex-row sm:items-center gap-3"
+                className="rounded-2xl bg-card p-4 shadow-card flex flex-col sm:flex-row sm:items-center gap-3 transition-all duration-200 hover:shadow-card-hover"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -108,16 +106,16 @@ const Reservations: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
                     <span className="flex items-center gap-1">
-                      <CalendarDays className="h-3.5 w-3.5" />
+                      <CalendarDays className="h-3.5 w-3.5 shrink-0" />
                       {formatDate(r.horario_reserva)}
                     </span>
                     <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
+                      <Clock className="h-3.5 w-3.5 shrink-0" />
                       {formatTime(r.horario_reserva)}
                     </span>
                     {r.mesa && (
                       <span className="flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5" />
+                        <Users className="h-3.5 w-3.5 shrink-0"" />
                         Mesa {r.mesa.numero} · {r.party_size ?? r.mesa.capacidade}/{r.mesa.capacidade} pessoas
                       </span>
                     )}
@@ -125,22 +123,12 @@ const Reservations: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {podeCheckin && (
-                    <Button
-                      size="sm"
-                      variant="default"
-                      onClick={() => handleCheckin(id)}
-                      disabled={isCheckin}
-                    >
+                    <Button size="sm" className="min-h-[36px]" onClick={() => handleCheckin(id)} disabled={isCheckin}>
                       {isCheckin ? 'Registrando...' : 'Check-in'}
                     </Button>
                   )}
                   {podeLiberar && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleLiberar(id)}
-                      disabled={isLiberando}
-                    >
+                    <Button size="sm" variant="outline" className="min-h-[36px]" onClick={() => handleLiberar(id)} disabled={isLiberando}>
                       {isLiberando ? 'Liberando...' : 'Liberar mesa'}
                     </Button>
                   )}

@@ -36,11 +36,11 @@ const Restaurants: React.FC = () => {
   }, [searchParams]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[36px]"
         >
           <ChevronLeft className="h-4 w-4" />
           Voltar
@@ -49,9 +49,9 @@ const Restaurants: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-72 rounded-xl" />
+            <Skeleton key={i} className="h-72 rounded-2xl" />
           ))}
         </div>
       ) : restaurants.length === 0 ? (
@@ -61,7 +61,7 @@ const Restaurants: React.FC = () => {
           description="Tente outros filtros de busca."
         />
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {restaurants.map(r => (
             <RestaurantCard key={r.id} restaurant={r} />
           ))}

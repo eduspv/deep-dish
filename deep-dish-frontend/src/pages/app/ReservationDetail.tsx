@@ -40,7 +40,6 @@ const ReservationDetail: React.FC = () => {
         if (!cancelled && !silent) setLoading(false);
       }
     };
-
     load();
     return () => { cancelled = true; };
   }, [id]);

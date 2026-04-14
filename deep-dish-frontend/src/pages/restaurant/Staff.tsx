@@ -31,20 +31,27 @@ const Staff: React.FC = () => {
     setFormName(''); setFormRole(''); setFormSchedule('');
   };
 
-  if (loading) return <div className="space-y-4"><Skeleton className="h-8 w-48" />{[1,2,3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>;
+  if (loading) return (
+    <div className="space-y-4">
+      <Skeleton className="h-8 w-48" />
+      {[1,2,3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold text-foreground">Equipe</h1>
-        <Button size="sm" onClick={() => setDialogOpen(true)}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
+        <Button size="sm" className="min-h-[36px]" onClick={() => setDialogOpen(true)}>
+          <Plus className="mr-1.5 h-4 w-4" />Adicionar
+        </Button>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2.5 animate-stagger">
         {staff.map(s => (
-          <div key={s.id} className="rounded-xl bg-card p-4 shadow-card flex items-center justify-between">
+          <div key={s.id} className="rounded-2xl bg-card p-4 shadow-card flex items-center justify-between transition-all duration-200 hover:shadow-card-hover">
             <div>
               <p className="font-semibold text-foreground">{s.name}</p>
-              <p className="text-sm text-muted-foreground">{s.role} · {s.schedule}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">{s.role} · {s.schedule}</p>
             </div>
             <StatusBadge status={s.active ? 'available' : 'inactive'} />
           </div>
@@ -52,14 +59,25 @@ const Staff: React.FC = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-card">
-          <DialogHeader><DialogTitle>Novo membro</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Nome</Label><Input value={formName} onChange={e => setFormName(e.target.value)} /></div>
-            <div><Label>Função</Label><Input placeholder="Garçom, Chef..." value={formRole} onChange={e => setFormRole(e.target.value)} /></div>
-            <div><Label>Horário</Label><Input placeholder="Seg-Sex 12:00-20:00" value={formSchedule} onChange={e => setFormSchedule(e.target.value)} /></div>
+        <DialogContent className="bg-card rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-display">Novo membro</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Nome</Label>
+              <Input value={formName} onChange={e => setFormName(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Função</Label>
+              <Input placeholder="Garçom, Chef..." value={formRole} onChange={e => setFormRole(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Horário</Label>
+              <Input placeholder="Seg-Sex 12:00-20:00" value={formSchedule} onChange={e => setFormSchedule(e.target.value)} />
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleAdd} disabled={!formName}>Adicionar</Button>
           </DialogFooter>

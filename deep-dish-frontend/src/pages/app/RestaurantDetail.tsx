@@ -245,7 +245,7 @@ const RestaurantDetail: React.FC = () => {
                     max="20"
                     value={partySize}
                     onChange={e => { setPartySize(e.target.value); setSelectedMesa(null); }}
-                    className="mt-1 w-24"
+                    className="w-24"
                   />
                 </div>
               )}

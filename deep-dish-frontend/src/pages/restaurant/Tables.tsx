@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Mesa } from '@/types';
 import { mesasService } from '@/services/mesas.service';
-import { Plus } from 'lucide-react';
+import { Plus, Pencil, Lock, Unlock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Tables: React.FC = () => {
@@ -82,46 +82,98 @@ const Tables: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-64 rounded-xl" /></div>;
+  if (loading) return (
+    <div className="space-y-4">
+      <Skeleton className="h-8 w-48" />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold text-foreground">Mesas</h1>
-        <Button size="sm" onClick={openNew}><Plus className="mr-1 h-4 w-4" />Nova mesa</Button>
+        <Button size="sm" onClick={openNew} className="min-h-[36px]">
+          <Plus className="mr-1.5 h-4 w-4" />Nova mesa
+        </Button>
       </div>
 
       {tables.length === 0 && (
-        <p className="text-muted-foreground text-center py-8">Nenhuma mesa cadastrada. Clique em "Nova mesa" para começar.</p>
+        <p className="text-muted-foreground text-center py-10">
+          Nenhuma mesa cadastrada. Clique em "Nova mesa" para começar.
+        </p>
       )}
 
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">
         {tables.map(t => (
-          <div key={t.id} className="rounded-xl bg-card p-4 shadow-card flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-foreground">Mesa {t.numero}</p>
-              <p className="text-sm text-muted-foreground">{t.capacidade} lugares</p>
-            </div>
-            <div className="flex items-center gap-2">
+          <div key={t.id} className="rounded-2xl bg-card p-4 shadow-card transition-all duration-200 hover:shadow-card-hover">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="font-display font-semibold text-foreground">Mesa {t.numero}</p>
+                <p className="text-sm text-muted-foreground">{t.capacidade} lugares</p>
+              </div>
               <StatusBadge status={t.status} />
-              <Button variant="ghost" size="sm" onClick={() => openEdit(t)}>Editar</Button>
-              <Button variant="outline" size="sm" onClick={() => toggleStatus(t)}>{t.status === 'bloqueada' ? 'Desbloquear' : 'Bloquear'}</Button>
-              <Button variant="destructive" size="sm" onClick={() => handleDelete(t)}>Excluir</Button>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2.5 text-xs"
+                onClick={() => openEdit(t)}
+              >
+                <Pencil className="h-3.5 w-3.5 mr-1" />
+                Editar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-2.5 text-xs"
+                onClick={() => toggleStatus(t)}
+              >
+                {t.status === 'bloqueada' ? (
+                  <><Unlock className="h-3.5 w-3.5 mr-1" />Liberar</>
+                ) : (
+                  <><Lock className="h-3.5 w-3.5 mr-1" />Bloquear</>
+                )}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8 px-2.5 text-xs"
+                onClick={() => handleDelete(t)}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                Excluir
+              </Button>
             </div>
           </div>
         ))}
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-card">
-          <DialogHeader><DialogTitle>{editTable ? 'Editar mesa' : 'Nova mesa'}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Número</Label><Input type="number" value={formNumber} onChange={e => setFormNumber(e.target.value)} /></div>
-            <div><Label>Capacidade</Label><Input type="number" value={formCapacity} onChange={e => setFormCapacity(e.target.value)} /></div>
+        <DialogContent className="bg-card rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-display">
+              {editTable ? 'Editar mesa' : 'Nova mesa'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Número</Label>
+              <Input type="number" value={formNumber} onChange={e => setFormNumber(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Capacidade</Label>
+              <Input type="number" value={formCapacity} onChange={e => setFormCapacity(e.target.value)} />
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? 'Salvando...' : 'Salvar'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

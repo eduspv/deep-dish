@@ -20,34 +20,47 @@ const QueueManagement: React.FC = () => {
     toast.success(msg);
   };
 
-  if (loading) return <div className="space-y-4"><Skeleton className="h-8 w-48" />{[1,2,3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>;
+  if (loading) return (
+    <div className="space-y-4">
+      <Skeleton className="h-8 w-48" />
+      {[1,2,3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <h1 className="font-display text-2xl font-bold text-foreground">Fila</h1>
-      <div className="space-y-3">
+      <div className="space-y-2.5 animate-stagger">
         {entries.map(e => (
-          <div key={e.id} className="rounded-xl bg-card p-4 shadow-card flex flex-col sm:flex-row sm:items-center gap-3">
+          <div key={e.id} className="rounded-2xl bg-card p-4 shadow-card flex flex-col sm:flex-row sm:items-center gap-3 transition-all duration-200 hover:shadow-card-hover">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold text-foreground">{e.userName}</span>
                 <StatusBadge status={e.status} />
               </div>
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <p className="text-sm text-muted-foreground mt-1">
                 {e.partySize} pessoas · Posição #{e.position} · {e.userPhone}
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {e.status === 'waiting' && (
                 <>
-                  <Button size="sm" onClick={() => updateStatus(e.id, 'called', `${e.userName} chamado!`)}>Mesa pronta</Button>
-                  <Button size="sm" variant="outline" onClick={() => updateStatus(e.id, 'cancelled', 'Removido da fila.')}>Remover</Button>
+                  <Button size="sm" className="min-h-[36px]" onClick={() => updateStatus(e.id, 'called', `${e.userName} chamado!`)}>
+                    Mesa pronta
+                  </Button>
+                  <Button size="sm" variant="outline" className="min-h-[36px]" onClick={() => updateStatus(e.id, 'cancelled', 'Removido da fila.')}>
+                    Remover
+                  </Button>
                 </>
               )}
               {e.status === 'called' && (
                 <>
-                  <Button size="sm" onClick={() => updateStatus(e.id, 'seated', `${e.userName} sentado!`)}>Sentou</Button>
-                  <Button size="sm" variant="outline" onClick={() => updateStatus(e.id, 'no_show', 'Marcado como não compareceu.')}>No show</Button>
+                  <Button size="sm" className="min-h-[36px]" onClick={() => updateStatus(e.id, 'seated', `${e.userName} sentado!`)}>
+                    Sentou
+                  </Button>
+                  <Button size="sm" variant="outline" className="min-h-[36px]" onClick={() => updateStatus(e.id, 'no_show', 'Marcado como não compareceu.')}>
+                    No show
+                  </Button>
                 </>
               )}
             </div>
