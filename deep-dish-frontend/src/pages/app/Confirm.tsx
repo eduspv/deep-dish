@@ -63,21 +63,21 @@ const Confirm: React.FC = () => {
           <img src={state.restaurantImage} alt="" className="h-40 w-full rounded-lg object-cover" />
         )}
         <h2 className="font-display text-xl font-semibold text-foreground">{state.restaurantName}</h2>
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <p className="flex items-center gap-2">
-            <CalendarDays className="h-4 w-4" />
+        <div className="space-y-2.5 text-sm text-muted-foreground">
+          <p className="flex items-center gap-2.5">
+            <CalendarDays className="h-4 w-4 shrink-0" />
             {formatDate(state.horarioReserva)}
           </p>
-          <p className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
+          <p className="flex items-center gap-2.5">
+            <Clock className="h-4 w-4 shrink-0" />
             {formatTime(state.horarioReserva)}
           </p>
-          <p className="flex items-center gap-2">
-            <Hash className="h-4 w-4" />
+          <p className="flex items-center gap-2.5">
+            <Hash className="h-4 w-4 shrink-0" />
             Mesa {state.mesaNumero} ({state.mesaCapacidade} lugares)
           </p>
-          <p className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
+          <p className="flex items-center gap-2.5">
+            <Users className="h-4 w-4 shrink-0" />
             {state.partySize} {state.partySize === 1 ? 'pessoa' : 'pessoas'}
           </p>
         </div>

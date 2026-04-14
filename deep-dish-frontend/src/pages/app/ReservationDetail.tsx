@@ -81,8 +81,8 @@ const ReservationDetail: React.FC = () => {
   if (loading) {
     return (
       <div className="max-w-lg mx-auto space-y-4">
-        <Skeleton className="h-48 rounded-xl" />
-        <Skeleton className="h-32 rounded-xl" />
+        <Skeleton className="h-48 rounded-2xl" />
+        <Skeleton className="h-32 rounded-2xl" />
       </div>
     );
   }
@@ -95,10 +95,10 @@ const ReservationDetail: React.FC = () => {
   const canCancel = reservation.status === 'confirmada' || reservation.status === 'em_andamento';
 
   return (
-    <div className="max-w-lg mx-auto space-y-6">
+    <div className="max-w-lg mx-auto space-y-6 animate-fade-in">
       <button
         onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[36px]"
       >
         <ArrowLeft className="h-4 w-4" />
         Voltar
@@ -106,60 +106,63 @@ const ReservationDetail: React.FC = () => {
 
       <h1 className="font-display text-2xl font-bold text-foreground">Detalhes da reserva</h1>
 
-      <div className="rounded-xl bg-card shadow-card overflow-hidden">
+      <div className="rounded-2xl bg-card shadow-card overflow-hidden">
         {restaurante?.imagem_url && (
           <img src={restaurante.imagem_url} alt="" className="h-40 w-full object-cover" />
         )}
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-5">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-lg font-semibold text-foreground">
               {restaurante?.name ?? 'Restaurante'}
             </h2>
             <StatusBadge status={reservation.status} />
           </div>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4" />
+
+          <div className="space-y-2.5 text-sm text-muted-foreground">
+            <p className="flex items-center gap-2.5">
+              <CalendarDays className="h-4 w-4 shrink-0" />
               {formatDate(reservation.horario_reserva)}
             </p>
-            <p className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
+            <p className="flex items-center gap-2.5">
+              <Clock className="h-4 w-4 shrink-0" />
               {formatTime(reservation.horario_reserva)}
             </p>
             {reservation.mesa && (
-              <p className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
+              <p className="flex items-center gap-2.5">
+                <Users className="h-4 w-4 shrink-0" />
                 Mesa {reservation.mesa.numero} · {reservation.party_size ?? reservation.mesa.capacidade}/{reservation.mesa.capacidade} pessoas
               </p>
             )}
             {restaurante?.endereco_completo && (
-              <p className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
+              <p className="flex items-center gap-2.5">
+                <MapPin className="h-4 w-4 shrink-0" />
                 {restaurante.endereco_completo}
               </p>
             )}
           </div>
+
           {reservation.status === 'confirmada' && (
-            <div className="rounded-lg bg-secondary/50 border border-border p-3 text-xs text-muted-foreground">
+            <div className="rounded-xl bg-secondary/50 p-4 text-xs text-muted-foreground leading-relaxed">
               Confirme sua chegada com o restaurante para liberar sua mesa.
             </div>
           )}
           {reservation.status === 'em_andamento' && (
-            <div className="rounded-lg bg-accent/20 border border-accent/30 p-3 text-xs text-foreground">
+            <div className="rounded-xl bg-emerald-500/10 p-4 text-xs text-emerald-700 dark:text-emerald-400 leading-relaxed">
               Check-in realizado! Aproveite sua refeição.
             </div>
           )}
           {reservation.status === 'expirada' && (
-            <div className="rounded-lg bg-muted border border-border p-3 text-xs text-muted-foreground">
+            <div className="rounded-xl bg-muted p-4 text-xs text-muted-foreground leading-relaxed">
               Esta reserva expirou porque o check-in não foi realizado dentro de 1 hora após o horário marcado. A mesa foi liberada.
             </div>
           )}
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => navigate('/app')}>
+
+          <div className="flex gap-3 pt-1">
+            <Button variant="outline" className="flex-1 min-h-[44px]" onClick={() => navigate('/app')}>
               Voltar
             </Button>
             {canCancel && (
-              <Button variant="destructive" className="flex-1" onClick={() => setCancelOpen(true)}>
+              <Button variant="destructive" className="flex-1 min-h-[44px]" onClick={() => setCancelOpen(true)}>
                 Cancelar
               </Button>
             )}

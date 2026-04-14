@@ -47,9 +47,9 @@ const RestaurantDetail: React.FC = () => {
       const [h, m] = hhmm.slice(0, 5).split(':').map(Number);
       return h * 60 + m;
     };
-    const sel    = toMin(selectedTime);
-    const abre   = toMin(restaurant.horario_abertura);
-    const fecha  = toMin(restaurant.horario_fechamento);
+    const sel   = toMin(selectedTime);
+    const abre  = toMin(restaurant.horario_abertura);
+    const fecha = toMin(restaurant.horario_fechamento);
     return sel < abre || sel >= fecha;
   })();
 
@@ -82,7 +82,6 @@ const RestaurantDetail: React.FC = () => {
     return () => { cancelled = true; };
   }, [id, restaurant?.reservations_enabled, selectedDate, selectedTime]);
 
-  // Filtra mesas pela quantidade de pessoas
   const partySizeNum = Math.max(1, Number(partySize) || 1);
   const mesasFiltradas = mesas.filter(m => m.capacidade >= partySizeNum);
 
@@ -113,33 +112,29 @@ const RestaurantDetail: React.FC = () => {
       : '');
 
   if (loading) return (
-    <div className="space-y-4">
-      <Skeleton className="h-56 rounded-xl" />
+    <div className="space-y-4 animate-fade-in">
+      <Skeleton className="h-56 rounded-2xl" />
       <Skeleton className="h-8 w-48" />
-      <Skeleton className="h-20" />
+      <Skeleton className="h-20 rounded-xl" />
     </div>
   );
 
   if (!restaurant) return (
-    <p className="text-center text-muted-foreground py-20">
-      Restaurante não encontrado.
-    </p>
+    <p className="text-center text-muted-foreground py-20">Restaurante não encontrado.</p>
   );
 
   return (
-    <div className="space-y-6">
-
-      {/* Voltar */}
+    <div className="space-y-6 animate-fade-in">
       <button
         onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[36px]"
       >
         <ArrowLeft className="h-4 w-4" />
         Voltar
       </button>
 
       {/* Banner */}
-      <div className="relative h-56 md:h-72 overflow-hidden rounded-xl">
+      <div className="relative h-52 sm:h-60 md:h-72 overflow-hidden rounded-2xl">
         {restaurant.imagem_url ? (
           <img
             src={restaurant.imagem_url}
@@ -148,17 +143,17 @@ const RestaurantDetail: React.FC = () => {
           />
         ) : (
           <div className="h-full w-full bg-muted flex items-center justify-center">
-            <span className="text-6xl font-bold text-muted-foreground/20">
+            <span className="text-6xl font-bold text-muted-foreground/15 font-display">
               {restaurant.name.charAt(0)}
             </span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-dark-surface/80 to-transparent" />
-        <div className="absolute bottom-4 left-4 right-4">
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-dark-surface-foreground">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-5">
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-white">
             {restaurant.name}
           </h1>
-          <div className="flex items-center gap-3 mt-1 text-sm text-dark-surface-foreground/80">
+          <div className="flex items-center gap-3 mt-1.5 text-sm text-white/75">
             {restaurant.rating && (
               <span className="flex items-center gap-1">
                 <Star className="h-4 w-4 fill-gold-accent text-gold-accent" />
@@ -174,13 +169,11 @@ const RestaurantDetail: React.FC = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
+        <div className="md:col-span-2 space-y-5">
 
-        {/* Coluna principal */}
-        <div className="md:col-span-2 space-y-6">
-
-          {/* Informações */}
-          <div className="rounded-xl bg-card p-5 shadow-card">
-            <p className="text-foreground">
+          {/* Info */}
+          <div className="rounded-2xl bg-card p-5 shadow-card">
+            <p className="text-foreground leading-relaxed">
               {restaurant.description || `Restaurante especializado em ${restaurant.tipo}.`}
             </p>
             <div className="mt-4 space-y-2 text-sm text-muted-foreground">
@@ -207,9 +200,9 @@ const RestaurantDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* Mesas disponíveis + reserva */}
+          {/* Reservas */}
           {!!restaurant.reservations_enabled && (
-            <div className="rounded-xl bg-card p-5 shadow-card space-y-4">
+            <div className="rounded-2xl bg-card p-5 shadow-card space-y-4">
               <h2 className="font-display text-lg font-semibold text-foreground">
                 Fazer uma reserva
               </h2>
@@ -273,17 +266,17 @@ const RestaurantDetail: React.FC = () => {
                   </p>
                 ) : (
                   <>
-                    <p className="text-xs text-muted-foreground">Selecione uma mesa:</p>
+                    <p className="text-xs text-muted-foreground">Selecione uma mesa para reservar:</p>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {mesasFiltradas.map(mesa => (
                         <button
                           key={mesa.id}
                           onClick={() => setSelectedMesa(mesa)}
-                          className={`rounded-lg border p-3 text-left transition-colors
-                            ${selectedMesa?.id === mesa.id
-                              ? 'bg-primary/10 border-primary ring-1 ring-primary'
-                              : 'bg-card border-border hover:border-primary/50'
-                            }`}
+                          className={`rounded-xl border p-3 text-left transition-all duration-200 min-h-[56px] ${
+                            selectedMesa?.id === mesa.id
+                              ? 'bg-primary/10 border-primary ring-2 ring-primary/20'
+                              : 'bg-card border-border hover:border-primary/40 hover:bg-primary/[0.03]'
+                          }`}
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-semibold text-foreground">Mesa {mesa.numero}</span>
@@ -300,13 +293,12 @@ const RestaurantDetail: React.FC = () => {
                 )
               )}
 
-              {/* Botão reservar */}
-              <div className="pt-2 border-t border-border">
+              <div className="pt-3 border-t border-border/60">
                 <Button
                   onClick={handleReserve}
                   disabled={!selectedMesa || !horarioReserva || horarioForaDoFuncionamento}
                   size="lg"
-                  className="w-full"
+                  className="w-full min-h-[48px]"
                 >
                   {selectedMesa
                     ? `Reservar Mesa ${selectedMesa.numero} • ${new Date(`${selectedDate}T${selectedTime}:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às ${selectedTime}`
@@ -317,30 +309,27 @@ const RestaurantDetail: React.FC = () => {
           )}
         </div>
 
-        {/* Coluna lateral */}
+        {/* Sidebar */}
         <div className="space-y-4">
-          <div className="rounded-xl bg-card p-5 shadow-card space-y-4">
-
-            {/* Fila ativa */}
+          <div className="rounded-2xl bg-card p-5 shadow-card space-y-4">
             {!!restaurant.fila_ativa && (
-              <div className="rounded-lg border border-border p-3">
+              <div className="rounded-xl border border-border/60 p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">Fila ativa</span>
                   <StatusBadge status="waiting" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1.5">
                   {restaurant.tamanho_fila_atual ?? 0} pessoas
                   {restaurant.averageWaitTime ? ` · ~${restaurant.averageWaitTime}min` : ''}
                 </p>
-                <Button onClick={handleQueue} className="w-full mt-3" size="sm">
+                <Button onClick={handleQueue} className="w-full mt-3 min-h-[40px]" size="sm">
                   Entrar na fila
                 </Button>
               </div>
             )}
 
-            {/* Nenhuma ação disponível */}
             {!restaurant.fila_ativa && !restaurant.reservations_enabled && (
-              <p className="text-sm text-muted-foreground text-center py-2">
+              <p className="text-sm text-muted-foreground text-center py-3">
                 Este restaurante não possui fila ou reservas ativas no momento.
               </p>
             )}
