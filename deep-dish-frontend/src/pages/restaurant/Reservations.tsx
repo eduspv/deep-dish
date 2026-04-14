@@ -7,12 +7,10 @@ import { reservationsService } from '@/services/reservations.service';
 import { ApiError } from '@/services/httpClient';
 import { Clock, Users, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatBRT } from '@/lib/utils';
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-
-const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const formatDate = (iso: string) => formatBRT(iso, { day: '2-digit', month: '2-digit' });
+const formatTime = (iso: string) => formatBRT(iso, { hour: '2-digit', minute: '2-digit' });
 
 const Reservations: React.FC = () => {
   const [reservations, setReservations] = useState<Reserva[]>([]);
@@ -117,8 +115,8 @@ const Reservations: React.FC = () => {
                     </span>
                     {r.mesa && (
                       <span className="flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5 shrink-0" />
-                        Mesa {r.mesa.numero} ({r.mesa.capacidade}p)
+                        <Users className="h-3.5 w-3.5 shrink-0"" />
+                        Mesa {r.mesa.numero} · {r.party_size ?? r.mesa.capacidade}/{r.mesa.capacidade} pessoas
                       </span>
                     )}
                   </div>

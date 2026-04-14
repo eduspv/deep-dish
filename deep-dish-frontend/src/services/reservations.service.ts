@@ -2,8 +2,9 @@ import { Reserva } from '@/types';
 import { httpClient } from './httpClient';
 
 interface CreateReservaPayload {
-  mesa_id:    string;
-  party_size: number;
+  mesa_id:         string;
+  party_size:      number;
+  horario_reserva: string; // ISO datetime ex: "2026-04-13T19:00:00"
 }
 
 interface CreateReservaResponse {

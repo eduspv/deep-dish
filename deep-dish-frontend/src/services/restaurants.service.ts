@@ -40,9 +40,12 @@ export const restaurantsService = {
     }
   },
 
-  // ─── Busca mesas disponíveis (status = livre) ──────────
-  async getMesasDisponiveis(restaurantId: string, capacidadeMin?: number): Promise<Mesa[]> {
-    const query = capacidadeMin ? `?capacidade_min=${capacidadeMin}` : '';
-    return httpClient.get<Mesa[]>(`/restaurantes/${restaurantId}/mesas/disponiveis${query}`);
+  // ─── Busca mesas disponíveis para um horário específico ──
+  async getMesasDisponiveis(restaurantId: string, capacidadeMin?: number, horario?: string): Promise<Mesa[]> {
+    const params = new URLSearchParams();
+    if (capacidadeMin) params.set('capacidade_min', String(capacidadeMin));
+    if (horario)       params.set('horario', horario);
+    const query = params.toString();
+    return httpClient.get<Mesa[]>(`/restaurantes/${restaurantId}/mesas/disponiveis${query ? `?${query}` : ''}`);
   },
 };
