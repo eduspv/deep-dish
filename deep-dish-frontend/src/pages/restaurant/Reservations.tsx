@@ -115,7 +115,7 @@ const Reservations: React.FC = () => {
                     </span>
                     {r.mesa && (
                       <span className="flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5 shrink-0"" />
+                        <Users className="h-3.5 w-3.5 shrink-0" />
                         Mesa {r.mesa.numero} · {r.party_size ?? r.mesa.capacidade}/{r.mesa.capacidade} pessoas
                       </span>
                     )}
