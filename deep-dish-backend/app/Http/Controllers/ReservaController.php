@@ -171,19 +171,29 @@ class ReservaController extends Controller
         }
     }
 
-    // ─── Cliente: lista suas reservas ───────────────────────
-    public function index(): JsonResponse
+    /** Status finalizados — podem ser excluídos permanentemente. */
+    private const STATUS_FINALIZADOS = ['liberada', 'expirada', 'cancelada'];
+
+    // ─── Cliente: lista suas reservas (paginado) ─────────────
+    public function index(Request $request): JsonResponse
     {
         self::expirarReservasVencidas();
 
         $clienteId = auth('api')->id();
+        $perPage   = min((int) $request->query('per_page', 10), 50);
+        $grupo     = $request->query('status_group'); // 'active' | 'finished' | null
 
-        $reservas = ClienteMesa::with(['mesa.restaurante'])
+        $query = ClienteMesa::with(['mesa.restaurante'])
             ->where('cliente_id', $clienteId)
-            ->orderBy('horario_reserva', 'desc')
-            ->get();
+            ->orderBy('horario_reserva', 'desc');
 
-        return response()->json($reservas);
+        if ($grupo === 'active') {
+            $query->whereIn('status', self::STATUS_ATIVOS);
+        } elseif ($grupo === 'finished') {
+            $query->whereIn('status', self::STATUS_FINALIZADOS);
+        }
+
+        return response()->json($query->paginate($perPage));
     }
 
     // ─── Cliente: detalhe de uma reserva ────────────────────
@@ -234,19 +244,29 @@ class ReservaController extends Controller
         ]);
     }
 
-    // ─── Restaurante: lista reservas das suas mesas ─────────
-    public function indexRestaurante(): JsonResponse
+    // ─── Restaurante: lista reservas das suas mesas (paginado)
+    public function indexRestaurante(Request $request): JsonResponse
     {
         self::expirarReservasVencidas();
 
         $restauranteId = auth('restaurante')->id();
+        $perPage       = min((int) $request->query('per_page', 10), 50);
+        $grupo         = $request->query('status_group'); // 'active' | 'finished' | null
 
-        $reservas = ClienteMesa::with(['mesa', 'cliente'])
+        $statusAtivos = implode("','", self::STATUS_ATIVOS);
+
+        $query = ClienteMesa::with(['mesa', 'cliente'])
             ->whereHas('mesa', fn ($q) => $q->where('restaurante_id', $restauranteId))
-            ->orderBy('horario_reserva', 'desc')
-            ->get();
+            ->orderByRaw("CASE WHEN status IN ('{$statusAtivos}') THEN 0 ELSE 1 END")
+            ->orderBy('horario_reserva', 'desc');
 
-        return response()->json($reservas);
+        if ($grupo === 'active') {
+            $query->whereIn('status', self::STATUS_ATIVOS);
+        } elseif ($grupo === 'finished') {
+            $query->whereIn('status', self::STATUS_FINALIZADOS);
+        }
+
+        return response()->json($query->paginate($perPage));
     }
 
     // ─── Restaurante: faz check-in do cliente ───────────────
@@ -314,5 +334,27 @@ class ReservaController extends Controller
             'message' => 'Mesa liberada.',
             'reserva' => $reserva->fresh(['mesa', 'cliente']),
         ]);
+    }
+
+    // ─── Restaurante: exclui permanentemente reserva finalizada
+    public function forceDestroyRestaurante(string $id): JsonResponse
+    {
+        $restauranteId = auth('restaurante')->id();
+
+        $reserva = ClienteMesa::where('id', $id)
+            ->whereHas('mesa', fn ($q) => $q->where('restaurante_id', $restauranteId))
+            ->first();
+
+        if (! $reserva) {
+            return response()->json(['error' => 'Reserva não encontrada.'], 404);
+        }
+
+        if (! in_array($reserva->status, self::STATUS_FINALIZADOS)) {
+            return response()->json(['error' => 'Só é possível excluir reservas finalizadas (liberada, expirada ou cancelada).'], 422);
+        }
+
+        $reserva->delete();
+
+        return response()->json(['message' => 'Reserva excluída.']);
     }
 }

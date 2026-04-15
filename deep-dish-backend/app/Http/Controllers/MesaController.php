@@ -22,7 +22,7 @@ class MesaController extends Controller
         $horarioParam = $request->query('horario');
 
         $query = Mesa::where('restaurante_id', $id)
-            ->where('status', '!=', 'bloqueada')
+            ->whereNotIn('status', ['bloqueada', 'ocupada'])
             ->orderBy('capacidade', 'asc');
 
         if ($request->has('capacidade_min')) {
@@ -38,7 +38,8 @@ class MesaController extends Controller
                 return response()->json(['error' => 'Horário inválido.'], 422);
             }
 
-            $reservadasIds = ClienteMesa::whereIn('status', ['confirmada', 'em_andamento'])
+            // Exclui apenas reservas confirmadas (em_andamento já são filtradas pelo status da mesa = ocupada)
+            $reservadasIds = ClienteMesa::where('status', 'confirmada')
                 ->where('horario_reserva', '<', $fim)
                 ->whereRaw("horario_reserva + interval '1 hour' > ?", [$inicio])
                 ->pluck('mesa_id');

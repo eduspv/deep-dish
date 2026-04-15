@@ -168,8 +168,8 @@ const RestaurantDetail: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2 space-y-5">
+      <div className={`grid gap-6 ${restaurant.fila_ativa ? 'md:grid-cols-3' : ''}`}>
+        <div className={`space-y-5 ${restaurant.fila_ativa ? 'md:col-span-2' : ''}`}>
 
           {/* Info */}
           <div className="rounded-2xl bg-card p-5 shadow-card">
@@ -309,10 +309,10 @@ const RestaurantDetail: React.FC = () => {
           )}
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-4">
-          <div className="rounded-2xl bg-card p-5 shadow-card space-y-4">
-            {!!restaurant.fila_ativa && (
+        {/* Sidebar — só exibe quando a fila está ativa */}
+        {!!restaurant.fila_ativa && (
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-card p-5 shadow-card space-y-4">
               <div className="rounded-xl border border-border/60 p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">Fila ativa</span>
@@ -326,15 +326,9 @@ const RestaurantDetail: React.FC = () => {
                   Entrar na fila
                 </Button>
               </div>
-            )}
-
-            {!restaurant.fila_ativa && !restaurant.reservations_enabled && (
-              <p className="text-sm text-muted-foreground text-center py-3">
-                Este restaurante não possui fila ou reservas ativas no momento.
-              </p>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
