@@ -53,13 +53,19 @@ const RestaurantDetail: React.FC = () => {
     return sel < abre || sel >= fecha;
   })();
 
+  // Verifica se o horário selecionado já passou
+  const horarioNoPassado = (() => {
+    if (!selectedDate || !selectedTime) return false;
+    return new Date(toISOBRT(selectedDate, selectedTime)) <= new Date();
+  })();
+
   // Recarrega mesas quando data ou hora muda
   useEffect(() => {
     if (!id || !restaurant?.reservations_enabled || !selectedDate || !selectedTime) {
       setMesas([]);
       return;
     }
-    if (horarioForaDoFuncionamento) {
+    if (horarioForaDoFuncionamento || horarioNoPassado) {
       setMesas([]);
       return;
     }
@@ -168,8 +174,8 @@ const RestaurantDetail: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2 space-y-5">
+      <div className={`grid gap-6 ${restaurant.fila_ativa ? 'md:grid-cols-3' : ''}`}>
+        <div className={`space-y-5 ${restaurant.fila_ativa ? 'md:col-span-2' : ''}`}>
 
           {/* Info */}
           <div className="rounded-2xl bg-card p-5 shadow-card">
@@ -225,9 +231,14 @@ const RestaurantDetail: React.FC = () => {
                     type="time"
                     value={selectedTime}
                     onChange={e => setSelectedTime(e.target.value)}
-                    className={`mt-1 ${horarioForaDoFuncionamento ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    className={`mt-1 ${horarioForaDoFuncionamento || horarioNoPassado ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                   />
-                  {horarioForaDoFuncionamento && (
+                  {horarioNoPassado && (
+                    <p className="mt-1 text-xs text-destructive">
+                      Este horário já passou. Escolha um horário futuro.
+                    </p>
+                  )}
+                  {horarioForaDoFuncionamento && !horarioNoPassado && (
                     <p className="mt-1 text-xs text-destructive">
                       Fora do horário de funcionamento ({restaurant.horario_abertura?.slice(0, 5)} – {restaurant.horario_fechamento?.slice(0, 5)}).
                     </p>
@@ -296,7 +307,7 @@ const RestaurantDetail: React.FC = () => {
               <div className="pt-3 border-t border-border/60">
                 <Button
                   onClick={handleReserve}
-                  disabled={!selectedMesa || !horarioReserva || horarioForaDoFuncionamento}
+                  disabled={!selectedMesa || !horarioReserva || horarioForaDoFuncionamento || horarioNoPassado}
                   size="lg"
                   className="w-full min-h-[48px]"
                 >
@@ -309,10 +320,10 @@ const RestaurantDetail: React.FC = () => {
           )}
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-4">
-          <div className="rounded-2xl bg-card p-5 shadow-card space-y-4">
-            {!!restaurant.fila_ativa && (
+        {/* Sidebar — só exibe quando a fila está ativa */}
+        {!!restaurant.fila_ativa && (
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-card p-5 shadow-card space-y-4">
               <div className="rounded-xl border border-border/60 p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">Fila ativa</span>
@@ -326,15 +337,9 @@ const RestaurantDetail: React.FC = () => {
                   Entrar na fila
                 </Button>
               </div>
-            )}
-
-            {!restaurant.fila_ativa && !restaurant.reservations_enabled && (
-              <p className="text-sm text-muted-foreground text-center py-3">
-                Este restaurante não possui fila ou reservas ativas no momento.
-              </p>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

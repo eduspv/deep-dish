@@ -1,4 +1,4 @@
-import { Reserva } from '@/types';
+import { Paginated, Reserva } from '@/types';
 import { httpClient } from './httpClient';
 
 interface CreateReservaPayload {
@@ -12,6 +12,22 @@ interface CreateReservaResponse {
   reserva: Reserva;
 }
 
+export interface ReservaListParams {
+  page?:         number;
+  per_page?:     number;
+  status_group?: 'active' | 'finished';
+}
+
+function buildQuery(params?: ReservaListParams): string {
+  if (!params) return '';
+  const q = new URLSearchParams();
+  if (params.page)         q.set('page',         String(params.page));
+  if (params.per_page)     q.set('per_page',     String(params.per_page));
+  if (params.status_group) q.set('status_group', params.status_group);
+  const str = q.toString();
+  return str ? `?${str}` : '';
+}
+
 export const reservationsService = {
 
   // ─── Cliente: cria reserva ──────────────────────────────
@@ -20,9 +36,9 @@ export const reservationsService = {
     return res.reserva;
   },
 
-  // ─── Cliente: lista suas reservas ───────────────────────
-  async listUserReservations(): Promise<Reserva[]> {
-    return httpClient.get<Reserva[]>('/reservas');
+  // ─── Cliente: lista suas reservas (paginado) ────────────
+  async listUserReservations(params?: ReservaListParams): Promise<Paginated<Reserva>> {
+    return httpClient.get<Paginated<Reserva>>(`/reservas${buildQuery(params)}`);
   },
 
   // ─── Cliente: busca uma reserva pelo ID ─────────────────
@@ -40,9 +56,9 @@ export const reservationsService = {
     return res.reserva;
   },
 
-  // ─── Restaurante: lista reservas das suas mesas ─────────
-  async listRestaurantReservations(): Promise<Reserva[]> {
-    return httpClient.get<Reserva[]>('/restaurante/reservas');
+  // ─── Restaurante: lista reservas das suas mesas (paginado)
+  async listRestaurantReservations(params?: ReservaListParams): Promise<Paginated<Reserva>> {
+    return httpClient.get<Paginated<Reserva>>(`/restaurante/reservas${buildQuery(params)}`);
   },
 
   // ─── Restaurante: faz check-in do cliente ────────────────
@@ -61,5 +77,10 @@ export const reservationsService = {
       {}
     );
     return res.reserva;
+  },
+
+  // ─── Restaurante: exclui permanentemente reserva finalizada
+  async deleteRestaurantReservation(id: string): Promise<void> {
+    await httpClient.delete<{ message: string }>(`/restaurante/reservas/${id}`);
   },
 };
