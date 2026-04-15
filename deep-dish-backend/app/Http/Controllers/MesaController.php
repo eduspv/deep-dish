@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ClienteMesa;
 use App\Models\Mesa;
-use Carbon\Carbon;
+use App\Http\Controllers\ReservaController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -30,19 +30,10 @@ class MesaController extends Controller
         }
 
         if ($horarioParam) {
-            // Exclui mesas que já têm reserva ativa sobreposta ao intervalo solicitado (1h)
-            try {
-                $inicio = Carbon::parse($horarioParam);
-                $fim    = $inicio->copy()->addMinutes(60);
-            } catch (\Throwable) {
-                return response()->json(['error' => 'Horário inválido.'], 422);
-            }
-
-            // Exclui apenas reservas confirmadas (em_andamento já são filtradas pelo status da mesa = ocupada)
-            $reservadasIds = ClienteMesa::where('status', 'confirmada')
-                ->where('horario_reserva', '<', $fim)
-                ->whereRaw("horario_reserva + interval '1 hour' > ?", [$inicio])
-                ->pluck('mesa_id');
+            // Exclui mesas que já possuem qualquer reserva ativa (confirmada ou em_andamento)
+            $reservadasIds = ClienteMesa::whereIn('status', ReservaController::STATUS_ATIVOS)
+                ->pluck('mesa_id')
+                ->unique();
 
             $query->whereNotIn('id', $reservadasIds);
         } else {

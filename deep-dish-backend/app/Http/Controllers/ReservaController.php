@@ -18,7 +18,7 @@ class ReservaController extends Controller
      * Duração padrão de uma reserva (em minutos).
      * Por enquanto fixa em 1 hora — futura feature: configurável por restaurante.
      */
-    private const DURACAO_RESERVA_MINUTOS = 60;
+    public const DURACAO_RESERVA_MINUTOS = 60;
 
     /**
      * Tolerância para no-show: após esse tempo sem check-in,
@@ -27,7 +27,7 @@ class ReservaController extends Controller
     private const TOLERANCIA_NO_SHOW_MINUTOS = 60;
 
     /** Status considerados "ativos" (bloqueia mesa no horário). */
-    private const STATUS_ATIVOS = ['confirmada', 'em_andamento'];
+    public const STATUS_ATIVOS = ['confirmada', 'em_andamento'];
 
     /**
      * Expira reservas com status 'confirmada' cujo horário + tolerância já passou.
