@@ -53,13 +53,19 @@ const RestaurantDetail: React.FC = () => {
     return sel < abre || sel >= fecha;
   })();
 
+  // Verifica se o horário selecionado já passou
+  const horarioNoPassado = (() => {
+    if (!selectedDate || !selectedTime) return false;
+    return new Date(toISOBRT(selectedDate, selectedTime)) <= new Date();
+  })();
+
   // Recarrega mesas quando data ou hora muda
   useEffect(() => {
     if (!id || !restaurant?.reservations_enabled || !selectedDate || !selectedTime) {
       setMesas([]);
       return;
     }
-    if (horarioForaDoFuncionamento) {
+    if (horarioForaDoFuncionamento || horarioNoPassado) {
       setMesas([]);
       return;
     }
@@ -225,9 +231,14 @@ const RestaurantDetail: React.FC = () => {
                     type="time"
                     value={selectedTime}
                     onChange={e => setSelectedTime(e.target.value)}
-                    className={`mt-1 ${horarioForaDoFuncionamento ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    className={`mt-1 ${horarioForaDoFuncionamento || horarioNoPassado ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                   />
-                  {horarioForaDoFuncionamento && (
+                  {horarioNoPassado && (
+                    <p className="mt-1 text-xs text-destructive">
+                      Este horário já passou. Escolha um horário futuro.
+                    </p>
+                  )}
+                  {horarioForaDoFuncionamento && !horarioNoPassado && (
                     <p className="mt-1 text-xs text-destructive">
                       Fora do horário de funcionamento ({restaurant.horario_abertura?.slice(0, 5)} – {restaurant.horario_fechamento?.slice(0, 5)}).
                     </p>
@@ -296,7 +307,7 @@ const RestaurantDetail: React.FC = () => {
               <div className="pt-3 border-t border-border/60">
                 <Button
                   onClick={handleReserve}
-                  disabled={!selectedMesa || !horarioReserva || horarioForaDoFuncionamento}
+                  disabled={!selectedMesa || !horarioReserva || horarioForaDoFuncionamento || horarioNoPassado}
                   size="lg"
                   className="w-full min-h-[48px]"
                 >
