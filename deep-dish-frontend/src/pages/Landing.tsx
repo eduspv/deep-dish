@@ -67,7 +67,7 @@ const Landing: React.FC = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="text-base px-8 min-h-[48px] border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+                className="text-base px-8 min-h-[48px] border-white/20 text-black hover:bg-white/10 hover:border-white/30"
               >
                 Entrar
               </Button>
@@ -295,7 +295,7 @@ const Landing: React.FC = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="text-base px-8 min-h-[48px] border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+                className="text-base px-8 min-h-[48px] border-white/20 text-black hover:bg-white/10 hover:border-white/30"
               >
                 Já tenho conta
                 <ChevronRight className="ml-1 h-4 w-4" />
