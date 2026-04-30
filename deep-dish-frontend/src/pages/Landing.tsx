@@ -67,7 +67,7 @@ const Landing: React.FC = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="text-base px-8 min-h-[48px] border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+                className="text-base px-8 min-h-[48px] border-white/20 text-black dark:text-white hover:bg-white/10 hover:border-white/30"
               >
                 Entrar
               </Button>
@@ -199,7 +199,7 @@ const Landing: React.FC = () => {
                 variants={fadeUp}
                 transition={{ duration: 0.5 }}
               >
-                <span className="absolute -top-4 left-6 font-display text-5xl font-extrabold text-primary/10">
+                <span className="absolute top-4 left-6 font-display text-5xl font-extrabold text-primary/10">
                   {step.step}
                 </span>
                 <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -295,7 +295,7 @@ const Landing: React.FC = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="text-base px-8 min-h-[48px] border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+                className="text-base px-8 min-h-[48px] border-white/20 text-black dark:text-white hover:bg-white/10 hover:border-white/30"
               >
                 Já tenho conta
                 <ChevronRight className="ml-1 h-4 w-4" />
@@ -347,7 +347,7 @@ const Landing: React.FC = () => {
       <footer className="border-t border-border/60 bg-card py-10">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-lg bg-background p-1.5 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-lg bg-white p-1.5 flex items-center justify-center">
               <img src={logo} alt="Logo Deep Dish" className="max-h-full max-w-full object-contain" />
             </div>
             <span className="font-display font-semibold text-foreground">Deep Dish</span>
