@@ -199,7 +199,7 @@ const Landing: React.FC = () => {
                 variants={fadeUp}
                 transition={{ duration: 0.5 }}
               >
-                <span className="absolute -top-4 left-6 font-display text-5xl font-extrabold text-primary/10">
+                <span className="absolute top-4 left-6 font-display text-5xl font-extrabold text-primary/10">
                   {step.step}
                 </span>
                 <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
