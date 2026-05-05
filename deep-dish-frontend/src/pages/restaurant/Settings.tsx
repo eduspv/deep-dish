@@ -38,6 +38,7 @@ const Settings: React.FC = () => {
   const [rating, setRating] = useState(restaurante?.rating?.toString() ?? '');
   const [priceRange, setPriceRange] = useState(restaurante?.price_range?.toString() ?? '');
   const [reservationsEnabled, setReservationsEnabled] = useState(restaurante?.reservations_enabled ?? false);
+  const [filaAtiva, setFilaAtiva] = useState(restaurante?.fila_ativa ?? false);
   const [description, setDescription] = useState(restaurante?.description ?? '');
   const [intervaloReserva, setIntervaloReserva] = useState(restaurante?.intervalo_reserva?.toString() ?? '');
 
@@ -53,6 +54,7 @@ const Settings: React.FC = () => {
         rating: rating ? parseFloat(rating) : null,
         price_range: priceRange ? parseInt(priceRange) : null,
         reservations_enabled: reservationsEnabled,
+        fila_ativa: filaAtiva,
         description: description || null,
         intervalo_reserva: intervaloReserva ? parseInt(intervaloReserva) : null,
         logradouro,
@@ -256,6 +258,19 @@ const Settings: React.FC = () => {
             />
             <Label htmlFor="reservationsEnabled" className="cursor-pointer">
               Aceita reservas
+            </Label>
+          </div>
+
+          <div className="sm:col-span-2 flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="filaAtiva"
+              checked={filaAtiva}
+              onChange={e => setFilaAtiva(e.target.checked)}
+              className="h-4 w-4 rounded border-input accent-primary"
+            />
+            <Label htmlFor="filaAtiva" className="cursor-pointer">
+              Fila de espera ativa
             </Label>
           </div>
 

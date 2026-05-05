@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ClienteMesa;
 use App\Models\Mesa;
 use App\Models\Restaurante;
+use App\Services\FilaService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -328,6 +329,9 @@ class ReservaController extends Controller
         $mesa = $reserva->mesa;
         if ($mesa) {
             $mesa->update(['status' => 'livre']);
+
+            // Promove o próximo da fila para esta mesa, se houver
+            app(FilaService::class)->promoverProximoParaMesa($mesa->restaurante_id, $mesa->fresh());
         }
 
         return response()->json([

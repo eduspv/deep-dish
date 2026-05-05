@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { CalendarDays, Plus, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, Plus, Clock, ChevronLeft, ChevronRight, ListOrdered, Hash, Users } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import EmptyState from '@/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { reservationsService } from '@/services/reservations.service';
 import { ApiError } from '@/services/httpClient';
-import { Paginated, Reserva } from '@/types';
+import { Paginated, Reserva, ClienteFilaEntry } from '@/types';
 import { toast } from 'sonner';
 import { formatBRT } from '@/lib/utils';
 
@@ -15,6 +15,45 @@ const formatDate = (iso: string) => formatBRT(iso, { day: '2-digit', month: '2-d
 const formatTime = (iso: string) => formatBRT(iso, { hour: '2-digit', minute: '2-digit' });
 
 const EMPTY_PAGE: Paginated<Reserva> = { data: [], current_page: 1, last_page: 1, per_page: 10, total: 0 };
+const FILA_KEY = 'deepdish_fila';
+
+interface FilaState {
+  entry: ClienteFilaEntry;
+  restaurantName: string;
+  restaurantImage?: string;
+  horarioReserva: string;
+}
+
+const FilaCard = ({ state, onClick }: { state: FilaState; onClick: () => void }) => (
+  <button onClick={onClick} className="w-full text-left group">
+    <div className="flex items-center gap-4 rounded-2xl bg-card p-4 shadow-card transition-all duration-200 ease-out-expo group-hover:shadow-card-hover group-hover:-translate-y-0.5 border border-primary/20">
+      <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+        {state.restaurantImage
+          ? <img src={state.restaurantImage} alt="" className="h-full w-full object-cover" />
+          : <ListOrdered className="h-6 w-6 text-primary" />
+        }
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-foreground truncate">{state.restaurantName}</p>
+        <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
+          <span className="flex items-center gap-1">
+            <Hash className="h-3.5 w-3.5" />
+            Posição {state.entry.posicao}
+          </span>
+          <span className="flex items-center gap-1">
+            <Users className="h-3.5 w-3.5" />
+            {state.entry.qntd_pessoas} {state.entry.qntd_pessoas === 1 ? 'pessoa' : 'pessoas'}
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5" />
+            {formatTime(state.horarioReserva)}
+          </span>
+        </div>
+      </div>
+      <StatusBadge status="waiting" />
+    </div>
+  </button>
+);
 
 // ─── sub-componentes definidos fora do pai para evitar remontagem ───────────
 
@@ -70,6 +109,8 @@ const Pagination = ({
 // ─── componente principal ────────────────────────────────────────────────────
 
 const AppHome: React.FC = () => {
+  const navigate = useNavigate();
+  const [filaState, setFilaState] = useState<FilaState | null>(null);
   const [activePage,    setActivePage]    = useState(1);
   const [finishedPage,  setFinishedPage]  = useState(1);
   const [activeData,    setActiveData]    = useState<Paginated<Reserva>>(EMPTY_PAGE);
@@ -101,6 +142,14 @@ const AppHome: React.FC = () => {
     }
   }, []);
 
+  // Carrega estado da fila do localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(FILA_KEY);
+    if (saved) {
+      try { setFilaState(JSON.parse(saved)); } catch { /* ignore */ }
+    }
+  }, []);
+
   useEffect(() => { fetchActive(activePage); },   [fetchActive, activePage]);
   useEffect(() => { fetchFinished(finishedPage); }, [fetchFinished, finishedPage]);
 
@@ -127,6 +176,19 @@ const AppHome: React.FC = () => {
           </Button>
         </Link>
       </div>
+
+      {/* Card de fila ativa */}
+      {filaState && (
+        <section>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+            Na fila
+          </h2>
+          <FilaCard
+            state={filaState}
+            onClick={() => navigate('/app/queue', { state: filaState })}
+          />
+        </section>
+      )}
 
       {loading ? (
         <div className="space-y-3">

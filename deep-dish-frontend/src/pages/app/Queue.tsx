@@ -1,69 +1,147 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/StatusBadge';
 import ConfirmModal from '@/components/ConfirmModal';
 import EmptyState from '@/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
-import { mockUserQueue } from '@/mocks/queue';
-import { QueueEntry } from '@/types';
-import { Users, Clock, Hash } from 'lucide-react';
+import { queueService } from '@/services/queue.service';
+import { ClienteFilaEntry } from '@/types';
+import { Users, Clock, Hash, ListOrdered } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatBRT } from '@/lib/utils';
+
+const STORAGE_KEY = 'deepdish_fila';
+
+interface QueueState {
+  entry: ClienteFilaEntry;
+  restaurantName: string;
+  restaurantImage?: string;
+  horarioReserva: string;
+}
 
 const Queue: React.FC = () => {
-  const [entry, setEntry] = useState<QueueEntry | null>(null);
-  const [loading, setLoading] = useState(true);
+  const navigate   = useNavigate();
+  const location   = useLocation();
+  const navState   = location.state as QueueState | null;
+
+  const [state, setState]         = useState<QueueState | null>(null);
+  const [loading, setLoading]     = useState(true);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
-  const navigate = useNavigate();
 
+  // Carrega do navigation state ou localStorage
   useEffect(() => {
-    const timer = setTimeout(() => { setEntry(mockUserQueue); setLoading(false); }, 600);
-    return () => clearTimeout(timer);
+    if (navState?.entry) {
+      setState(navState);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(navState));
+      setLoading(false);
+      return;
+    }
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try { setState(JSON.parse(saved)); } catch { /* ignore */ }
+    }
+    setLoading(false);
   }, []);
 
+  // Polling — atualiza posição a cada 30s
+  const refreshPosicao = useCallback(async (current: QueueState) => {
+    const filaId = current.entry.fila?.restaurante_id;
+    const horario = current.entry.fila?.horario_reserva;
+    if (!filaId || !horario) return;
+    try {
+      const updated = await queueService.consultarPosicao({
+        restaurante_id: filaId,
+        horario_reserva: horario,
+      });
+      setState(prev => prev ? { ...prev, entry: updated } : prev);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...current, entry: updated }));
+    } catch {
+      // 404 = saiu da fila (foi promovido ou expirou)
+      setState(null);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!state) return;
+    const interval = setInterval(() => refreshPosicao(state), 30_000);
+    return () => clearInterval(interval);
+  }, [state, refreshPosicao]);
+
   const handleCancel = async () => {
+    if (!state) return;
     setCancelling(true);
-    await new Promise(r => setTimeout(r, 600));
-    toast.success('Saiu da fila.');
-    setCancelling(false);
-    setCancelOpen(false);
-    setEntry(null);
+    try {
+      await queueService.cancelQueue(state.entry.id);
+      toast.success('Você saiu da fila.');
+      setState(null);
+      localStorage.removeItem(STORAGE_KEY);
+      setCancelOpen(false);
+    } catch {
+      toast.error('Erro ao sair da fila. Tente novamente.');
+    } finally {
+      setCancelling(false);
+    }
   };
 
-  if (loading) return <div className="space-y-4"><Skeleton className="h-48 rounded-2xl" /></div>;
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-48 rounded-2xl" />
+      </div>
+    );
+  }
 
-  if (!entry || entry.status === 'cancelled') {
+  if (!state) {
     return (
       <EmptyState
-        icon={<Users className="h-7 w-7" />}
+        icon={<ListOrdered className="h-7 w-7" />}
         title="Você não está em nenhuma fila"
         description="Entre na fila de um restaurante para acompanhar sua posição."
-        action={<Button onClick={() => navigate('/app/restaurants')}>Ver restaurantes</Button>}
+        action={<Button onClick={() => navigate('/app/search')}>Ver restaurantes</Button>}
       />
     );
   }
+
+  const { entry, restaurantName, restaurantImage, horarioReserva } = state;
 
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-fade-in">
       <h1 className="font-display text-2xl font-bold text-foreground">Acompanhar fila</h1>
 
       <div className="rounded-2xl bg-card p-6 shadow-card space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display font-semibold text-foreground text-lg">{entry.restaurantName}</h2>
-          <StatusBadge status={entry.status} />
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          {restaurantImage ? (
+            <img src={restaurantImage} alt="" className="h-12 w-12 rounded-xl object-cover shrink-0" />
+          ) : (
+            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <span className="text-lg font-bold text-primary font-display">
+                {restaurantName?.charAt(0)}
+              </span>
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <h2 className="font-display font-semibold text-foreground truncate">{restaurantName}</h2>
+            {horarioReserva && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {formatBRT(horarioReserva, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+              </p>
+            )}
+          </div>
+          <StatusBadge status="waiting" />
         </div>
 
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { icon: Hash, value: entry.position, label: 'Posição' },
-            { icon: Clock, value: entry.estimatedWaitMinutes, label: 'min restantes' },
-            { icon: Users, value: entry.partySize, label: 'Pessoas' },
+            { icon: Hash,  value: entry.posicao,       label: 'Posição' },
+            { icon: Clock, value: '~30',               label: 'min est.' },
+            { icon: Users, value: entry.qntd_pessoas,  label: 'Pessoas' },
           ].map((stat, i) => (
-            <div
-              key={i}
-              className="rounded-xl bg-secondary/60 p-4 text-center"
-            >
+            <div key={i} className="rounded-xl bg-secondary/60 p-4 text-center">
               <stat.icon className="mx-auto h-5 w-5 text-primary" />
               <p className="mt-2 text-2xl font-bold text-foreground font-display animate-count-up">
                 {stat.value}
@@ -73,13 +151,9 @@ const Queue: React.FC = () => {
           ))}
         </div>
 
-        {entry.status === 'called' && (
-          <div className="relative rounded-xl bg-primary/8 p-5 text-center overflow-hidden">
-            <div className="absolute inset-0 rounded-xl border-2 border-primary/30 animate-pulse-soft" />
-            <p className="relative font-display font-bold text-primary text-lg">Sua mesa está pronta!</p>
-            <p className="relative text-sm text-muted-foreground mt-1">Dirija-se ao restaurante.</p>
-          </div>
-        )}
+        <p className="text-xs text-center text-muted-foreground">
+          Sua posição é atualizada automaticamente a cada 30 segundos.
+        </p>
 
         <Button variant="outline" className="w-full min-h-[44px]" onClick={() => setCancelOpen(true)}>
           Sair da fila

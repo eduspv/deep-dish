@@ -114,6 +114,29 @@ export interface Reserva {
   cliente?: Cliente;
 }
 
+// Entrada na fila conforme retornada pelo backend (ClienteFila + relações)
+export interface ClienteFilaEntry {
+  id: string;
+  fila_id: string;
+  cliente_id: string;
+  qntd_pessoas: number;
+  posicao: number;
+  created_at: string;
+  updated_at: string;
+  fila?: {
+    id: string;
+    restaurante_id: string;
+    horario_reserva: string; // UTC datetime
+    status: string;
+  };
+  cliente?: {
+    id: string;
+    name: string;
+    email: string;
+    telefone?: string;
+  };
+}
+
 export interface QueueEntry {
   id: string;
   userId: string;
