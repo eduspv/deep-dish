@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ClienteMesa;
 use App\Models\Mesa;
+use App\Http\Controllers\ReservaController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -12,14 +14,31 @@ use Illuminate\Validation\Rule;
 class MesaController extends Controller
 {
     // ─── Rota pública: mesas disponíveis de um restaurante ──
+    // Query params opcionais:
+    //   horario      = ISO datetime (ex: 2026-04-13T19:00:00) → filtra por sobreposição de reservas
+    //   capacidade_min = int → filtra por capacidade mínima
     public function disponiveis(Request $request, string $id): JsonResponse
     {
+        $horarioParam = $request->query('horario');
+
         $query = Mesa::where('restaurante_id', $id)
-            ->where('status', 'livre')
+            ->whereNotIn('status', ['bloqueada', 'ocupada'])
             ->orderBy('capacidade', 'asc');
 
         if ($request->has('capacidade_min')) {
             $query->where('capacidade', '>=', (int) $request->query('capacidade_min'));
+        }
+
+        if ($horarioParam) {
+            // Exclui mesas que já possuem qualquer reserva ativa (confirmada ou em_andamento)
+            $reservadasIds = ClienteMesa::whereIn('status', ReservaController::STATUS_ATIVOS)
+                ->pluck('mesa_id')
+                ->unique();
+
+            $query->whereNotIn('id', $reservadasIds);
+        } else {
+            // Sem horário: comportamento legado — só mesas com status livre
+            $query->where('status', 'livre');
         }
 
         return response()->json($query->get());

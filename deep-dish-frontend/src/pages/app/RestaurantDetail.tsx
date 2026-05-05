@@ -9,6 +9,7 @@ import { restaurantsService } from '@/services/restaurants.service';
 import { ApiError } from '@/services/httpClient';
 import { Restaurante, Mesa } from '@/types';
 import { ArrowLeft, MapPin, Clock, Phone, Star, Users } from 'lucide-react';
+import { hojeEmBRT, toISOBRT } from '@/lib/utils';
 
 const PRICE_LABELS: Record<number, string> = { 1: 'R$', 2: 'R$$', 3: 'R$$$', 4: 'R$$$$' };
 
@@ -19,52 +20,83 @@ const RestaurantDetail: React.FC = () => {
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [mesasError, setMesasError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMesas, setLoadingMesas] = useState(false);
   const [partySize, setPartySize] = useState('2');
   const [selectedMesa, setSelectedMesa] = useState<Mesa | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(hojeEmBRT());
+  const [selectedTime, setSelectedTime] = useState<string>('');
 
+  // Carrega dados do restaurante
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
+    setLoading(true);
 
-    const load = async () => {
-      setLoading(true);
-      setMesasError(null);
-      try {
-        const data = await restaurantsService.getRestaurantById(id);
-        if (!cancelled) {
-          setRestaurant(data ?? null);
-          if (data?.reservations_enabled) {
-            try {
-              const mesasData = await restaurantsService.getMesasDisponiveis(id);
-              if (!cancelled) setMesas(mesasData);
-            } catch (err) {
-              if (!cancelled) {
-                const msg = err instanceof ApiError
-                  ? err.message
-                  : 'Não foi possível carregar as mesas disponíveis.';
-                setMesasError(msg);
-              }
-            }
-          }
-        }
-      } catch {
-        if (!cancelled) setRestaurant(null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
+    restaurantsService.getRestaurantById(id)
+      .then(data => { if (!cancelled) setRestaurant(data ?? null); })
+      .catch(() => { if (!cancelled) setRestaurant(null); })
+      .finally(() => { if (!cancelled) setLoading(false); });
 
-    load();
     return () => { cancelled = true; };
   }, [id]);
+
+  // Verifica se o horário informado está dentro do funcionamento do restaurante
+  const horarioForaDoFuncionamento = (() => {
+    if (!selectedTime || !restaurant?.horario_abertura || !restaurant?.horario_fechamento) return false;
+    const toMin = (hhmm: string) => {
+      const [h, m] = hhmm.slice(0, 5).split(':').map(Number);
+      return h * 60 + m;
+    };
+    const sel   = toMin(selectedTime);
+    const abre  = toMin(restaurant.horario_abertura);
+    const fecha = toMin(restaurant.horario_fechamento);
+    return sel < abre || sel >= fecha;
+  })();
+
+  // Verifica se o horário selecionado já passou
+  const horarioNoPassado = (() => {
+    if (!selectedDate || !selectedTime) return false;
+    return new Date(toISOBRT(selectedDate, selectedTime)) <= new Date();
+  })();
+
+  // Recarrega mesas quando data ou hora muda
+  useEffect(() => {
+    if (!id || !restaurant?.reservations_enabled || !selectedDate || !selectedTime) {
+      setMesas([]);
+      return;
+    }
+    if (horarioForaDoFuncionamento || horarioNoPassado) {
+      setMesas([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingMesas(true);
+    setMesasError(null);
+    setSelectedMesa(null);
+
+    const horario = toISOBRT(selectedDate, selectedTime);
+
+    restaurantsService.getMesasDisponiveis(id, undefined, horario)
+      .then(data => { if (!cancelled) setMesas(data); })
+      .catch(err => {
+        if (!cancelled) {
+          setMesasError(err instanceof ApiError ? err.message : 'Erro ao carregar mesas.');
+        }
+      })
+      .finally(() => { if (!cancelled) setLoadingMesas(false); });
+
+    return () => { cancelled = true; };
+  }, [id, restaurant?.reservations_enabled, selectedDate, selectedTime]);
 
   const partySizeNum = Math.max(1, Number(partySize) || 1);
   const mesasFiltradas = mesas.filter(m => m.capacidade >= partySizeNum);
 
+  const horarioReserva = selectedDate && selectedTime ? toISOBRT(selectedDate, selectedTime) : '';
+
   const handleQueue = () => navigate('/app/queue');
 
   const handleReserve = () => {
-    if (!selectedMesa) return;
+    if (!selectedMesa || !horarioReserva) return;
     navigate('/app/confirm', {
       state: {
         restaurantId:    id,
@@ -74,6 +106,7 @@ const RestaurantDetail: React.FC = () => {
         mesaNumero:      selectedMesa.numero,
         mesaCapacidade:  selectedMesa.capacidade,
         partySize:       partySizeNum,
+        horarioReserva,
       },
     });
   };
@@ -141,8 +174,8 @@ const RestaurantDetail: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2 space-y-5">
+      <div className={`grid gap-6 ${restaurant.fila_ativa ? 'md:grid-cols-3' : ''}`}>
+        <div className={`space-y-5 ${restaurant.fila_ativa ? 'md:col-span-2' : ''}`}>
 
           {/* Info */}
           <div className="rounded-2xl bg-card p-5 shadow-card">
@@ -173,15 +206,49 @@ const RestaurantDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* Mesas */}
+          {/* Reservas */}
           {!!restaurant.reservations_enabled && (
             <div className="rounded-2xl bg-card p-5 shadow-card space-y-4">
               <h2 className="font-display text-lg font-semibold text-foreground">
-                Mesas disponíveis
+                Fazer uma reserva
               </h2>
 
-              <div className="flex items-end gap-3">
-                <div className="space-y-1.5">
+              {/* Seletor de data e horário */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Data</Label>
+                  <Input
+                    type="date"
+                    min={hojeEmBRT()}
+                    value={selectedDate}
+                    onChange={e => { setSelectedDate(e.target.value); setSelectedTime(''); }}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Horário</Label>
+                  <Input
+                    type="time"
+                    value={selectedTime}
+                    onChange={e => setSelectedTime(e.target.value)}
+                    className={`mt-1 ${horarioForaDoFuncionamento || horarioNoPassado ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                  />
+                  {horarioNoPassado && (
+                    <p className="mt-1 text-xs text-destructive">
+                      Este horário já passou. Escolha um horário futuro.
+                    </p>
+                  )}
+                  {horarioForaDoFuncionamento && !horarioNoPassado && (
+                    <p className="mt-1 text-xs text-destructive">
+                      Fora do horário de funcionamento ({restaurant.horario_abertura?.slice(0, 5)} – {restaurant.horario_fechamento?.slice(0, 5)}).
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Filtro de pessoas — só aparece após selecionar horário */}
+              {selectedTime && (
+                <div>
                   <Label className="text-xs text-muted-foreground">Quantas pessoas?</Label>
                   <Input
                     type="number"
@@ -192,64 +259,71 @@ const RestaurantDetail: React.FC = () => {
                     className="w-24"
                   />
                 </div>
-              </div>
+              )}
 
-              {mesasError ? (
-                <p className="text-sm text-destructive">{mesasError}</p>
-              ) : mesas.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhuma mesa disponível no momento.</p>
-              ) : mesasFiltradas.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Nenhuma mesa disponível para {partySizeNum} pessoas. Tente um número menor.
-                </p>
-              ) : (
-                <>
-                  <p className="text-xs text-muted-foreground">Selecione uma mesa para reservar:</p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {mesasFiltradas.map(mesa => (
-                      <button
-                        key={mesa.id}
-                        onClick={() => setSelectedMesa(mesa)}
-                        className={`rounded-xl border p-3 text-left transition-all duration-200 min-h-[56px] ${
-                          selectedMesa?.id === mesa.id
-                            ? 'bg-primary/8 border-primary ring-2 ring-primary/20'
-                            : 'bg-card border-border hover:border-primary/40 hover:bg-primary/[0.03]'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-foreground">Mesa {mesa.numero}</span>
-                          <StatusBadge status={mesa.status} />
-                        </div>
-                        <span className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                          <Users className="h-3.5 w-3.5" />
-                          {mesa.capacidade} lugares
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </>
+              {/* Lista de mesas */}
+              {selectedTime && (
+                loadingMesas ? (
+                  <p className="text-sm text-muted-foreground">Buscando mesas disponíveis...</p>
+                ) : mesasError ? (
+                  <p className="text-sm text-destructive">{mesasError}</p>
+                ) : mesas.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma mesa disponível neste horário.
+                  </p>
+                ) : mesasFiltradas.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma mesa disponível para {partySizeNum} pessoas. Tente um número menor.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-xs text-muted-foreground">Selecione uma mesa para reservar:</p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {mesasFiltradas.map(mesa => (
+                        <button
+                          key={mesa.id}
+                          onClick={() => setSelectedMesa(mesa)}
+                          className={`rounded-xl border p-3 text-left transition-all duration-200 min-h-[56px] ${
+                            selectedMesa?.id === mesa.id
+                              ? 'bg-primary/10 border-primary ring-2 ring-primary/20'
+                              : 'bg-card border-border hover:border-primary/40 hover:bg-primary/[0.03]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-foreground">Mesa {mesa.numero}</span>
+                            <StatusBadge status={mesa.status} />
+                          </div>
+                          <span className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                            <Users className="h-3.5 w-3.5" />
+                            {mesa.capacidade} lugares
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )
               )}
 
               <div className="pt-3 border-t border-border/60">
                 <Button
                   onClick={handleReserve}
-                  disabled={!selectedMesa}
+                  disabled={!selectedMesa || !horarioReserva || horarioForaDoFuncionamento || horarioNoPassado}
                   size="lg"
                   className="w-full min-h-[48px]"
                 >
                   {selectedMesa
-                    ? `Reservar Mesa ${selectedMesa.numero}`
-                    : 'Selecione uma mesa'}
+                    ? `Reservar Mesa ${selectedMesa.numero} • ${new Date(`${selectedDate}T${selectedTime}:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às ${selectedTime}`
+                    : 'Selecione data, horário e mesa'}
                 </Button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-4">
-          <div className="rounded-2xl bg-card p-5 shadow-card space-y-4">
-            {!!restaurant.fila_ativa && (
+        {/* Sidebar — só exibe quando a fila está ativa */}
+        {!!restaurant.fila_ativa && (
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-card p-5 shadow-card space-y-4">
               <div className="rounded-xl border border-border/60 p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">Fila ativa</span>
@@ -263,15 +337,9 @@ const RestaurantDetail: React.FC = () => {
                   Entrar na fila
                 </Button>
               </div>
-            )}
-
-            {!restaurant.fila_ativa && !restaurant.reservations_enabled && (
-              <p className="text-sm text-muted-foreground text-center py-3">
-                Este restaurante não possui fila ou reservas ativas no momento.
-              </p>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -49,10 +49,10 @@ Route::middleware(['auth:api', \App\Http\Middleware\VerifyJwtTokenVersion::class
 
 // Reservas — cliente
 Route::middleware(['auth:api', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
-    Route::post('/reservas',        [App\Http\Controllers\ReservaController::class, 'store']);
-    Route::get('/reservas',         [App\Http\Controllers\ReservaController::class, 'index']);
-    Route::get('/reservas/{id}',    [App\Http\Controllers\ReservaController::class, 'show']);
-    Route::delete('/reservas/{id}', [App\Http\Controllers\ReservaController::class, 'destroy']);
+    Route::post('/reservas',                  [App\Http\Controllers\ReservaController::class, 'store']);
+    Route::get('/reservas',                   [App\Http\Controllers\ReservaController::class, 'index']);
+    Route::get('/reservas/{id}',              [App\Http\Controllers\ReservaController::class, 'show']);
+    Route::delete('/reservas/{id}',           [App\Http\Controllers\ReservaController::class, 'destroy']);
 });
 
 Route::prefix('restaurante')->middleware(['auth:restaurante', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
@@ -63,9 +63,10 @@ Route::prefix('restaurante')->middleware(['auth:restaurante', \App\Http\Middlewa
     Route::post('/refresh', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'refresh']);
 
     // Reservas — restaurante
-    Route::get('/reservas', [App\Http\Controllers\ReservaController::class, 'indexRestaurante']);
+    Route::get('/reservas',                [App\Http\Controllers\ReservaController::class, 'indexRestaurante']);
     Route::patch('/reservas/{id}/checkin', [App\Http\Controllers\ReservaController::class, 'checkin']);
     Route::patch('/reservas/{id}/liberar', [App\Http\Controllers\ReservaController::class, 'liberar']);
+    Route::delete('/reservas/{id}',        [App\Http\Controllers\ReservaController::class, 'forceDestroyRestaurante']);
 
     // Mesas — restaurante
     Route::get('/mesas',         [App\Http\Controllers\MesaController::class, 'index']);

@@ -80,6 +80,15 @@ export interface Reservation {
   notes?: string;
 }
 
+// Resposta paginada do Laravel (paginate())
+export interface Paginated<T> {
+  data: T[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
 // Status real vindo do backend (clientemesa.status)
 export type ReservaStatus = 'confirmada' | 'em_andamento' | 'cancelada' | 'liberada' | 'expirada';
 
@@ -90,6 +99,7 @@ export interface Reserva {
   mesa_id: number | string;
   horario_reserva: string; // ISO datetime
   horario_checkin?: string | null; // ISO datetime — preenchido no check-in
+  party_size?: number;
   status: ReservaStatus;
   created_at?: string;
   updated_at?: string;
