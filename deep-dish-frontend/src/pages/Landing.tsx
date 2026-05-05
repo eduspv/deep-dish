@@ -254,7 +254,7 @@ const Landing: React.FC = () => {
                 transition={{ duration: 0.45, delay: i * 0.08 }}
               >
                 <span
-                  className="font-display font-extrabold text-border/60 shrink-0 tabular-nums select-none"
+                  className="font-display font-extrabold text-foreground/15 dark:text-border/60 shrink-0 tabular-nums select-none"
                   style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', lineHeight: 1, width: '4rem', textAlign: 'right' }}
                 >
                   {step.num}
@@ -413,17 +413,17 @@ const Landing: React.FC = () => {
             >
               <GlowCard
                 customSize
-                glowColor="orange"
+                glowColor="red"
                 className="w-full bg-primary p-8 md:p-10"
               >
                 <div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 text-white">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-foreground/10 text-foreground dark:bg-white/15 dark:text-white">
                     <Clock className="h-6 w-6" />
                   </div>
-                  <h3 className="mt-6 font-display text-2xl font-bold text-white leading-snug">
+                  <h3 className="mt-6 font-display text-2xl font-bold text-foreground dark:text-white leading-snug">
                     Fila em tempo real
                   </h3>
-                  <p className="mt-3 text-white/70 leading-relaxed" style={{ maxWidth: '40ch' }}>
+                  <p className="mt-3 text-muted-foreground dark:text-white/70 leading-relaxed" style={{ maxWidth: '40ch' }}>
                     Acompanhe sua posição ao vivo. Nada de ligar pro restaurante —
                     você espera de onde quiser e chega na hora certa.
                   </p>
@@ -438,19 +438,19 @@ const Landing: React.FC = () => {
                   icon: <Users className="h-5 w-5" />,
                   title: 'Sem aglomeração',
                   desc: 'Espere de onde quiser, chegue na hora certa.',
-                  glow: 'blue' as const,
+                  glow: 'red' as const,
                 },
                 {
                   icon: <CalendarCheck className="h-5 w-5" />,
                   title: 'Reservas fáceis',
                   desc: 'Escolha mesa, horário e número de pessoas em segundos.',
-                  glow: 'purple' as const,
+                  glow: 'red' as const,
                 },
                 {
                   icon: <Store className="h-5 w-5" />,
                   title: 'Para restaurantes',
                   desc: 'Gerencie filas, mesas e equipe em um único painel.',
-                  glow: 'green' as const,
+                  glow: 'red' as const,
                 },
               ].map((b, i) => (
                 <motion.div
@@ -483,11 +483,23 @@ const Landing: React.FC = () => {
       </section>
 
       {/* ── Para restaurantes ─────────────────────────── */}
-      <section className="relative py-24 bg-foreground overflow-hidden">
+      <section className="relative py-24 bg-background overflow-hidden border-t border-border/40">
         {/* Sparkles background */}
-        <div className="absolute inset-0 w-full h-full">
+        <div className="absolute inset-0 w-full h-full dark:hidden">
           <SparklesCore
-            id="cta-sparkles"
+            id="cta-sparkles-light"
+            background="transparent"
+            minSize={0.4}
+            maxSize={1.4}
+            particleDensity={80}
+            className="w-full h-full"
+            particleColor="#000000"
+            speed={1}
+          />
+        </div>
+        <div className="absolute inset-0 w-full h-full hidden dark:block">
+          <SparklesCore
+            id="cta-sparkles-dark"
             background="transparent"
             minSize={0.4}
             maxSize={1.4}
@@ -498,7 +510,7 @@ const Landing: React.FC = () => {
           />
         </div>
         {/* Radial mask for soft edges */}
-        <div className="absolute inset-0 w-full h-full bg-foreground [mask-image:radial-gradient(ellipse_80%_60%_at_50%_50%,transparent_30%,white)]" />
+        <div className="absolute inset-0 w-full h-full bg-background [mask-image:radial-gradient(ellipse_80%_60%_at_50%_50%,transparent_30%,white)]" />
 
         <div className="relative z-10 container mx-auto px-4">
           <div className="max-w-2xl">
@@ -512,7 +524,7 @@ const Landing: React.FC = () => {
               Para restaurantes
             </motion.p>
             <motion.h2
-              className="font-display font-extrabold text-background leading-[0.92] tracking-tight"
+              className="font-display font-extrabold text-foreground leading-[0.92] tracking-tight"
               style={{ fontSize: 'clamp(2.25rem, 6vw, 4.5rem)' }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -522,7 +534,7 @@ const Landing: React.FC = () => {
               Chega de lista<br />de espera no papel.
             </motion.h2>
             <motion.p
-              className="mt-6 text-background/55 leading-relaxed"
+              className="mt-6 text-muted-foreground leading-relaxed"
               style={{ maxWidth: '55ch' }}
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -548,7 +560,7 @@ const Landing: React.FC = () => {
                 <Button
                   size="lg"
                   variant="ghost"
-                  className="text-base px-6 min-h-[48px] text-background hover:text-background hover:bg-background/10 focus-visible:ring-background/40"
+                  className="text-base px-6 min-h-[48px] text-foreground hover:bg-accent/50 focus-visible:ring-foreground/40"
                 >
                   Já tenho conta
                   <ChevronRight className="ml-1 h-4 w-4" />
