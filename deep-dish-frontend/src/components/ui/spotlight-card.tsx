@@ -3,7 +3,7 @@ import React, { useEffect, useRef, ReactNode } from 'react';
 interface GlowCardProps {
   children: ReactNode;
   className?: string;
-  glowColor?: 'red' | 'yellow' | 'yellow' | 'red' | 'orange';
+  glowColor?: 'blue' | 'purple' | 'green' | 'red' | 'orange' | 'brand';
   size?: 'sm' | 'md' | 'lg';
   width?: string | number;
   height?: string | number;
@@ -11,11 +11,12 @@ interface GlowCardProps {
 }
 
 const glowColorMap = {
-  blue: { base: 220, spread: 200 },
-  purple: { base: 280, spread: 300 },
-  green: { base: 120, spread: 200 },
-  red: { base: 0, spread: 200 },
-  orange: { base: 30, spread: 200 },
+  blue: { hue1: 190, hue2: 230 },
+  purple: { hue1: 260, hue2: 290 },
+  green: { hue1: 110, hue2: 150 },
+  red: { hue1: 50, hue2: 0 },    // Yellow (inside) to Red (outside)
+  orange: { hue1: 45, hue2: 15 }, // Yellow (inside) to Orange (outside)
+  brand: { hue1: 0, hue2: 45 },  // Red (inside) to Yellow (outside)
 };
 
 const sizeMap = {
@@ -51,7 +52,7 @@ const GlowCard: React.FC<GlowCardProps> = ({
     return () => document.removeEventListener('pointermove', syncPointer);
   }, []);
 
-  const { base, spread } = glowColorMap[glowColor];
+  const { hue1, hue2 } = glowColorMap[glowColor];
 
   const getSizeClasses = () => {
     if (customSize) return '';
@@ -60,8 +61,8 @@ const GlowCard: React.FC<GlowCardProps> = ({
 
   const getInlineStyles = (): React.CSSProperties & Record<string, string | number> => {
     const baseStyles: React.CSSProperties & Record<string, string | number> = {
-      '--base': base,
-      '--spread': spread,
+      '--hue1': hue1,
+      '--hue2': hue2,
       '--radius': '14',
       '--border': '3',
       '--backdrop': 'hsl(0 0% 60% / 0.12)',
@@ -70,12 +71,13 @@ const GlowCard: React.FC<GlowCardProps> = ({
       '--outer': '1',
       '--border-size': 'calc(var(--border, 2) * 1px)',
       '--spotlight-size': 'calc(var(--size, 150) * 1px)',
-      '--hue': 'calc(var(--base) + (var(--xp, 0) * var(--spread, 0)))',
       backgroundImage: `radial-gradient(
         var(--spotlight-size) var(--spotlight-size) at
         calc(var(--x, 0) * 1px)
         calc(var(--y, 0) * 1px),
-        hsl(var(--hue, 210) calc(var(--saturation, 100) * 1%) calc(var(--lightness, 70) * 1%) / var(--bg-spot-opacity, 0.1)), transparent
+        hsl(var(--hue1, 210) 100% 65% / var(--bg-spot-opacity, 0.15)), 
+        hsl(var(--hue2, 210) 100% 65% / var(--bg-spot-opacity, 0.05)) 50%,
+        transparent 100%
       )`,
       backgroundColor: 'var(--backdrop, transparent)',
       backgroundSize: 'calc(100% + (2 * var(--border-size))) calc(100% + (2 * var(--border-size)))',
@@ -119,7 +121,9 @@ const GlowCard: React.FC<GlowCardProps> = ({
         calc(var(--spotlight-size) * 0.75) calc(var(--spotlight-size) * 0.75) at
         calc(var(--x, 0) * 1px)
         calc(var(--y, 0) * 1px),
-        hsl(var(--hue, 210) calc(var(--saturation, 100) * 1%) calc(var(--lightness, 50) * 1%) / var(--border-spot-opacity, 1)), transparent 100%
+        hsl(var(--hue1, 210) 100% 60% / var(--border-spot-opacity, 1)), 
+        hsl(var(--hue2, 210) 100% 50% / var(--border-spot-opacity, 1)) 40%,
+        transparent 100%
       );
       filter: brightness(2);
     }
