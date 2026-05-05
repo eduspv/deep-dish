@@ -83,6 +83,14 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
+        "marquee": {
+          from: { transform: "translateX(0%)" },
+          to: { transform: "translateX(-50%)" },
+        },
+        "marquee-reverse": {
+          from: { transform: "translateX(-50%)" },
+          to: { transform: "translateX(0%)" },
+        },
         "accordion-down": {
           from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
@@ -145,6 +153,8 @@ export default {
         "pulse-ring": "pulse-ring 1.5s cubic-bezier(0, 0, 0.2, 1) infinite",
         "shimmer": "shimmer 2s linear infinite",
         "count-up": "count-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "marquee": "marquee 35s linear infinite",
+        "marquee-reverse": "marquee-reverse 35s linear infinite",
       },
       transitionTimingFunction: {
         "out-expo": "cubic-bezier(0.16, 1, 0.3, 1)",
