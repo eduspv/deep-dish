@@ -12,12 +12,14 @@ import { Restaurante, Mesa } from '@/types';
 import { ArrowLeft, MapPin, Clock, Phone, Star, Users, ListOrdered } from 'lucide-react';
 import { hojeEmBRT, toISOBRT } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const PRICE_LABELS: Record<number, string> = { 1: 'R$', 2: 'R$$', 3: 'R$$$', 4: 'R$$$$' };
 
 const RestaurantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [restaurant, setRestaurant] = useState<Restaurante | null>(null);
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [mesasError, setMesasError] = useState<string | null>(null);
@@ -29,13 +31,14 @@ const RestaurantDetail: React.FC = () => {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [joiningQueue, setJoiningQueue] = useState(false);
 
-  // Verifica se o cliente já está na fila deste restaurante (pelo localStorage)
+  // Verifica se o cliente logado já está na fila deste restaurante (pelo localStorage)
   const jaEmFilaNesteRestaurante = (() => {
     try {
       const saved = localStorage.getItem('deepdish_fila');
       if (!saved) return false;
       const state = JSON.parse(saved);
-      return state?.entry?.fila?.restaurante_id === id;
+      return state?.entry?.fila?.restaurante_id === id
+        && state?.clienteId === user?.id;
     } catch { return false; }
   })();
 
@@ -117,10 +120,11 @@ const RestaurantDetail: React.FC = () => {
       });
       navigate('/app/queue', {
         state: {
-          entry:          result.data,
-          restaurantName: restaurant?.name,
+          entry:           result.data,
+          restaurantName:  restaurant?.name,
           restaurantImage: restaurant?.imagem_url,
           horarioReserva,
+          clienteId:       user?.id,
         },
       });
     } catch (err) {
@@ -302,45 +306,15 @@ const RestaurantDetail: React.FC = () => {
                   <p className="text-sm text-muted-foreground">Buscando mesas disponíveis...</p>
                 ) : mesasError ? (
                   <p className="text-sm text-destructive">{mesasError}</p>
-                ) : mesas.length === 0 ? (
-                  <div className="space-y-3">
+                ) : mesas.length === 0 && !horarioNoPassado && !horarioForaDoFuncionamento ? (
+                  <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">
                       Nenhuma mesa disponível neste horário.
                     </p>
                     {!!restaurant.fila_ativa && (
-                      <div className="rounded-xl border border-border/60 bg-secondary/30 p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <ListOrdered className="h-4 w-4 text-primary" />
-                            <span className="text-sm font-medium text-foreground">Fila de espera</span>
-                          </div>
-                          <StatusBadge status="waiting" />
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {restaurant.tamanho_fila_atual ?? 0} {restaurant.tamanho_fila_atual === 1 ? 'pessoa' : 'pessoas'} na fila
-                          {restaurant.averageWaitTime ? ` · ~${restaurant.averageWaitTime} min` : ''}
-                        </p>
-                        {jaEmFilaNesteRestaurante ? (
-                          <p className="text-xs text-primary font-medium">
-                            Você já está na fila deste restaurante.{' '}
-                            <button
-                              className="underline"
-                              onClick={() => navigate('/app/queue')}
-                            >
-                              Ver posição
-                            </button>
-                          </p>
-                        ) : (
-                          <Button
-                            onClick={handleQueue}
-                            disabled={joiningQueue}
-                            className="w-full min-h-[40px]"
-                            size="sm"
-                          >
-                            {joiningQueue ? 'Entrando na fila...' : 'Entrar na fila para este horário'}
-                          </Button>
-                        )}
-                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Use o card de fila de espera ao lado para garantir seu lugar.
+                      </p>
                     )}
                   </div>
                 ) : mesasFiltradas.length === 0 ? (
@@ -412,19 +386,27 @@ const RestaurantDetail: React.FC = () => {
                     Ver posição
                   </button>
                 </p>
-              ) : horarioReserva ? (
+              ) : !horarioReserva ? (
+                <p className="text-xs text-muted-foreground italic">
+                  Selecione data e horário para entrar na fila.
+                </p>
+              ) : horarioNoPassado || horarioForaDoFuncionamento ? (
+                <p className="text-xs text-muted-foreground italic">
+                  Selecione um horário válido para entrar na fila.
+                </p>
+              ) : mesas.length > 0 && !loadingMesas ? (
+                <p className="text-xs text-muted-foreground italic">
+                  Há mesas disponíveis — faça uma reserva acima.
+                </p>
+              ) : (
                 <Button
                   onClick={handleQueue}
-                  disabled={joiningQueue}
+                  disabled={joiningQueue || loadingMesas}
                   className="w-full min-h-[40px]"
                   size="sm"
                 >
                   {joiningQueue ? 'Entrando...' : 'Entrar na fila'}
                 </Button>
-              ) : (
-                <p className="text-xs text-muted-foreground italic">
-                  Selecione data e horário para entrar na fila.
-                </p>
               )}
             </div>
           </div>
