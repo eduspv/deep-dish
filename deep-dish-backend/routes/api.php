@@ -68,6 +68,11 @@ Route::prefix('restaurante')->middleware(['auth:restaurante', \App\Http\Middlewa
     Route::patch('/reservas/{id}/liberar', [App\Http\Controllers\ReservaController::class, 'liberar']);
     Route::delete('/reservas/{id}',        [App\Http\Controllers\ReservaController::class, 'forceDestroyRestaurante']);
 
+    // Fila — restaurante
+    Route::get('/fila',                [App\Http\Controllers\FilaController::class, 'indexRestaurante']);
+    Route::delete('/fila/{id}',        [App\Http\Controllers\FilaController::class, 'removerRestaurante'])
+        ->where('id', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+
     // Mesas — restaurante
     Route::get('/mesas',         [App\Http\Controllers\MesaController::class, 'index']);
     Route::post('/mesas',        [App\Http\Controllers\MesaController::class, 'store']);

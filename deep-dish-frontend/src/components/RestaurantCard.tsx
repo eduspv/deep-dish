@@ -1,7 +1,6 @@
 import { Restaurante } from '@/types';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Users, Star } from 'lucide-react';
-import StatusBadge from './StatusBadge';
 
 const PRICE_LABELS: Record<number, string> = { 1: 'R$', 2: 'R$$', 3: 'R$$$', 4: 'R$$$$' };
 
@@ -38,16 +37,24 @@ const RestaurantCard = ({ restaurant }: { restaurant: Restaurante }) => {
           <div className="absolute top-3 right-3 flex gap-1.5">
             {open !== null && (
               <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold backdrop-blur-sm ${
-                open
-                  ? 'bg-emerald-500/90 text-white'
-                  : 'bg-red-500/90 text-white'
+                open ? 'bg-emerald-500/90 text-white' : 'bg-red-500/90 text-white'
               }`}>
                 <span className={`h-1.5 w-1.5 rounded-full ${open ? 'bg-white animate-pulse-soft' : 'bg-white/60'}`} />
                 {open ? 'Aberto' : 'Fechado'}
               </span>
             )}
-            {!!restaurant.fila_ativa && <StatusBadge status="waiting" />}
-            {!!restaurant.reservations_enabled && <StatusBadge status="available" />}
+            {!!restaurant.fila_ativa && (
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold backdrop-blur-sm bg-amber-500/90 text-white">
+                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse-soft" />
+                Fila ativa
+              </span>
+            )}
+            {!!restaurant.reservations_enabled && !restaurant.fila_ativa && (
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold backdrop-blur-sm bg-blue-500/90 text-white">
+                <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                Reservas
+              </span>
+            )}
           </div>
         </div>
         <div className="p-4">

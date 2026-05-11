@@ -15,6 +15,18 @@ class FilaService
     public function enfileirar(string $clienteId, string $restauranteId, string $horarioReserva, int $qntdPessoas): ClienteFila
     {
         return DB::transaction(function () use ($clienteId, $restauranteId, $horarioReserva, $qntdPessoas) {
+            // Impede entrada dupla na fila do mesmo restaurante
+            $jaEmFila = ClienteFila::where('cliente_id', $clienteId)
+                ->whereHas('fila', fn ($q) => $q
+                    ->where('restaurante_id', $restauranteId)
+                    ->where('status', Fila::STATUS_ABERTA)
+                )
+                ->exists();
+
+            if ($jaEmFila) {
+                throw new \InvalidArgumentException('Você já está na fila deste restaurante.');
+            }
+
             $horario = Carbon::parse($horarioReserva);
 
             $fila = Fila::query()
@@ -127,20 +139,53 @@ class FilaService
             ->first();
     }
 
+    /**
+     * Promove o próximo da fila para uma mesa que acabou de ser liberada.
+     * Busca a entrada mais antiga entre todas as filas abertas do restaurante.
+     */
+    public function promoverProximoParaMesa(string $restauranteId, Mesa $mesa): ?ClienteMesa
+    {
+        return DB::transaction(function () use ($restauranteId, $mesa) {
+            $proximo = ClienteFila::whereHas('fila', fn ($q) => $q
+                    ->where('restaurante_id', $restauranteId)
+                    ->where('status', Fila::STATUS_ABERTA)
+                )
+                ->orderBy('created_at')
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $proximo || $mesa->capacidade < $proximo->qntd_pessoas) {
+                return null;
+            }
+
+            $clienteMesa = ClienteMesa::create([
+                'cliente_id'      => $proximo->cliente_id,
+                'mesa_id'         => $mesa->id,
+                'horario_reserva' => now()->utc(),
+                'party_size'      => $proximo->qntd_pessoas,
+                'status'          => 'confirmada',
+            ]);
+
+            $fila = $proximo->fila;
+            $proximo->delete();
+            $this->encerrarFilaSeVazia($fila);
+
+            return $clienteMesa;
+        });
+    }
+
     private function buscarMesaDisponivel(string $restauranteId, Carbon $horarioReserva, int $qntdPessoas): ?Mesa
     {
         return Mesa::query()
             ->where('restaurante_id', $restauranteId)
             ->where('capacidade', '>=', $qntdPessoas)
-            ->where(function ($q) {
-                $q->where('status', 'disponivel')
-                    ->orWhere('status', 'disponível');
-            })
+            ->where('status', 'livre')
             ->whereDoesntHave('clienteMesas', function ($q) use ($horarioReserva) {
                 $q->where('horario_reserva', $horarioReserva)
-                    ->whereIn('status', ['pendente', 'ativo']);
+                    ->whereIn('status', ['confirmada', 'em_andamento']);
             })
-            ->orderBy('id')
+            ->orderBy('capacidade')
             ->first();
     }
 

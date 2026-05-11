@@ -1,72 +1,119 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/StatusBadge';
+import EmptyState from '@/components/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
-import { mockQueueEntries } from '@/mocks/queue';
-import { QueueEntry } from '@/types';
+import { queueService } from '@/services/queue.service';
+import { ClienteFilaEntry } from '@/types';
+import { ListOrdered, Users, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatBRT } from '@/lib/utils';
 
 const QueueManagement: React.FC = () => {
-  const [entries, setEntries] = useState<QueueEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [entries, setEntries]     = useState<ClienteFilaEntry[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => { setEntries(mockQueueEntries); setLoading(false); }, 400);
-    return () => clearTimeout(timer);
+  const fetchQueue = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const data = await queueService.getRestaurantQueue();
+      setEntries(data);
+    } catch {
+      if (!silent) toast.error('Erro ao carregar fila.');
+    } finally {
+      if (!silent) setLoading(false);
+    }
   }, []);
 
-  const updateStatus = (id: string, status: QueueEntry['status'], msg: string) => {
-    setEntries(prev => prev.map(e => e.id === id ? { ...e, status } : e));
-    toast.success(msg);
+  useEffect(() => { fetchQueue(); }, [fetchQueue]);
+
+  // Polling a cada 30s
+  useEffect(() => {
+    const interval = setInterval(() => fetchQueue(true), 30_000);
+    return () => clearInterval(interval);
+  }, [fetchQueue]);
+
+  const handleRemover = async (id: string) => {
+    setRemovingId(id);
+    try {
+      await queueService.removeFromQueue(id);
+      setEntries(prev => prev.filter(e => e.id !== id));
+      toast.success('Removido da fila.');
+    } catch {
+      toast.error('Erro ao remover da fila.');
+    } finally {
+      setRemovingId(null);
+    }
   };
 
   if (loading) return (
     <div className="space-y-4">
       <Skeleton className="h-8 w-48" />
-      {[1,2,3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}
+      {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}
     </div>
   );
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="font-display text-2xl font-bold text-foreground">Fila</h1>
-      <div className="space-y-2.5 animate-stagger">
-        {entries.map(e => (
-          <div key={e.id} className="rounded-2xl bg-card p-4 shadow-card flex flex-col sm:flex-row sm:items-center gap-3 transition-all duration-200 hover:shadow-card-hover">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-foreground">{e.userName}</span>
-                <StatusBadge status={e.status} />
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                {e.partySize} pessoas · Posição #{e.position} · {e.userPhone}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {e.status === 'waiting' && (
-                <>
-                  <Button size="sm" className="min-h-[36px]" onClick={() => updateStatus(e.id, 'called', `${e.userName} chamado!`)}>
-                    Mesa pronta
-                  </Button>
-                  <Button size="sm" variant="outline" className="min-h-[36px]" onClick={() => updateStatus(e.id, 'cancelled', 'Removido da fila.')}>
-                    Remover
-                  </Button>
-                </>
-              )}
-              {e.status === 'called' && (
-                <>
-                  <Button size="sm" className="min-h-[36px]" onClick={() => updateStatus(e.id, 'seated', `${e.userName} sentado!`)}>
-                    Sentou
-                  </Button>
-                  <Button size="sm" variant="outline" className="min-h-[36px]" onClick={() => updateStatus(e.id, 'no_show', 'Marcado como não compareceu.')}>
-                    No show
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        ))}
+      <div className="flex items-center justify-between">
+        <h1 className="font-display text-2xl font-bold text-foreground">Fila de espera</h1>
+        <span className="text-sm text-muted-foreground">{entries.length} {entries.length === 1 ? 'pessoa' : 'pessoas'}</span>
       </div>
+
+      {entries.length === 0 ? (
+        <EmptyState
+          icon={<ListOrdered className="h-7 w-7" />}
+          title="Fila vazia"
+          description="Nenhum cliente na fila no momento."
+        />
+      ) : (
+        <div className="space-y-2.5 animate-stagger">
+          {entries.map((e, idx) => (
+            <div
+              key={e.id}
+              className="rounded-2xl bg-card p-4 shadow-card flex flex-col sm:flex-row sm:items-center gap-3 transition-all duration-200 hover:shadow-card-hover"
+            >
+              <div className="flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 shrink-0">
+                <span className="text-sm font-bold text-primary">#{idx + 1}</span>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-foreground">
+                    {e.cliente?.name ?? `Cliente #${e.id.slice(-4)}`}
+                  </span>
+                  <StatusBadge status="waiting" />
+                </div>
+                <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3.5 w-3.5" />
+                    {e.qntd_pessoas} {e.qntd_pessoas === 1 ? 'pessoa' : 'pessoas'}
+                  </span>
+                  {e.fila?.horario_reserva && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      {formatBRT(e.fila.horario_reserva, { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="min-h-[36px] text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                  onClick={() => handleRemover(e.id)}
+                  disabled={removingId === e.id}
+                >
+                  {removingId === e.id ? 'Removendo...' : 'Remover'}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
