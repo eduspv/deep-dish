@@ -286,10 +286,19 @@ const AppHome: React.FC = () => {
       setFilaState(novo);
       localStorage.setItem(FILA_KEY, JSON.stringify(novo));
     } catch {
-      // 404 = saiu da fila (promovido ou expirado)
+      // 404 = saiu da fila — verifica se foi promovido ou removido pelo restaurante
       localStorage.removeItem(FILA_KEY);
       setFilaState(null);
-      // fetchActive rodará no mesmo tick e detectará a nova reserva confirmada
+      try {
+        const reservas = await reservationsService.listUserReservations({ status_group: 'active', per_page: 5 });
+        const foiPromovido = reservas.data.some(r => r.status === 'confirmada');
+        if (!foiPromovido) {
+          toast.info('Sua posição na fila foi encerrada', {
+            description: 'O restaurante reorganizou os atendimentos. Fique à vontade para entrar novamente.',
+            duration: 10000,
+          });
+        }
+      } catch { /* ignore */ }
     }
   }, []);
 

@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { queueService } from '@/services/queue.service';
 import { reservationsService } from '@/services/reservations.service';
 import { ClienteFilaEntry, Reserva } from '@/types';
-import { Users, Clock, Hash, ListOrdered, Home, PartyPopper, CalendarCheck } from 'lucide-react';
+import { Users, Clock, Hash, ListOrdered, Home, PartyPopper, CalendarCheck, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatBRT } from '@/lib/utils';
 
@@ -38,6 +38,7 @@ const Queue: React.FC = () => {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [promoted, setPromoted]     = useState<PromotedInfo | null>(null);
+  const [removido, setRemovido]     = useState(false);
 
   // Carrega do navigation state ou localStorage
   useEffect(() => {
@@ -91,6 +92,7 @@ const Queue: React.FC = () => {
       if (!promovido) {
         setState(null);
         localStorage.removeItem(STORAGE_KEY);
+        setRemovido(true);
       }
     }
   }, [verificarPromocao]);
@@ -184,6 +186,47 @@ const Queue: React.FC = () => {
           <Button className="w-full min-h-[44px]" onClick={() => navigate('/app')}>
             Ver minhas reservas
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Tela: removido da fila pelo restaurante ──────────────────────────────
+  if (removido) {
+    return (
+      <div className="max-w-lg mx-auto space-y-6 animate-fade-in">
+        <Link
+          to="/app"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[36px]"
+        >
+          <Home className="h-4 w-4" />
+          Início
+        </Link>
+
+        <div className="rounded-2xl bg-card p-6 shadow-card space-y-5 border border-border">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center shrink-0">
+              <Info className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <h2 className="font-display text-lg font-semibold text-foreground">
+              Sua posição na fila foi encerrada
+            </h2>
+          </div>
+
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            O restaurante precisou reorganizar os atendimentos e encerrou sua posição na fila.
+            Isso pode acontecer por inatividade prolongada ou ajustes internos.
+            Fique à vontade para entrar na fila novamente quando quiser.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+            <Button className="flex-1 min-h-[44px]" onClick={() => navigate(-1)}>
+              Voltar ao restaurante
+            </Button>
+            <Button variant="outline" className="flex-1 min-h-[44px]" onClick={() => navigate('/app')}>
+              Ir para o início
+            </Button>
+          </div>
         </div>
       </div>
     );
