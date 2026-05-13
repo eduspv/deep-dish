@@ -40,6 +40,15 @@ export const restaurantsService = {
     }
   },
 
+  // ─── Busca equipe pública de um restaurante ─────────────
+  async getStaff(restaurantId: string): Promise<{ name: string; cargo: string; horario?: string | null }[]> {
+    try {
+      return await httpClient.get(`/restaurantes/${restaurantId}/funcionarios`);
+    } catch {
+      return [];
+    }
+  },
+
   // ─── Busca mesas disponíveis para um horário específico ──
   async getMesasDisponiveis(restaurantId: string, capacidadeMin?: number, horario?: string): Promise<Mesa[]> {
     const params = new URLSearchParams();

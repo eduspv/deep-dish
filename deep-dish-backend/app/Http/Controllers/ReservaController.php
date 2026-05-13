@@ -31,16 +31,67 @@ class ReservaController extends Controller
     public const STATUS_ATIVOS = ['confirmada', 'em_andamento'];
 
     /**
-     * Expira reservas com status 'confirmada' cujo horário + tolerância já passou.
-     * Libera a mesa associada. Retorna a quantidade de reservas expiradas.
+     * Minutos de folga após o fechamento do restaurante antes de expirar sessões.
+     * Dá tempo para o restaurante liberar as mesas manualmente.
+     */
+    private const FOLGA_POS_FECHAMENTO_MINUTOS = 60;
+
+    /**
+     * Fallback quando o restaurante não tem horário de fechamento configurado.
+     */
+    private const FALLBACK_SESSAO_MAXIMA_HORAS = 12;
+
+    /**
+     * Expira reservas vencidas:
+     *  - 'confirmada' cujo horário + tolerância de no-show já passou.
+     *  - 'em_andamento' após o horário de fechamento do restaurante + folga.
+     *    Fallback de 12 h quando não há horário configurado.
+     * Libera a mesa associada em ambos os casos. Retorna o total expirado.
      */
     public static function expirarReservasVencidas(): int
     {
-        $limite = Carbon::now()->subMinutes(self::TOLERANCIA_NO_SHOW_MINUTOS);
+        $limiteNoShow = Carbon::now()->subMinutes(self::TOLERANCIA_NO_SHOW_MINUTOS);
 
-        $vencidas = ClienteMesa::where('status', 'confirmada')
-            ->where('horario_reserva', '<', $limite)
+        // Reservas confirmadas sem check-in dentro da tolerância
+        $noShow = ClienteMesa::where('status', 'confirmada')
+            ->where('horario_reserva', '<', $limiteNoShow)
             ->get();
+
+        // Reservas em andamento: carrega restaurante via mesa para usar horario_fechamento
+        $emAndamento = ClienteMesa::where('status', 'em_andamento')
+            ->with('mesa.restaurante')
+            ->get();
+
+        $sessaoExpirada = $emAndamento->filter(function (ClienteMesa $reserva) {
+            $restaurante   = $reserva->mesa?->restaurante;
+            $fechamentoStr = $restaurante?->horario_fechamento; // "HH:MM" ou null
+
+            $referencia = $reserva->horario_checkin ?? $reserva->horario_reserva;
+            if (! $referencia) {
+                return false;
+            }
+
+            if (! $fechamentoStr) {
+                // Sem horário de fechamento: usa fallback de 12 horas
+                return Carbon::parse($referencia)
+                    ->addHours(self::FALLBACK_SESSAO_MAXIMA_HORAS)
+                    ->isPast();
+            }
+
+            // Monta o datetime de fechamento do dia da reserva
+            [$fh, $fm] = array_map('intval', explode(':', substr($fechamentoStr, 0, 5)));
+            $dataBase  = Carbon::parse($referencia)->startOfDay();
+            $fechamento = $dataBase->copy()->setTime($fh, $fm);
+
+            // Restaurantes que fecham depois da meia-noite (ex: 02:00)
+            if ($fh < 12) {
+                $fechamento->addDay();
+            }
+
+            return Carbon::now()->gt($fechamento->addMinutes(self::FOLGA_POS_FECHAMENTO_MINUTOS));
+        });
+
+        $vencidas = $noShow->merge($sessaoExpirada);
 
         if ($vencidas->isEmpty()) {
             return 0;
@@ -50,9 +101,8 @@ class ReservaController extends Controller
             /** @var ClienteMesa $reserva */
             foreach ($vencidas as $reserva) {
                 $reserva->update(['status' => 'expirada']);
-                // Mesa só precisa ser resetada se estiver ocupada (check-in foi feito mas não liberada)
                 $mesa = Mesa::find($reserva->mesa_id);
-                if ($mesa && $mesa->status === 'ocupada') {
+                if ($mesa && in_array($mesa->status, ['reservada', 'ocupada'])) {
                     $mesa->update(['status' => 'livre']);
                 }
             }

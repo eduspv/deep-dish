@@ -30,6 +30,8 @@ Route::prefix('restaurantes')->group(function () {
          ->where('id', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
     Route::get('/{id}/mesas/disponiveis', [App\Http\Controllers\MesaController::class, 'disponiveis'])
          ->where('id', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+    Route::get('/{id}/funcionarios', [App\Http\Controllers\FuncionarioController::class, 'publicIndex'])
+         ->where('id', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
 });
 
 //Definindo Rotas Protegidas (JWT guard api — mesmo provider que cliente)
@@ -56,6 +58,8 @@ Route::middleware(['auth:api', \App\Http\Middleware\VerifyJwtTokenVersion::class
 });
 
 Route::prefix('restaurante')->middleware(['auth:restaurante', \App\Http\Middleware\VerifyJwtTokenVersion::class])->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'stats']);
+
     Route::get('/me', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'me']);
     Route::put('/me',         [App\Http\Controllers\Auth\RestauranteAuthController::class, 'update']);
     Route::post('/me/imagem', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'uploadImagem']);
@@ -78,6 +82,12 @@ Route::prefix('restaurante')->middleware(['auth:restaurante', \App\Http\Middlewa
     Route::post('/mesas',        [App\Http\Controllers\MesaController::class, 'store']);
     Route::put('/mesas/{id}',    [App\Http\Controllers\MesaController::class, 'update']);
     Route::delete('/mesas/{id}', [App\Http\Controllers\MesaController::class, 'destroy']);
+
+    // Funcionários — restaurante
+    Route::get('/funcionarios',         [App\Http\Controllers\FuncionarioController::class, 'index']);
+    Route::post('/funcionarios',        [App\Http\Controllers\FuncionarioController::class, 'store']);
+    Route::put('/funcionarios/{id}',    [App\Http\Controllers\FuncionarioController::class, 'update']);
+    Route::delete('/funcionarios/{id}', [App\Http\Controllers\FuncionarioController::class, 'destroy']);
 });
 
 Route::prefix('cliente')->middleware('cliente.or.restaurante')->group(function(){

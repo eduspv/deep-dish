@@ -64,22 +64,6 @@ export interface TimeSlot {
   available: boolean;
 }
 
-// Tipo legado mantido para o admin de reservas/queue (mocks ainda em uso em outras telas)
-export interface Reservation {
-  id: string;
-  userId: string;
-  restaurantId: string;
-  restaurantName: string;
-  restaurantImage: string;
-  date: string;
-  time: string;
-  partySize: number;
-  status: 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled';
-  tableNumber?: number;
-  createdAt: string;
-  notes?: string;
-}
-
 // Resposta paginada do Laravel (paginate())
 export interface Paginated<T> {
   data: T[];
@@ -179,9 +163,17 @@ export interface RestaurantSettings {
 
 export interface StaffMember {
   id: string;
-  restaurantId: string;
+  restaurante_id: string;
   name: string;
-  role: string;
-  schedule: string;
-  active: boolean;
+  cargo: string;
+  cpf?: string | null;
+  telefone?: string | null;
+  email?: string | null;
+  data_nascimento?: string | null;
+  horario?: string | null;
+  observacoes?: string | null;
+  ativo: boolean;
+  motivo_afastamento?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
