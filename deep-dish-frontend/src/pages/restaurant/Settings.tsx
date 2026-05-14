@@ -28,13 +28,13 @@ const Settings: React.FC = () => {
   const [horarioFechamento, setHorarioFechamento] = useState(
     (restaurante?.horario_fechamento ?? '').slice(0, 5)
   );
-  const [logradouro, setLogradouro] = useState(restaurante?.logradouro ?? '');
-  const [numero, setNumero] = useState(restaurante?.numero ?? '');
-  const [complemento, setComplemento] = useState(restaurante?.complemento ?? '');
-  const [bairro, setBairro] = useState(restaurante?.bairro ?? '');
-  const [cidade, setCidade] = useState(restaurante?.cidade ?? '');
-  const [estado, setEstado] = useState(restaurante?.estado ?? '');
-  const [cep, setCep] = useState(restaurante?.cep ?? '');
+  const logradouro  = restaurante?.logradouro  ?? '';
+  const numero      = restaurante?.numero      ?? '';
+  const complemento = restaurante?.complemento ?? '';
+  const bairro      = restaurante?.bairro      ?? '';
+  const cidade      = restaurante?.cidade      ?? '';
+  const estado      = restaurante?.estado      ?? '';
+  const cep         = restaurante?.cep         ?? '';
   const [rating, setRating] = useState(restaurante?.rating?.toString() ?? '');
   const [priceRange, setPriceRange] = useState(restaurante?.price_range?.toString() ?? '');
   const [reservationsEnabled, setReservationsEnabled] = useState(restaurante?.reservations_enabled ?? false);
@@ -94,6 +94,7 @@ const Settings: React.FC = () => {
       setUploadingImg(false);
     }
   };
+
 
   const imagemAtual = preview || restaurante?.imagem_url;
 
@@ -186,37 +187,38 @@ const Settings: React.FC = () => {
 
           <div className="space-y-1.5">
             <Label>Logradouro</Label>
-            <Input value={logradouro} onChange={e => setLogradouro(e.target.value)} placeholder="Rua, avenida..." />
+            <Input value={logradouro} disabled />
           </div>
 
           <div className="space-y-1.5">
             <Label>Número</Label>
-            <Input value={numero} onChange={e => setNumero(e.target.value)} placeholder="123" />
+            <Input value={numero} disabled />
           </div>
 
           <div className="space-y-1.5">
             <Label>Complemento</Label>
-            <Input value={complemento} onChange={e => setComplemento(e.target.value)} placeholder="Sala, bloco..." />
+            <Input value={complemento || '—'} disabled />
           </div>
 
           <div className="space-y-1.5">
             <Label>Bairro</Label>
-            <Input value={bairro} onChange={e => setBairro(e.target.value)} />
+            <Input value={bairro} disabled />
           </div>
 
           <div className="space-y-1.5">
             <Label>Cidade</Label>
-            <Input value={cidade} onChange={e => setCidade(e.target.value)} />
+            <Input value={cidade} disabled />
           </div>
 
           <div className="space-y-1.5">
             <Label>Estado</Label>
-            <Input value={estado} onChange={e => setEstado(e.target.value)} maxLength={2} placeholder="SP" />
+            <Input value={estado} disabled />
           </div>
 
           <div className="space-y-1.5">
             <Label>CEP</Label>
-            <Input value={cep} onChange={e => setCep(e.target.value)} placeholder="00000-000" />
+            <Input value={cep} disabled />
+            <p className="text-xs text-muted-foreground">Para alterar o endereço, entre em contato com o suporte.</p>
           </div>
 
           <div className="sm:col-span-2 space-y-1.5">

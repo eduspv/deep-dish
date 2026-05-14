@@ -1,24 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users, CalendarDays, Grid3X3, TrendingUp } from 'lucide-react';
+import { dashboardService, DashboardStats } from '@/services/dashboard.service';
+import { toast } from 'sonner';
 
 const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState<{ queueSize: number; reservationsToday: number; tablesAvailable: number; totalTables: number } | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setStats({ queueSize: 4, reservationsToday: 4, tablesAvailable: 4, totalTables: 8 });
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    dashboardService.stats()
+      .then(setStats)
+      .catch(() => toast.error('Erro ao carregar estatísticas.'))
+      .finally(() => setLoading(false));
   }, []);
 
   const cards = stats ? [
-    { label: 'Fila agora', value: stats.queueSize, icon: Users, color: 'text-primary', bg: 'bg-primary/8' },
-    { label: 'Reservas hoje', value: stats.reservationsToday, icon: CalendarDays, color: 'text-gold-accent', bg: 'bg-gold-accent/10' },
-    { label: 'Mesas livres', value: `${stats.tablesAvailable}/${stats.totalTables}`, icon: Grid3X3, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/8' },
-    { label: 'Taxa de ocupação', value: `${Math.round(((stats.totalTables - stats.tablesAvailable) / stats.totalTables) * 100)}%`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/8' },
+    { label: 'Fila agora', value: stats.queue_size, icon: Users, color: 'text-primary', bg: 'bg-primary/8' },
+    { label: 'Reservas hoje', value: stats.reservations_today, icon: CalendarDays, color: 'text-gold-accent', bg: 'bg-gold-accent/10' },
+    { label: 'Mesas livres', value: `${stats.tables_available}/${stats.total_tables}`, icon: Grid3X3, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/8' },
+    {
+      label: 'Taxa de ocupação',
+      value: stats.total_tables > 0
+        ? `${Math.round(((stats.total_tables - stats.tables_available) / stats.total_tables) * 100)}%`
+        : '—',
+      icon: TrendingUp,
+      color: 'text-primary',
+      bg: 'bg-primary/8',
+    },
   ] : [];
 
   return (
@@ -26,7 +35,7 @@ const Dashboard: React.FC = () => {
       <h1 className="font-display text-2xl font-bold text-foreground">Dashboard</h1>
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[1,2,3,4].map(i => <Skeleton key={i} className="h-28 rounded-2xl" />)}
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 rounded-2xl" />)}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-stagger">

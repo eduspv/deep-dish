@@ -14,6 +14,8 @@ import { hojeEmBRT, toISOBRT } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
+interface PublicStaff { name: string; cargo: string; horario?: string | null; }
+
 const PRICE_LABELS: Record<number, string> = { 1: 'R$', 2: 'R$$', 3: 'R$$$', 4: 'R$$$$' };
 
 const RestaurantDetail: React.FC = () => {
@@ -21,6 +23,7 @@ const RestaurantDetail: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [restaurant, setRestaurant] = useState<Restaurante | null>(null);
+  const [staffList, setStaffList]   = useState<PublicStaff[]>([]);
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [mesasError, setMesasError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,10 +51,16 @@ const RestaurantDetail: React.FC = () => {
     let cancelled = false;
     setLoading(true);
 
-    restaurantsService.getRestaurantById(id)
-      .then(data => { if (!cancelled) setRestaurant(data ?? null); })
-      .catch(() => { if (!cancelled) setRestaurant(null); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+    Promise.all([
+      restaurantsService.getRestaurantById(id),
+      restaurantsService.getStaff(id),
+    ]).then(([rest, staff]) => {
+      if (cancelled) return;
+      setRestaurant(rest ?? null);
+      setStaffList(staff);
+    }).catch(() => {
+      if (!cancelled) setRestaurant(null);
+    }).finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
   }, [id]);
@@ -244,6 +253,31 @@ const RestaurantDetail: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Equipe */}
+          {staffList.length > 0 && (
+            <div className="rounded-2xl bg-card p-5 shadow-card space-y-3">
+              <h2 className="font-display text-lg font-semibold text-foreground">Nossa equipe</h2>
+              <div className="space-y-2.5">
+                {staffList.map((s, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="h-9 w-9 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-sm font-bold text-primary">
+                        {s.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground text-sm leading-tight">{s.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {s.cargo}
+                        {s.horario && <span className="ml-1.5">· {s.horario}</span>}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Reservas */}
           {!!restaurant.reservations_enabled && (

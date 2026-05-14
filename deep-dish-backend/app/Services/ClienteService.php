@@ -15,11 +15,13 @@ class ClienteService
     {
         return DB::transaction(function () use ($validated) {
             $cliente = $this->repo->create($validated);
-            $token = auth('api')->login($cliente);
+            $token   = auth('api')->login($cliente);
+
+            $cliente->sendEmailVerificationNotification();
 
             return [
                 'cliente' => $cliente,
-                'token' => $token,
+                'token'   => $token,
             ];
         });
     }

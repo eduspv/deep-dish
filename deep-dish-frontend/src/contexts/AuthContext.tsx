@@ -56,10 +56,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setUser(data);
         localStorage.setItem("user", JSON.stringify(data));
-      } catch {
-        localStorage.removeItem("jwt");
-        localStorage.removeItem("tipo_usuario");
-        localStorage.removeItem("user");
+      } catch (err) {
+        const isEmailNotVerified = err instanceof Error && err.message === 'email_not_verified';
+        if (!isEmailNotVerified) {
+          localStorage.removeItem("jwt");
+          localStorage.removeItem("tipo_usuario");
+          localStorage.removeItem("user");
+        }
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -74,9 +77,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { token } = await authService.loginCliente(email, password);
     localStorage.setItem("jwt", token);
     localStorage.setItem("tipo_usuario", "cliente");
-    const cliente = await authService.getMeCliente();
-    setUser(cliente);
-    localStorage.setItem("user", JSON.stringify(cliente));
+    try {
+      const cliente = await authService.getMeCliente();
+      setUser(cliente);
+      localStorage.setItem("user", JSON.stringify(cliente));
+    } catch (err) {
+      if (err instanceof Error && err.message === 'email_not_verified') return;
+      throw err;
+    }
   }, []);
 
   // ─── LOGIN RESTAURANTE ───────────────────────────────────
@@ -84,9 +92,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { token } = await authService.loginRestaurante(email, password);
     localStorage.setItem("jwt", token);
     localStorage.setItem("tipo_usuario", "restaurante");
-    const restaurante = await authService.getMeRestaurante();
-    setUser(restaurante);
-    localStorage.setItem("user", JSON.stringify(restaurante));
+    try {
+      const restaurante = await authService.getMeRestaurante();
+      setUser(restaurante);
+      localStorage.setItem("user", JSON.stringify(restaurante));
+    } catch (err) {
+      if (err instanceof Error && err.message === 'email_not_verified') return;
+      throw err;
+    }
   }, []);
 
   // ─── REGISTER CLIENTE ────────────────────────────────────
@@ -99,9 +112,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const result = await authService.registerCliente(name, email, cpf, password);
     localStorage.setItem("jwt", result.token);
     localStorage.setItem("tipo_usuario", "cliente");
-    const cliente = result.cliente ?? await authService.getMeCliente();
-    setUser(cliente);
-    localStorage.setItem("user", JSON.stringify(cliente));
+    try {
+      const cliente = result.cliente ?? await authService.getMeCliente();
+      setUser(cliente);
+      localStorage.setItem("user", JSON.stringify(cliente));
+    } catch (err) {
+      if (err instanceof Error && err.message === 'email_not_verified') return;
+      throw err;
+    }
   }, []);
 
   // ─── REGISTER RESTAURANTE ────────────────────────────────
@@ -109,9 +127,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const result = await authService.registerRestaurante(data);
     localStorage.setItem("jwt", result.token);
     localStorage.setItem("tipo_usuario", "restaurante");
-    const restaurante = result.restaurante ?? await authService.getMeRestaurante();
-    setUser(restaurante);
-    localStorage.setItem("user", JSON.stringify(restaurante));
+    try {
+      const restaurante = result.restaurante ?? await authService.getMeRestaurante();
+      setUser(restaurante);
+      localStorage.setItem("user", JSON.stringify(restaurante));
+    } catch (err) {
+      if (err instanceof Error && err.message === 'email_not_verified') return;
+      throw err;
+    }
   }, []);
 
   // ─── UPDATE RESTAURANTE ──────────────────────────────────

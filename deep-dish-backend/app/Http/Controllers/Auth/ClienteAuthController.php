@@ -69,7 +69,16 @@ class ClienteAuthController extends Controller
                 'error' => 'Email ou senha inválidos'
             ], 401);
         }
-    
+
+        $user = auth('api')->user();
+        if (!$user->hasVerifiedEmail()) {
+            $cacheKey = 'verify_sent_cliente_' . $user->id;
+            if (!\Cache::has($cacheKey)) {
+                $user->sendEmailVerificationNotification();
+                \Cache::put($cacheKey, true, now()->addMinutes(2));
+            }
+        }
+
         return response()->json([
             'message' => 'Login realizado com sucesso',
             'type' => 'cliente',

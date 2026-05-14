@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,8 @@ const RestaurantLogin: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { loginRestaurant } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const passwordReset = params.get('reset') === '1';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,13 +39,24 @@ const RestaurantLogin: React.FC = () => {
           <h1 className="mt-5 font-display text-2xl font-bold text-foreground">Painel do Restaurante</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">Acesse o gerenciamento do seu restaurante</p>
         </div>
+        {passwordReset && (
+          <div className="rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600 dark:text-emerald-400 text-center">
+            Senha redefinida com sucesso! Faça login com a nova senha.
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="email">E-mail</Label>
             <Input id="email" type="email" placeholder="admin@restaurante.com" value={email} onChange={e => setEmail(e.target.value)} required />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="password">Senha</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Senha</Label>
+              <Link to="/restaurant/forgot-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                Esqueceu a senha?
+              </Link>
+            </div>
             <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
           </div>
           {error && (

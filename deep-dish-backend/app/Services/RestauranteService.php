@@ -17,7 +17,9 @@ class RestauranteService
         return DB::transaction(function () use ($validated) {
             $validated['tipo_usuario'] = 'restaurante';
             $restaurante = $this->repo->create($validated);
-            $token = auth('restaurante')->login($restaurante);
+            $token       = auth('restaurante')->login($restaurante);
+
+            $restaurante->sendEmailVerificationNotification();
 
             return [
                 'restaurante' => $restaurante,
