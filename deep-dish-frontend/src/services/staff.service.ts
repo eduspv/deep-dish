@@ -1,4 +1,4 @@
-import { StaffMember } from '@/types';
+import { StaffMember, Paginated } from '@/types';
 import { httpClient } from './httpClient';
 
 interface StaffPayload {
@@ -14,9 +14,22 @@ interface StaffPayload {
   motivo_afastamento?: string | null;
 }
 
+interface StaffListParams {
+  page?: number;
+  per_page?: number;
+  status?: 'ativo' | 'inativo';
+  cargo?: string;
+}
+
 export const staffService = {
-  async list(): Promise<StaffMember[]> {
-    return httpClient.get('/restaurante/funcionarios');
+  async list(params?: StaffListParams): Promise<Paginated<StaffMember>> {
+    const q = new URLSearchParams();
+    if (params?.page)     q.set('page',     String(params.page));
+    if (params?.per_page) q.set('per_page', String(params.per_page));
+    if (params?.status)   q.set('status',   params.status);
+    if (params?.cargo)    q.set('cargo',    params.cargo);
+    const path = q.toString() ? `/restaurante/funcionarios?${q}` : '/restaurante/funcionarios';
+    return httpClient.get(path);
   },
 
   async create(payload: StaffPayload): Promise<StaffMember> {

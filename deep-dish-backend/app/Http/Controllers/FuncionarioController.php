@@ -18,15 +18,26 @@ class FuncionarioController extends Controller
         return response()->json($funcionarios);
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $restauranteId = auth('restaurante')->id();
+        $perPage       = min((int) $request->query('per_page', 15), 50);
+        $status        = $request->query('status');  // 'ativo' | 'inativo' | null
+        $cargo         = $request->query('cargo');
 
-        $funcionarios = Funcionario::where('restaurante_id', $restauranteId)
-            ->orderBy('name')
-            ->get();
+        $query = Funcionario::where('restaurante_id', $restauranteId);
 
-        return response()->json($funcionarios);
+        if ($status === 'ativo') {
+            $query->where('ativo', true);
+        } elseif ($status === 'inativo') {
+            $query->where('ativo', false);
+        }
+
+        if ($cargo) {
+            $query->where('cargo', $cargo);
+        }
+
+        return response()->json($query->orderBy('name')->paginate($perPage));
     }
 
     public function store(Request $request): JsonResponse

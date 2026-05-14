@@ -18,6 +18,9 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import RestaurantLogin from "@/pages/RestaurantLogin";
 import RestaurantRegister from "@/pages/RestaurantRegister";
+import VerifyEmail from "@/pages/VerifyEmail";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import NotFound from "@/pages/NotFound";
 
 import AppHome from "@/pages/app/Home";
@@ -53,6 +56,10 @@ const App = () => (
               <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
               <Route path="/restaurant/login" element={<GuestRoute><RestaurantLogin /></GuestRoute>} />
               <Route path="/restaurant/register" element={<GuestRoute><RestaurantRegister /></GuestRoute>} />
+              <Route path="/forgot-password" element={<GuestRoute><ForgotPassword tipo="cliente" /></GuestRoute>} />
+              <Route path="/restaurant/forgot-password" element={<GuestRoute><ForgotPassword tipo="restaurante" /></GuestRoute>} />
+              <Route path="/reset-password" element={<GuestRoute><ResetPassword /></GuestRoute>} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
             </Route>
 
             {/* Client App (cliente E restaurante podem acessar) */}

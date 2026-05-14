@@ -20,6 +20,8 @@ const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [cpfDigits, setCpfDigits] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
@@ -28,10 +30,15 @@ const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSubmitAttempted(true);
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem.');
+      return;
+    }
     setLoading(true);
     try {
       await register(name, email, cpfDigits, password);
-      navigate('/app');
+      navigate('/verify-email?tipo=cliente');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar conta. Tente novamente.');
     } finally {
@@ -76,6 +83,21 @@ const Register: React.FC = () => {
           <div className="space-y-1.5">
             <Label htmlFor="password">Senha</Label>
             <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="confirmPassword">Confirmar senha</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              className={submitAttempted && confirmPassword !== password ? 'border-destructive focus-visible:ring-destructive' : ''}
+              required
+            />
+            {submitAttempted && confirmPassword !== password && (
+              <p className="text-xs text-destructive">As senhas não coincidem.</p>
+            )}
           </div>
           {error && (
             <div className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive animate-fade-in" role="alert">

@@ -88,6 +88,15 @@ class RestauranteAuthController extends Controller
             ], 401);
         }
 
+        $user = auth('restaurante')->user();
+        if (!$user->hasVerifiedEmail()) {
+            $cacheKey = 'verify_sent_restaurante_' . $user->id;
+            if (!\Cache::has($cacheKey)) {
+                $user->sendEmailVerificationNotification();
+                \Cache::put($cacheKey, true, now()->addMinutes(2));
+            }
+        }
+
         return response()->json([
             'message' => 'Login realizado com sucesso',
             'type'    => 'restaurante',

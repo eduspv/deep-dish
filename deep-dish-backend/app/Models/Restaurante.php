@@ -2,15 +2,19 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class Restaurante extends Authenticatable implements JWTSubject
+class Restaurante extends Authenticatable implements JWTSubject, MustVerifyEmail
 {
-    use HasFactory, HasUuids; // adicionado HasUuids
+    use HasFactory, Notifiable, HasUuids; // adicionado HasUuids
 
     protected $keyType = 'string';   
     public $incrementing = false;    
@@ -110,5 +114,15 @@ class Restaurante extends Authenticatable implements JWTSubject
     public function filas(): HasMany
     {
         return $this->hasMany(Fila::class, 'restaurante_id');
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification('restaurante'));
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token, 'restaurante'));
     }
 }

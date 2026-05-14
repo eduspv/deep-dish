@@ -1,6 +1,7 @@
 // src/pages/RestaurantRegister.tsx
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,14 +50,57 @@ const RestaurantRegister: React.FC = () => {
   const [estado, setEstado] = useState("");
   const [cepDigits, setCepDigits] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const [error, setError] = useState("");
+  const [cnpjWarning, setCnpjWarning] = useState("");
 
   const [loading, setLoading] = useState(false);
+  const [cnpjLoading, setCnpjLoading] = useState(false);
   const { registerRestaurant } = useAuth();
   const navigate = useNavigate();
 
   const cepValue = formatCep(cepDigits);
-  const cepRaw = onlyDigits(cepDigits);
+  const cepRaw   = onlyDigits(cepDigits);
+
+  const handleCnpjBlur = useCallback(async () => {
+    if (cnpjDigits.length !== 14) return;
+    setCnpjLoading(true);
+    setError("");
+    setCnpjWarning("");
+    try {
+      const res = await fetch(`https://publica.cnpj.ws/cnpj/${cnpjDigits}`);
+      if (res.status === 404) {
+        setError("CNPJ não encontrado na Receita Federal.");
+        return;
+      }
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const est = data.estabelecimento;
+
+      if (est?.situacao_cadastral && est.situacao_cadastral !== "Ativa") {
+        setCnpjWarning(`Atenção: este CNPJ consta como "${est.situacao_cadastral}" na Receita Federal.`);
+      }
+
+      const nomeSugerido = est?.nome_fantasia?.trim() || data.razao_social?.trim() || "";
+      if (nomeSugerido) setName(nomeSugerido);
+
+      if (est) {
+        const tipoLog = est.tipo_logradouro ? `${est.tipo_logradouro} ` : "";
+        setLogradouro(`${tipoLog}${est.logradouro ?? ""}`.trim());
+        setNumero(est.numero ?? "");
+        setComplemento(est.complemento ?? "");
+        setBairro(est.bairro ?? "");
+        setCidade(est.cidade?.nome ?? "");
+        setEstado(est.estado?.sigla ?? "");
+        setCepDigits(onlyDigits(est.cep ?? "").slice(0, 8));
+      }
+    } catch {
+      setError("Erro ao consultar CNPJ. Preencha os dados manualmente.");
+    } finally {
+      setCnpjLoading(false);
+    }
+  }, [cnpjDigits]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +141,12 @@ const RestaurantRegister: React.FC = () => {
       return;
     }
 
+    setSubmitAttempted(true);
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem.");
+      return;
+    }
+
     setLoading(true);
     try {
       await registerRestaurant({
@@ -113,7 +163,7 @@ const RestaurantRegister: React.FC = () => {
         estado,
         cep: cepRaw.length === 8 ? formatCep(cepRaw) : cepValue,
       });
-      navigate("/restaurant/dashboard");
+      navigate("/verify-email?tipo=restaurante");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao cadastrar restaurante. Tente novamente.");
     } finally {
@@ -138,17 +188,6 @@ const RestaurantRegister: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Nome do restaurante</Label>
-            <Input
-              id="name"
-              placeholder="Meu Restaurante"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-
-          <div>
             <Label htmlFor="email">E-mail</Label>
             <Input
               id="email"
@@ -162,17 +201,42 @@ const RestaurantRegister: React.FC = () => {
 
           <div>
             <Label htmlFor="cnpj">CNPJ</Label>
+            <div className="relative">
+              <Input
+                id="cnpj"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="00.000.000/0000-00"
+                value={formatCnpj(cnpjDigits)}
+                onChange={(e) => {
+                  const nextDigits = onlyDigits(e.target.value).slice(0, 14);
+                  setCnpjDigits(nextDigits);
+                  setCnpjWarning("");
+                }}
+                onBlur={handleCnpjBlur}
+                disabled={cnpjLoading}
+                required
+              />
+              {cnpjLoading && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
+            {cnpjWarning && (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{cnpjWarning}</p>
+            )}
+            {!cnpjWarning && cnpjDigits.length === 14 && !cnpjLoading && !error && (
+              <p className="mt-1 text-xs text-muted-foreground">Dados preenchidos automaticamente — verifique e corrija se necessário.</p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="name">Nome do restaurante</Label>
             <Input
-              id="cnpj"
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="00.000.000/0000-00"
-              value={formatCnpj(cnpjDigits)}
-              onChange={(e) => {
-                const nextDigits = onlyDigits(e.target.value).slice(0, 14);
-                setCnpjDigits(nextDigits);
-              }}
+              id="name"
+              placeholder="Meu Restaurante"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
@@ -300,13 +364,29 @@ const RestaurantRegister: React.FC = () => {
             />
           </div>
 
+          <div>
+            <Label htmlFor="confirmPassword">Confirmar senha</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className={submitAttempted && confirmPassword !== password ? 'border-destructive focus-visible:ring-destructive' : ''}
+              required
+            />
+            {submitAttempted && confirmPassword !== password && (
+              <p className="mt-1 text-xs text-destructive">As senhas não coincidem.</p>
+            )}
+          </div>
+
           {error && (
             <div className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive animate-fade-in" role="alert">
               {error}
             </div>
           )}
 
-          <Button type="submit" className="w-full min-h-[44px]" disabled={loading}>
+          <Button type="submit" className="w-full min-h-[44px]" disabled={loading || cnpjLoading}>
             {loading ? "Cadastrando..." : "Cadastrar"}
           </Button>
         </form>

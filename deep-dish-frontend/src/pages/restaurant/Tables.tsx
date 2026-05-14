@@ -152,8 +152,12 @@ const Tables: React.FC = () => {
         ))}
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-card rounded-2xl">
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) setDialogOpen(false); }}>
+        <DialogContent
+          className="bg-card rounded-2xl"
+          onPointerDownOutside={e => e.preventDefault()}
+          onEscapeKeyDown={e => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="font-display">
               {editTable ? 'Editar mesa' : 'Nova mesa'}

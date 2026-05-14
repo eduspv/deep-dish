@@ -73,7 +73,7 @@ let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
 
 async function tryRefreshToken(): Promise<string | null> {
-  const userType = localStorage.getItem('userType');
+  const userType = localStorage.getItem('tipo_usuario');
   const endpoint = userType === 'restaurante' ? '/restaurante/refresh' : '/cliente/refresh';
 
   try {
@@ -123,6 +123,13 @@ async function handleResponse<T>(res: Response): Promise<T> {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
+    if (res.status === 403 && (data as Record<string, unknown>)?.error === 'email_not_verified') {
+      if (!window.location.pathname.startsWith('/verify-email')) {
+        const tipo = localStorage.getItem('tipo_usuario') ?? 'cliente';
+        window.location.href = `/verify-email?tipo=${tipo}`;
+      }
+      return Promise.reject(new ApiError(403, 'email_not_verified'));
+    }
     throw new ApiError(res.status, extrairMensagem(data, res.status));
   }
 

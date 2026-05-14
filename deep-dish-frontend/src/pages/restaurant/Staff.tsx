@@ -10,7 +10,10 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { staffService } from '@/services/staff.service';
 import { StaffMember } from '@/types';
-import { Plus, Pencil, Trash2, Loader2, UserCheck, UserX, Phone, Mail, BriefcaseMedical } from 'lucide-react';
+import {
+  Plus, Pencil, Trash2, Loader2, UserCheck, UserX,
+  Phone, Mail, BriefcaseMedical, ChevronLeft, ChevronRight,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import EmptyState from '@/components/EmptyState';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -48,6 +51,8 @@ const HORAS = Array.from({ length: 22 }, (_, i) => {
   return `${String(h).padStart(2, '0')}:00`;
 });
 
+const PER_PAGE = 15;
+
 // ── Máscaras ──────────────────────────────────────────────────────────────────
 
 const maskCPF = (v: string) => {
@@ -67,6 +72,18 @@ const maskTelefone = (v: string) => {
 
 const isEmailValido = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
+const isCpfValido = (cpf: string): boolean => {
+  const d = cpf.replace(/\D/g, '');
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  const digit = (slice: string, factor: number) => {
+    const sum = slice.split('').reduce((acc, n, i) => acc + parseInt(n) * (factor - i), 0);
+    const r = (sum * 10) % 11;
+    return r >= 10 ? 0 : r;
+  };
+  return digit(d.slice(0, 9), 10) === parseInt(d[9]) &&
+         digit(d.slice(0, 10), 11) === parseInt(d[10]);
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const nullIfEmpty = (v: string) => v.trim() || null;
@@ -85,6 +102,8 @@ const buildHorario = (dias: string, entrada: string, saida: string) =>
   dias && entrada && saida ? `${dias} · ${entrada}–${saida}` : null;
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
+
+type StatusFilter = 'all' | 'ativo' | 'inativo';
 
 interface FormState {
   name: string;
@@ -123,19 +142,26 @@ const Staff: React.FC = () => {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const [dialogOpen, setDialogOpen]   = useState(false);
-  const [editTarget, setEditTarget]   = useState<StaffMember | null>(null);
-  const [form, setForm]               = useState<FormState>(FORM_VAZIO);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [cargoFilter, setCargoFilter]   = useState('');
+  const [page, setPage]                 = useState(1);
+  const [lastPage, setLastPage]         = useState(1);
+  const [total, setTotal]               = useState(0);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<StaffMember | null>(null);
+  const [form, setForm]             = useState<FormState>(FORM_VAZIO);
 
   const [confirmOpen, setConfirmOpen]     = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<StaffMember | null>(null);
 
-  const [motivoOpen, setMotivoOpen]       = useState(false);
-  const [motivoTarget, setMotivoTarget]   = useState<StaffMember | null>(null);
-  const [motivo, setMotivo]               = useState('');
+  const [motivoOpen, setMotivoOpen]     = useState(false);
+  const [motivoTarget, setMotivoTarget] = useState<StaffMember | null>(null);
+  const [motivo, setMotivo]             = useState('');
 
   const emailInvalid  = form.email.trim() !== '' && !isEmailValido(form.email);
   const cargoFinal    = form.cargo === 'outro' ? form.cargoCustom.trim() : form.cargo;
+  const cpfValido     = form.cpf.length === 14 && isCpfValido(form.cpf);
   const horasSaida    = form.horaEntrada
     ? HORAS.slice(HORAS.indexOf(form.horaEntrada) + 1)
     : HORAS;
@@ -143,7 +169,7 @@ const Staff: React.FC = () => {
   const canSave =
     !!form.name.trim() &&
     !!cargoFinal &&
-    form.cpf.length === 14 &&
+    cpfValido &&
     !!form.data_nascimento &&
     form.telefone.length >= 14 &&
     turnoCompleto &&
@@ -152,13 +178,21 @@ const Staff: React.FC = () => {
   const fetchStaff = useCallback(async () => {
     setLoading(true);
     try {
-      setStaff(await staffService.list());
+      const result = await staffService.list({
+        page,
+        per_page: PER_PAGE,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        cargo: cargoFilter || undefined,
+      });
+      setStaff(result.data);
+      setLastPage(result.last_page);
+      setTotal(result.total);
     } catch {
       toast.error('Erro ao carregar equipe.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, statusFilter, cargoFilter]);
 
   useEffect(() => { fetchStaff(); }, [fetchStaff]);
 
@@ -217,9 +251,9 @@ const Staff: React.FC = () => {
         setStaff(prev => prev.map(s => s.id === updated.id ? updated : s));
         toast.success('Funcionário atualizado.');
       } else {
-        const created = await staffService.create(payload);
-        setStaff(prev => [...prev, created]);
+        await staffService.create(payload);
         toast.success('Funcionário adicionado.');
+        fetchStaff();
       }
       closeDialog();
     } catch {
@@ -233,12 +267,10 @@ const Staff: React.FC = () => {
 
   const handleToggleAtivo = (s: StaffMember) => {
     if (s.ativo) {
-      // Desativar → pede motivo
       setMotivoTarget(s);
       setMotivo('');
       setMotivoOpen(true);
     } else {
-      // Reativar → direto, sem motivo
       handleReativar(s);
     }
   };
@@ -288,10 +320,16 @@ const Staff: React.FC = () => {
     setDeletingId(confirmTarget.id);
     try {
       await staffService.remove(confirmTarget.id);
-      setStaff(prev => prev.filter(s => s.id !== confirmTarget.id));
       toast.success('Funcionário removido.');
       setConfirmOpen(false);
       setConfirmTarget(null);
+      // Go to prev page if last item on page > 1
+      const newPage = staff.length === 1 && page > 1 ? page - 1 : page;
+      if (newPage !== page) {
+        setPage(newPage);
+      } else {
+        fetchStaff();
+      }
     } catch {
       toast.error('Erro ao remover funcionário.');
     } finally {
@@ -299,14 +337,19 @@ const Staff: React.FC = () => {
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Filtros ───────────────────────────────────────────────────────────────
 
-  if (loading) return (
-    <div className="space-y-4">
-      <Skeleton className="h-8 w-48" />
-      {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}
-    </div>
-  );
+  const changeStatus = (s: StatusFilter) => {
+    setStatusFilter(s);
+    setPage(1);
+  };
+
+  const changeCargo = (v: string) => {
+    setCargoFilter(v === 'all' ? '' : v);
+    setPage(1);
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -317,82 +360,154 @@ const Staff: React.FC = () => {
         </Button>
       </div>
 
-      {staff.length === 0 ? (
-        <EmptyState
-          icon={<UserCheck className="h-7 w-7" />}
-          title="Nenhum funcionário cadastrado"
-          description="Adicione os membros da sua equipe para gerenciá-los aqui."
-          action={<Button onClick={openAdd}>Adicionar funcionário</Button>}
-        />
-      ) : (
-        <div className="space-y-2.5 animate-stagger">
-          {staff.map(s => (
-            <div
-              key={s.id}
-              className={`rounded-2xl bg-card p-4 shadow-card flex items-center justify-between gap-3 transition-all duration-200 hover:shadow-card-hover ${!s.ativo ? 'opacity-60' : ''}`}
+      {/* Filtros */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex rounded-xl border border-border overflow-hidden text-sm">
+          {(['all', 'ativo', 'inativo'] as const).map((s, i) => (
+            <button
+              key={s}
+              onClick={() => changeStatus(s)}
+              className={`px-3 py-1.5 transition-colors duration-150 ${
+                i > 0 ? 'border-l border-border' : ''
+              } ${
+                statusFilter === s
+                  ? 'bg-primary text-primary-foreground font-medium'
+                  : 'bg-background text-muted-foreground hover:bg-muted'
+              }`}
             >
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground">{s.name}</p>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {s.cargo}
-                  {s.horario && <span className="ml-2">· {s.horario}</span>}
-                </p>
-                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-                  {s.telefone && (
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                      <Phone className="h-3 w-3" />{s.telefone}
-                    </span>
-                  )}
-                  {s.email && (
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                      <Mail className="h-3 w-3" />{s.email}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  s.ativo
-                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                    : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                }`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${s.ativo ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                  {s.ativo ? 'Ativo' : (s.motivo_afastamento ?? 'Inativo')}
-                </span>
-
-                <Button size="sm" variant="ghost" className="h-8 w-8 p-0"
-                  title={s.ativo ? 'Desativar' : 'Ativar'}
-                  disabled={togglingId === s.id}
-                  onClick={() => handleToggleAtivo(s)}
-                >
-                  {togglingId === s.id
-                    ? <Loader2 className="h-4 w-4 animate-spin" />
-                    : s.ativo
-                      ? <UserX className="h-4 w-4 text-muted-foreground" />
-                      : <UserCheck className="h-4 w-4 text-muted-foreground" />
-                  }
-                </Button>
-
-                <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Editar" onClick={() => openEdit(s)}>
-                  <Pencil className="h-4 w-4 text-muted-foreground" />
-                </Button>
-
-                <Button size="sm" variant="ghost"
-                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  title="Remover" onClick={() => openDelete(s)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+              {s === 'all' ? 'Todos' : s === 'ativo' ? 'Ativos' : 'Inativos'}
+            </button>
           ))}
         </div>
+
+        <Select value={cargoFilter || 'all'} onValueChange={changeCargo}>
+          <SelectTrigger className="w-48 h-9 text-sm">
+            <SelectValue placeholder="Cargo..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os cargos</SelectItem>
+            {CARGOS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        {total > 0 && (
+          <span className="ml-auto text-sm text-muted-foreground">
+            {total} {total === 1 ? 'funcionário' : 'funcionários'}
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="space-y-2.5">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}
+        </div>
+      ) : staff.length === 0 ? (
+        <EmptyState
+          icon={<UserCheck className="h-7 w-7" />}
+          title="Nenhum funcionário encontrado"
+          description={
+            statusFilter !== 'all' || cargoFilter
+              ? 'Tente ajustar os filtros.'
+              : 'Adicione os membros da sua equipe para gerenciá-los aqui.'
+          }
+          action={
+            statusFilter === 'all' && !cargoFilter
+              ? <Button onClick={openAdd}>Adicionar funcionário</Button>
+              : undefined
+          }
+        />
+      ) : (
+        <>
+          <div className="space-y-2.5 animate-stagger">
+            {staff.map(s => (
+              <div
+                key={s.id}
+                className={`rounded-2xl bg-card p-4 shadow-card flex items-center justify-between gap-3 transition-all duration-200 hover:shadow-card-hover ${!s.ativo ? 'opacity-60' : ''}`}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground">{s.name}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {s.cargo}
+                    {s.horario && <span className="ml-2">· {s.horario}</span>}
+                  </p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                    {s.telefone && (
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <Phone className="h-3 w-3" />{s.telefone}
+                      </span>
+                    )}
+                    {s.email && (
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <Mail className="h-3 w-3" />{s.email}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    s.ativo
+                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                      : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                  }`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${s.ativo ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                    {s.ativo ? 'Ativo' : (s.motivo_afastamento ?? 'Inativo')}
+                  </span>
+
+                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0"
+                    title={s.ativo ? 'Desativar' : 'Ativar'}
+                    disabled={togglingId === s.id}
+                    onClick={() => handleToggleAtivo(s)}
+                  >
+                    {togglingId === s.id
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : s.ativo
+                        ? <UserX className="h-4 w-4 text-muted-foreground" />
+                        : <UserCheck className="h-4 w-4 text-muted-foreground" />
+                    }
+                  </Button>
+
+                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Editar" onClick={() => openEdit(s)}>
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+
+                  <Button size="sm" variant="ghost"
+                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    title="Remover" onClick={() => openDelete(s)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {lastPage > 1 && (
+            <div className="flex items-center justify-center gap-3 pt-1">
+              <Button
+                variant="ghost" size="sm" className="h-8 w-8 p-0"
+                disabled={page <= 1}
+                onClick={() => setPage(p => p - 1)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Página {page} de {lastPage}
+              </span>
+              <Button
+                variant="ghost" size="sm" className="h-8 w-8 p-0"
+                disabled={page >= lastPage}
+                onClick={() => setPage(p => p + 1)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Dialog: adicionar / editar */}
-      <Dialog open={dialogOpen} onOpenChange={() => {}}>
-
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); }}>
         <DialogContent
           className="bg-card rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto"
           onPointerDownOutside={e => e.preventDefault()}
@@ -426,7 +541,11 @@ const Staff: React.FC = () => {
                     placeholder="000.000.000-00"
                     maxLength={14}
                     inputMode="numeric"
+                    className={form.cpf.length === 14 && !cpfValido ? 'border-destructive focus-visible:ring-destructive' : ''}
                   />
+                  {form.cpf.length === 14 && !cpfValido && (
+                    <p className="text-xs text-destructive">CPF inválido</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Data de nascimento <span className="text-destructive">*</span></Label>
@@ -586,7 +705,7 @@ const Staff: React.FC = () => {
       </Dialog>
 
       {/* Modal de motivo de afastamento */}
-      <Dialog open={motivoOpen} onOpenChange={() => {}}>
+      <Dialog open={motivoOpen} onOpenChange={(open) => { if (!open) { setMotivoOpen(false); setMotivoTarget(null); setMotivo(''); } }}>
         <DialogContent
           className="bg-card rounded-2xl max-w-sm"
           onPointerDownOutside={e => e.preventDefault()}
