@@ -120,7 +120,7 @@ class MesaController extends Controller
                     ->ignore($mesa->id),
             ],
             'capacidade' => 'sometimes|integer|min:1|max:30',
-            'status'     => 'sometimes|string|in:livre,reservada,ocupada,bloqueada',
+            'status'     => 'sometimes|string|in:livre,bloqueada',
         ]);
 
         if ($validator->fails()) {
@@ -128,6 +128,18 @@ class MesaController extends Controller
                 'error'   => 'Dados inválidos',
                 'details' => $validator->errors(),
             ], 422);
+        }
+
+        if ($request->has('status')) {
+            $temReservaAtiva = ClienteMesa::where('mesa_id', $mesa->id)
+                ->whereIn('status', ReservaController::STATUS_ATIVOS)
+                ->exists();
+
+            if ($temReservaAtiva) {
+                return response()->json([
+                    'error' => 'Não é possível alterar o status desta mesa pois há uma reserva ativa vinculada a ela.',
+                ], 422);
+            }
         }
 
         try {
@@ -154,6 +166,16 @@ class MesaController extends Controller
 
         if (! $mesa) {
             return response()->json(['error' => 'Mesa não encontrada.'], 404);
+        }
+
+        $temReservaAtiva = ClienteMesa::where('mesa_id', $mesa->id)
+            ->whereIn('status', ReservaController::STATUS_ATIVOS)
+            ->exists();
+
+        if ($temReservaAtiva) {
+            return response()->json([
+                'error' => 'Não é possível remover esta mesa pois há uma reserva ativa vinculada a ela.',
+            ], 422);
         }
 
         $mesa->delete();
