@@ -93,13 +93,7 @@ Este projeto é uma **Single Page Application (SPA)**.
 
 ## 🔌 Integração com Backend
 
-O frontend foi estruturado para integrar com uma API Laravel.
-
-Atualmente: - Serviços estão modelados - Endpoints estão documentados
-nos arquivos - Dados mockados simulam respostas reais
-
-Quando o backend estiver pronto, basta substituir os mocks pelas
-chamadas HTTP reais.
+O frontend integra com a API Laravel via HTTP (autenticação JWT, reservas, fila, mesas e funcionários).
 
 ------------------------------------------------------------------------
 
@@ -112,42 +106,95 @@ git clone <YOUR_GIT_URL>
 cd <PROJECT_NAME>
 ```
 
-### 2️⃣ Instale as dependências
+---
+
+### 🐳 Com Docker (recomendado)
+
+O jeito mais fácil de subir o projeto inteiro — sobe o **frontend**, o **backend** e o **worker de filas** automaticamente, sem precisar instalar PHP, Composer ou Node manualmente.
+
+**Pré-requisito:** ter o [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado.
+
+Configure as variáveis de ambiente do backend:
+
+``` bash
+cp deep-dish-backend/.env.example deep-dish-backend/.env
+```
+
+Suba os containers (na raiz do projeto):
+
+``` bash
+docker compose up --build
+```
+
+Ou em background (libera o terminal):
+
+``` bash
+docker compose up --build -d
+```
+
+Após subir:
+- **Frontend:** http://localhost:8080
+- **Backend (API):** http://localhost:8000
+
+> Na primeira execução o `composer install` e o `npm install` rodam automaticamente. Pode levar alguns minutos.
+
+Comandos úteis:
+
+``` bash
+docker compose logs -f        # ver logs em tempo real
+docker compose ps             # status dos containers
+docker compose down           # parar tudo
+```
+
+---
+
+### 🛠️ Sem Docker (manual)
+
+**Frontend:**
+
+Instale as dependências e rode o servidor:
 
 ``` bash
 npm install
-```
-
-### 3️⃣ Rode o servidor
-
-``` bash
 npm run dev
 ```
 
-O projeto estará disponível em:
+O frontend estará disponível em http://localhost:8080
 
-http://localhost:5173
+**Backend:**
+
+``` bash
+cd deep-dish-backend
+composer install
+php artisan serve
+```
+
+O backend estará disponível em http://localhost:8000
+
+**Worker de filas** (necessário para envio de e-mails de verificação):
+
+``` bash
+php artisan queue:work --tries=3 --sleep=3
+```
 
 ------------------------------------------------------------------------
 
-## 📦 Variáveis de Ambiente (quando integrar com API)
+## 📦 Variáveis de Ambiente
 
-Crie um arquivo `.env`:
+**Frontend** — crie `deep-dish-frontend/.env`:
 
-    VITE_API_URL=http://127.0.0.1:8000
+    VITE_API_URL=http://127.0.0.1:8000/api
+
+**Backend** — crie `deep-dish-backend/.env` a partir do `.env.example` e preencha banco de dados, JWT e SMTP.
 
 ------------------------------------------------------------------------
 
 ## 🔐 Controle de Rotas
 
-O sistema possui proteção de rotas por perfil:
+O sistema possui proteção de rotas por perfil via token **JWT**:
 
--   USER
--   RESTAURANT
--   ADMIN
-
-No MVP, isso é simulado via mock. No futuro será controlado por token
-JWT / Sanctum.
+-   Cliente
+-   Restaurante
 
 ------------------------------------------------------------------------
 
