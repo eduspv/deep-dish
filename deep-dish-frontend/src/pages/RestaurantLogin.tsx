@@ -39,13 +39,13 @@ const FloorPlanSVG = () => (
     <line x1="0" y1="56" x2="220" y2="56" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
     <line x1="0" y1="112" x2="220" y2="112" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
 
-    {/* Mesa 1 — ocupada (dourado) */}
-    <rect x="8" y="8" width="52" height="36" rx="6" fill="rgba(202,135,40,0.18)" stroke="rgba(202,135,40,0.55)" strokeWidth="1.5" />
-    <circle cx="34" cy="3" r="3.5" fill="rgba(202,135,40,0.45)" />
-    <circle cx="34" cy="49" r="3.5" fill="rgba(202,135,40,0.45)" />
-    <circle cx="3" cy="26" r="3.5" fill="rgba(202,135,40,0.45)" />
-    <circle cx="65" cy="26" r="3.5" fill="rgba(202,135,40,0.45)" />
-    <circle cx="34" cy="26" r="5" fill="rgba(202,135,40,0.35)" />
+    {/* Mesa 1 — ocupada */}
+    <rect x="8" y="8" width="52" height="36" rx="6" fill="rgba(218,27,27,0.18)" stroke="rgba(218,27,27,0.55)" strokeWidth="1.5" />
+    <circle cx="34" cy="3" r="3.5" fill="rgba(218,27,27,0.45)" />
+    <circle cx="34" cy="49" r="3.5" fill="rgba(218,27,27,0.45)" />
+    <circle cx="3" cy="26" r="3.5" fill="rgba(218,27,27,0.45)" />
+    <circle cx="65" cy="26" r="3.5" fill="rgba(218,27,27,0.45)" />
+    <circle cx="34" cy="26" r="5" fill="rgba(218,27,27,0.35)" />
 
     {/* Mesa 2 — livre */}
     <rect x="84" y="8" width="52" height="36" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.13)" strokeWidth="1" />
@@ -54,11 +54,11 @@ const FloorPlanSVG = () => (
     <circle cx="79" cy="26" r="3.5" fill="rgba(255,255,255,0.1)" />
     <circle cx="141" cy="26" r="3.5" fill="rgba(255,255,255,0.1)" />
 
-    {/* Mesa 3 — ocupada (dourado suave) */}
-    <rect x="160" y="8" width="52" height="36" rx="6" fill="rgba(202,135,40,0.12)" stroke="rgba(202,135,40,0.35)" strokeWidth="1" />
-    <circle cx="186" cy="3" r="3.5" fill="rgba(202,135,40,0.3)" />
-    <circle cx="186" cy="49" r="3.5" fill="rgba(202,135,40,0.3)" />
-    <circle cx="186" cy="26" r="4" fill="rgba(202,135,40,0.2)" />
+    {/* Mesa 3 — ocupada */}
+    <rect x="160" y="8" width="52" height="36" rx="6" fill="rgba(218,27,27,0.12)" stroke="rgba(218,27,27,0.35)" strokeWidth="1" />
+    <circle cx="186" cy="3" r="3.5" fill="rgba(218,27,27,0.3)" />
+    <circle cx="186" cy="49" r="3.5" fill="rgba(218,27,27,0.3)" />
+    <circle cx="186" cy="26" r="4" fill="rgba(218,27,27,0.2)" />
 
     {/* Mesa 4 — livre */}
     <rect x="8" y="64" width="52" height="36" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.13)" strokeWidth="1" />
@@ -66,13 +66,13 @@ const FloorPlanSVG = () => (
     <circle cx="34" cy="105" r="3.5" fill="rgba(255,255,255,0.1)" />
     <circle cx="3" cy="82" r="3.5" fill="rgba(255,255,255,0.1)" />
 
-    {/* Mesa 5 — ocupada, destaque (dourado forte) */}
-    <rect x="84" y="64" width="52" height="36" rx="6" fill="rgba(202,135,40,0.22)" stroke="rgba(202,135,40,0.65)" strokeWidth="1.5" />
-    <circle cx="110" cy="59" r="3.5" fill="rgba(202,135,40,0.55)" />
-    <circle cx="110" cy="105" r="3.5" fill="rgba(202,135,40,0.55)" />
-    <circle cx="79" cy="82" r="3.5" fill="rgba(202,135,40,0.55)" />
-    <circle cx="141" cy="82" r="3.5" fill="rgba(202,135,40,0.55)" />
-    <circle cx="110" cy="82" r="5.5" fill="rgba(202,135,40,0.4)" />
+    {/* Mesa 5 — ocupada, destaque */}
+    <rect x="84" y="64" width="52" height="36" rx="6" fill="rgba(218,27,27,0.22)" stroke="rgba(218,27,27,0.65)" strokeWidth="1.5" />
+    <circle cx="110" cy="59" r="3.5" fill="rgba(218,27,27,0.55)" />
+    <circle cx="110" cy="105" r="3.5" fill="rgba(218,27,27,0.55)" />
+    <circle cx="79" cy="82" r="3.5" fill="rgba(218,27,27,0.55)" />
+    <circle cx="141" cy="82" r="3.5" fill="rgba(218,27,27,0.55)" />
+    <circle cx="110" cy="82" r="5.5" fill="rgba(218,27,27,0.4)" />
 
     {/* Mesa 6 — livre */}
     <rect x="160" y="64" width="52" height="36" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.13)" strokeWidth="1" />
@@ -83,7 +83,7 @@ const FloorPlanSVG = () => (
 
     {/* Linha 3 — parcialmente cortada (profundidade) */}
     <rect x="8" y="120" width="52" height="36" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-    <rect x="84" y="120" width="52" height="36" rx="6" fill="rgba(202,135,40,0.1)" stroke="rgba(202,135,40,0.25)" strokeWidth="1" />
+    <rect x="84" y="120" width="52" height="36" rx="6" fill="rgba(218,27,27,0.1)" stroke="rgba(218,27,27,0.25)" strokeWidth="1" />
     <rect x="160" y="120" width="52" height="36" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
   </svg>
 );
@@ -138,14 +138,14 @@ const RestaurantLogin: React.FC = () => {
           aria-hidden="true"
         />
 
-        {/* Brilhos decorativos — dourado */}
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-gold-accent/15 blur-3xl" aria-hidden="true" />
-        <div className="absolute top-1/3 -right-16 w-64 h-64 rounded-full bg-gold-accent/8 blur-2xl" aria-hidden="true" />
+        {/* Brilhos decorativos */}
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-primary/15 blur-3xl" aria-hidden="true" />
+        <div className="absolute top-1/3 -right-16 w-64 h-64 rounded-full bg-primary/10 blur-2xl" aria-hidden="true" />
 
-        {/* Linha de acento no topo — dourado */}
+        {/* Linha de acento no topo */}
         <div
           className="absolute top-0 left-0 right-0 h-px"
-          style={{ background: 'linear-gradient(to right, transparent, hsl(38 60% 50% / 0.6), transparent)' }}
+          style={{ background: 'linear-gradient(to right, transparent, hsl(0 78% 48% / 0.6), transparent)' }}
           aria-hidden="true"
         />
 
@@ -173,7 +173,7 @@ const RestaurantLogin: React.FC = () => {
           >
             <p className="text-5xl font-display font-bold leading-tight text-dark-surface-foreground text-balance">
               Controle total do<br />
-              <span className="text-gold-accent">seu negócio.</span>
+              <span className="text-primary">seu negócio.</span>
             </p>
             <p className="mt-4 text-base text-dark-surface-foreground/60 leading-relaxed max-w-xs">
               Visibilidade completa sobre filas, reservas e mesas — tudo em um só lugar.
@@ -188,8 +188,8 @@ const RestaurantLogin: React.FC = () => {
           >
             {features.map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-3 text-sm text-dark-surface-foreground/70">
-                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-gold-accent/15">
-                  <Icon className="h-3.5 w-3.5 text-gold-accent" aria-hidden="true" />
+                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
+                  <Icon className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
                 </div>
                 {label}
               </div>
@@ -221,7 +221,7 @@ const RestaurantLogin: React.FC = () => {
 
             {/* Header com eyebrow dourado */}
             <div className="mb-6">
-              <p className="mb-2 text-[11px] font-bold tracking-[0.2em] uppercase text-gold-accent">
+              <p className="mb-2 text-[18px] font-bold tracking-[0.1em] uppercase text-primary">
                 Restaurante
               </p>
               <h1 className="font-display text-4xl font-bold text-foreground text-balance leading-tight">
@@ -294,7 +294,7 @@ const RestaurantLogin: React.FC = () => {
                         <FormLabel>Senha</FormLabel>
                         <Link
                           to="/restaurant/forgot-password"
-                          className="text-xs text-muted-foreground hover:text-gold-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                          className="text-xs text-muted-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                         >
                           Esqueceu a senha?
                         </Link>
@@ -329,7 +329,7 @@ const RestaurantLogin: React.FC = () => {
 
                 <Button
                   type="submit"
-                  className="w-full min-h-[44px] bg-gold-accent text-zinc-900 hover:bg-gold-accent/90"
+                  className="w-full min-h-[44px]"
                   disabled={isSubmitting}
                   aria-busy={isSubmitting}
                 >
@@ -349,7 +349,7 @@ const RestaurantLogin: React.FC = () => {
             <div className="mt-5 space-y-2 text-center text-sm text-muted-foreground">
               <p>
                 Não tem conta?{' '}
-                <Link to="/restaurant/register" className="font-medium text-gold-accent hover:text-gold-accent/80 transition-colors">
+                <Link to="/restaurant/register" className="font-medium text-primary hover:text-primary/80 transition-colors">
                   Cadastrar restaurante
                 </Link>
               </p>
