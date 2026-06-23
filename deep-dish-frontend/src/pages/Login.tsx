@@ -66,7 +66,7 @@ const Login: React.FC = () => {
       >
         {/* Logo */}
         <div className="mb-6">
-          <span className="font-display text-3xl font-bold color-red text-foreground">Deep Dish</span>
+          <span className="font-display text-3xl font-bold text-foreground">Deep Dish</span>
         </div>
 
         {/* Header */}
