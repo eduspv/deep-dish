@@ -11,6 +11,7 @@ services:
       - ./deep-dish-backend/.env
     command: >
       sh -c "composer install --no-interaction --prefer-dist --quiet
+      && php artisan storage:link --force
       && php artisan serve --host=0.0.0.0 --port=8000"
     restart: unless-stopped
 

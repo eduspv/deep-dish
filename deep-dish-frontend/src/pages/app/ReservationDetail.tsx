@@ -10,6 +10,7 @@ import { ApiError } from '@/services/httpClient';
 import { CalendarDays, Clock, Users, MapPin, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatBRT } from '@/lib/utils';
+import { storageUrl } from '@/lib/storage';
 
 const formatDate = (iso: string) => formatBRT(iso, { day: '2-digit', month: 'long', year: 'numeric' });
 const formatTime = (iso: string) => formatBRT(iso, { hour: '2-digit', minute: '2-digit' });
@@ -107,7 +108,7 @@ const ReservationDetail: React.FC = () => {
 
       <div className="rounded-2xl bg-card shadow-card overflow-hidden">
         {restaurante?.imagem_url && (
-          <img src={restaurante.imagem_url} alt="" className="h-40 w-full object-cover" />
+          <img src={storageUrl(restaurante.imagem_url)} alt="" className="h-40 w-full object-cover" />
         )}
         <div className="p-6 space-y-5">
           <div className="flex items-center justify-between">

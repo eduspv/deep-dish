@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { reservationsService } from '@/services/reservations.service';
 import { queueService } from '@/services/queue.service';
 import { ApiError } from '@/services/httpClient';
+import { storageUrl } from '@/lib/storage';
 import { Paginated, Reserva, ClienteFilaEntry } from '@/types';
 import { toast } from 'sonner';
 import { formatBRT } from '@/lib/utils';
@@ -70,7 +71,7 @@ const ConfirmadaBanner = ({ reservas }: { reservas: Reserva[] }) => (
     <div className="space-y-2.5">
       {reservas.map(r => {
         const nome   = r.mesa?.restaurante?.name ?? 'Restaurante';
-        const imagem = r.mesa?.restaurante?.imagem_url;
+        const imagem = storageUrl(r.mesa?.restaurante?.imagem_url);
         const mesa   = r.mesa?.numero;
         return (
           <Link key={r.id} to={`/app/reservations/${String(r.id)}`} className="block group">
@@ -109,7 +110,7 @@ const EmAndamentoBanner = ({ reservas }: { reservas: Reserva[] }) => (
     <div className="space-y-2.5">
       {reservas.map(r => {
         const nome   = r.mesa?.restaurante?.name ?? 'Restaurante';
-        const imagem = r.mesa?.restaurante?.imagem_url;
+        const imagem = storageUrl(r.mesa?.restaurante?.imagem_url);
         const mesa   = r.mesa?.numero;
         return (
           <Link key={r.id} to={`/app/reservations/${String(r.id)}`} className="block group">
@@ -141,7 +142,7 @@ const EmAndamentoBanner = ({ reservas }: { reservas: Reserva[] }) => (
 // ─── Card de reserva genérico ────────────────────────────────────────────────
 
 const ReservaCard = ({ r, faded }: { r: Reserva; faded?: boolean }) => {
-  const imagem  = r.mesa?.restaurante?.imagem_url;
+  const imagem  = storageUrl(r.mesa?.restaurante?.imagem_url);
   const name    = r.mesa?.restaurante?.name ?? 'Restaurante';
   const initial = name.charAt(0).toUpperCase();
 

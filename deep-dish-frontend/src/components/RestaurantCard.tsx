@@ -1,6 +1,7 @@
 import { Restaurante } from '@/types';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Users, Star } from 'lucide-react';
+import { storageUrl } from '@/lib/storage';
 
 const PRICE_LABELS: Record<number, string> = { 1: 'R$', 2: 'R$$', 3: 'R$$$', 4: 'R$$$$' };
 
@@ -21,7 +22,7 @@ const RestaurantCard = ({ restaurant }: { restaurant: Restaurante }) => {
         <div className="relative h-40 @sm:h-44 overflow-hidden">
           {restaurant.imagem_url ? (
             <img
-              src={restaurant.imagem_url}
+              src={storageUrl(restaurant.imagem_url)}
               alt={restaurant.name}
               className="h-full w-full object-cover transition-transform duration-500 ease-out-expo group-hover:scale-[1.03]"
               loading="lazy"

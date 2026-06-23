@@ -169,21 +169,22 @@ class RestauranteAuthController extends Controller
 
         $restaurante = auth('restaurante')->user();
 
-        // remove imagem antiga se existir
+        // remove imagem antiga se existir (imagem_url pode ser path relativo ou URL legada)
         if ($restaurante->imagem_url) {
-            $oldPath = str_replace(asset('storage') . '/', '', $restaurante->imagem_url);
+            $oldPath = str_starts_with($restaurante->imagem_url, 'http')
+                ? str_replace(asset('storage') . '/', '', $restaurante->imagem_url)
+                : $restaurante->imagem_url;
             Storage::disk('public')->delete($oldPath);
         }
 
-        // salva nova imagem em storage/app/public/restaurantes/
+        // salva path relativo — URL é reconstruída no frontend
         $path = $request->file('imagem')->store('restaurantes', 'public');
-        $url  = asset('storage/' . $path);
 
-        $restaurante->update(['imagem_url' => $url]);
+        $restaurante->update(['imagem_url' => $path]);
 
         return response()->json([
             'message'    => 'Imagem atualizada com sucesso!',
-            'imagem_url' => $url,
+            'imagem_url' => $path,
         ]);
     }
 

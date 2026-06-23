@@ -11,6 +11,7 @@ import { ApiError } from '@/services/httpClient';
 import { Restaurante, Mesa } from '@/types';
 import { ArrowLeft, MapPin, Clock, Phone, Star, Users, ListOrdered } from 'lucide-react';
 import { hojeEmBRT, toISOBRT } from '@/lib/utils';
+import { storageUrl } from '@/lib/storage';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -191,7 +192,7 @@ const RestaurantDetail: React.FC = () => {
       <div className="relative h-52 sm:h-60 md:h-72 overflow-hidden rounded-2xl">
         {restaurant.imagem_url ? (
           <img
-            src={restaurant.imagem_url}
+            src={storageUrl(restaurant.imagem_url)}
             alt={restaurant.name}
             className="h-full w-full object-cover"
           />
