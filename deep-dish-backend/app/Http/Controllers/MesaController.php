@@ -21,8 +21,10 @@ class MesaController extends Controller
     {
         $horarioParam = $request->query('horario');
 
+        // 'bloqueada' é sempre excluída; 'ocupada' reflete estado atual e não deve
+        // bloquear datas futuras — a sobreposição de reservas cuida disso abaixo.
         $query = Mesa::where('restaurante_id', $id)
-            ->whereNotIn('status', ['bloqueada', 'ocupada'])
+            ->where('status', '!=', 'bloqueada')
             ->orderBy('capacidade', 'asc');
 
         if ($request->has('capacidade_min')) {
@@ -30,14 +32,19 @@ class MesaController extends Controller
         }
 
         if ($horarioParam) {
-            // Exclui mesas que já possuem qualquer reserva ativa (confirmada ou em_andamento)
-            $reservadasIds = ClienteMesa::whereIn('status', ReservaController::STATUS_ATIVOS)
-                ->pluck('mesa_id')
-                ->unique();
+            $inicio = \Carbon\Carbon::parse($horarioParam)->utc();
+            $fim    = $inicio->copy()->addMinutes(ReservaController::DURACAO_RESERVA_MINUTOS);
 
-            $query->whereNotIn('id', $reservadasIds);
+            // Exclui apenas mesas com reserva ativa que se sobreponha à janela pedida.
+            // Mesma lógica de ReservaController::store (sintaxe Postgres).
+            $conflitantes = ClienteMesa::whereIn('status', ReservaController::STATUS_ATIVOS)
+                ->where('horario_reserva', '<', $fim)
+                ->whereRaw("horario_reserva + interval '1 hour' > ?", [$inicio])
+                ->pluck('mesa_id');
+
+            $query->whereNotIn('id', $conflitantes);
         } else {
-            // Sem horário: comportamento legado — só mesas com status livre
+            // Sem horário: comportamento legado — só mesas com status livre agora
             $query->where('status', 'livre');
         }
 
