@@ -41,10 +41,9 @@ function ScrollColumn({
   const startY = useRef(0);
   const scrollStart = useRef(0);
   // Verdadeiro enquanto a própria coluna está causando a mudança de `value`
-  // (wheel/drag/click). Evita que o efeito de sincronização abaixo puxe o
-  // scroll de volta no meio do gesto do usuário (loop de snap-back).
+  // (drag/click/scroll nativo). Evita que o efeito de sincronização abaixo
+  // puxe o scroll de volta no meio do gesto do usuário (loop de snap-back).
   const isInteracting = useRef(false);
-  const wheelAccum = useRef(0);
 
   const scrollToValue = useCallback(
     (val: string, smooth = true) => {
@@ -90,35 +89,6 @@ function ScrollColumn({
     const clamped = Math.max(0, Math.min(idx, items.length - 1));
     if (items[clamped] !== value) commitChange(items[clamped]);
   };
-
-  // Handler nativo e não-passivo: o onWheel do React é passivo por padrão e
-  // não permite preventDefault, então a rolagem "vazaria" para a página.
-  useEffect(() => {
-    const el = listRef.current;
-    if (!el) return;
-
-    const onWheel = (e: globalThis.WheelEvent) => {
-      e.preventDefault();
-      wheelAccum.current += e.deltaY;
-
-      const threshold = 24; // evita pular vários itens por "notch" da rodinha
-      if (Math.abs(wheelAccum.current) < threshold) return;
-
-      const direction = wheelAccum.current > 0 ? 1 : -1;
-      wheelAccum.current = 0;
-
-      const currentIdx = items.indexOf(value);
-      const nextIdx = Math.max(0, Math.min(currentIdx + direction, items.length - 1));
-      const nextItem = items[nextIdx];
-      if (nextItem !== value) {
-        commitChange(nextItem);
-        scrollToValue(nextItem);
-      }
-    };
-
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, [items, value, commitChange, scrollToValue]);
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     isDragging.current = true;
@@ -284,6 +254,12 @@ export function TimePicker({
           role="dialog"
           aria-modal="true"
           aria-label="Selecionar horário"
+          // Faz o Lenis (scroll suave global, ver main.tsx) recuar e deixar o
+          // scroll nativo do navegador agir dentro do popover — sem isso, o
+          // listener de wheel do Lenis em `window` intercepta e cancela o
+          // scroll padrão de QUALQUER elemento da página, ignorando
+          // preventDefault() de listeners locais.
+          data-lenis-prevent
           className="absolute left-0 z-50 mt-2 min-w-[180px] rounded-2xl border border-border bg-popover p-3 pt-4 shadow-lg"
         >
           <div className="mb-3 text-center text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
