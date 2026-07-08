@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { getAuthHeaders } from './api';
 
 const BASE = import.meta.env.VITE_API_URL;
@@ -105,6 +106,37 @@ async function refreshOnce(): Promise<string | null> {
   return refreshPromise;
 }
 
+// Evita disparar o logout/redirect várias vezes quando várias requisições
+// falham ao mesmo tempo (todas compartilham a mesma tentativa de refresh).
+let sessionExpiredHandled = false;
+
+// Retorna true se assumiu o controle (vai navegar embora) — nesse caso o
+// chamador não deve seguir tratando a resposta/erro original, pra não expor
+// um segundo toast de "sessão expirada" enquanto a navegação acontece.
+function forceLogout(): boolean {
+  // Já está numa tela pública de auth — não há sessão pra encerrar/redirecionar.
+  if (window.location.pathname.startsWith('/login')
+    || window.location.pathname.startsWith('/restaurant/login')) {
+    return false;
+  }
+
+  if (sessionExpiredHandled) return true;
+  sessionExpiredHandled = true;
+
+  const loginPath = localStorage.getItem('tipo_usuario') === 'restaurante'
+    ? '/restaurant/login'
+    : '/login';
+
+  localStorage.removeItem('jwt');
+  localStorage.removeItem('tipo_usuario');
+  localStorage.removeItem('user');
+
+  toast.error('Sessão expirada. Faça login novamente.');
+  window.location.href = loginPath;
+
+  return true;
+}
+
 async function fetchWithRefresh(path: string, init: RequestInit): Promise<Response> {
   const res = await fetch(`${BASE}${path}`, init);
 
@@ -113,6 +145,14 @@ async function fetchWithRefresh(path: string, init: RequestInit): Promise<Respon
     if (newToken) {
       const retryHeaders = { ...init.headers, Authorization: `Bearer ${newToken}` } as HeadersInit;
       return fetch(`${BASE}${path}`, { ...init, headers: retryHeaders });
+    }
+
+    // Refresh falhou — a sessão realmente expirou (ou foi invalidada por
+    // logout em outro dispositivo). Força logout + redirect e "trava" a
+    // resposta, pra evitar que a página atual mostre erro duplicado
+    // enquanto o navegador ainda está processando o redirect.
+    if (forceLogout()) {
+      return new Promise<Response>(() => {});
     }
   }
 

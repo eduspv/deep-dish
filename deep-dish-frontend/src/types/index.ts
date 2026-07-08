@@ -58,12 +58,6 @@ export interface Mesa {
   updated_at?: string;
 }
 
-export interface TimeSlot {
-  id: string;
-  time: string;
-  available: boolean;
-}
-
 // Resposta paginada do Laravel (paginate())
 export interface Paginated<T> {
   data: T[];

@@ -51,52 +51,6 @@ class FilaService
         });
     }
 
-    public function promoverProximo(string $restauranteId, string $horarioReserva): ?ClienteMesa
-    {
-        return DB::transaction(function () use ($restauranteId, $horarioReserva) {
-            $horario = Carbon::parse($horarioReserva);
-
-            $fila = Fila::query()
-                ->where('restaurante_id', $restauranteId)
-                ->where('horario_reserva', $horario)
-                ->where('status', Fila::STATUS_ABERTA)
-                ->first();
-
-            if (! $fila) {
-                return null;
-            }
-
-            $proximo = ClienteFila::query()
-                ->where('fila_id', $fila->id)
-                ->orderBy('created_at')
-                ->orderBy('id')
-                ->first();
-
-            if (! $proximo) {
-                return null;
-            }
-
-            $mesa = $this->buscarMesaDisponivel($restauranteId, $horario, $proximo->qntd_pessoas);
-
-            if (! $mesa) {
-                return null;
-            }
-
-            $clienteMesa = ClienteMesa::create([
-                'cliente_id' => $proximo->cliente_id,
-                'mesa_id' => $mesa->id,
-                'horario_reserva' => $horario,
-                'status' => 'pendente',
-            ]);
-
-            $proximo->delete();
-
-            $this->encerrarFilaSeVazia($fila);
-
-            return $clienteMesa;
-        });
-    }
-
     public function cancelarPosicao(string $clienteFilaId, string $clienteId): bool
     {
         return DB::transaction(function () use ($clienteFilaId, $clienteId) {
@@ -173,20 +127,6 @@ class FilaService
 
             return $clienteMesa;
         });
-    }
-
-    private function buscarMesaDisponivel(string $restauranteId, Carbon $horarioReserva, int $qntdPessoas): ?Mesa
-    {
-        return Mesa::query()
-            ->where('restaurante_id', $restauranteId)
-            ->where('capacidade', '>=', $qntdPessoas)
-            ->where('status', 'livre')
-            ->whereDoesntHave('clienteMesas', function ($q) use ($horarioReserva) {
-                $q->where('horario_reserva', $horarioReserva)
-                    ->whereIn('status', ['confirmada', 'em_andamento']);
-            })
-            ->orderBy('capacidade')
-            ->first();
     }
 
     private function encerrarFilaSeVazia(Fila $fila): void
