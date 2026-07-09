@@ -127,11 +127,15 @@ class RestauranteAuthController extends Controller
             'cidade'             => 'sometimes|string|max:100',
             'estado'             => 'sometimes|string|size:2',
             'cep'                  => ['sometimes', 'string', 'regex:/^\d{5}-?\d{3}$/'],
+            // TODO: 'rating' hoje é auto-declarado pelo próprio restaurante, sem
+            // nenhuma verificação. O ideal é substituir por uma média calculada a
+            // partir de avaliações reais de clientes (ex.: liberadas após reserva
+            // com status 'liberada', no mesmo padrão do histórico de reservas que
+            // já existe) — e parar de aceitar esse valor diretamente aqui.
             'rating'               => 'sometimes|nullable|numeric|min:0|max:5',
             'price_range'          => 'sometimes|nullable|integer|min:1|max:4',
             'reservations_enabled' => 'sometimes|boolean',
             'description'          => 'sometimes|nullable|string|max:500',
-            'intervalo_reserva'    => 'sometimes|nullable|integer|min:15|max:120',
         ]);
 
         if ($validator->fails()) {

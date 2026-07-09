@@ -42,7 +42,6 @@ class Restaurante extends Authenticatable implements JWTSubject, MustVerifyEmail
         'price_range',
         'reservations_enabled',
         'description',
-        'intervalo_reserva',
         'tipo_usuario',
         'password',
         'token_version',

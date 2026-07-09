@@ -40,6 +40,10 @@ function ScrollColumn({
   const isDragging = useRef(false);
   const startY = useRef(0);
   const scrollStart = useRef(0);
+  // Verdadeiro enquanto a própria coluna está causando a mudança de `value`
+  // (drag/click/scroll nativo). Evita que o efeito de sincronização abaixo
+  // puxe o scroll de volta no meio do gesto do usuário (loop de snap-back).
+  const isInteracting = useRef(false);
 
   const scrollToValue = useCallback(
     (val: string, smooth = true) => {
@@ -54,18 +58,41 @@ function ScrollColumn({
   );
 
   useEffect(() => {
+    if (isInteracting.current) return;
     scrollToValue(value, false);
   }, [value, scrollToValue]);
 
+  const releaseTimeout = useRef<ReturnType<typeof setTimeout>>();
+
+  const commitChange = useCallback(
+    (item: string) => {
+      isInteracting.current = true;
+      onChange(item);
+      // Mantém a trava até a rolagem suave (scrollToValue) terminar; se
+      // liberássemos no frame seguinte, o useEffect([value]) reagiria ao
+      // novo valor e cortaria a animação com um "pulo" instantâneo.
+      if (releaseTimeout.current) clearTimeout(releaseTimeout.current);
+      releaseTimeout.current = setTimeout(() => {
+        isInteracting.current = false;
+      }, 300);
+    },
+    [onChange],
+  );
+
+  useEffect(() => () => {
+    if (releaseTimeout.current) clearTimeout(releaseTimeout.current);
+  }, []);
+
   const handleScroll = () => {
-    if (!listRef.current) return;
+    if (!listRef.current || isDragging.current) return;
     const idx = Math.round(listRef.current.scrollTop / ITEM_HEIGHT);
     const clamped = Math.max(0, Math.min(idx, items.length - 1));
-    if (items[clamped] !== value) onChange(items[clamped]);
+    if (items[clamped] !== value) commitChange(items[clamped]);
   };
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     isDragging.current = true;
+    isInteracting.current = true;
     startY.current = e.clientY;
     scrollStart.current = listRef.current?.scrollTop ?? 0;
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -81,7 +108,7 @@ function ScrollColumn({
     if (!listRef.current) return;
     const idx = Math.round(listRef.current.scrollTop / ITEM_HEIGHT);
     const clamped = Math.max(0, Math.min(idx, items.length - 1));
-    onChange(items[clamped]);
+    commitChange(items[clamped]);
     scrollToValue(items[clamped]);
   };
 
@@ -118,7 +145,7 @@ function ScrollColumn({
             key={item}
             type="button"
             onClick={() => {
-              onChange(item);
+              commitChange(item);
               scrollToValue(item);
             }}
             className={cn(
@@ -227,6 +254,12 @@ export function TimePicker({
           role="dialog"
           aria-modal="true"
           aria-label="Selecionar horário"
+          // Faz o Lenis (scroll suave global, ver main.tsx) recuar e deixar o
+          // scroll nativo do navegador agir dentro do popover — sem isso, o
+          // listener de wheel do Lenis em `window` intercepta e cancela o
+          // scroll padrão de QUALQUER elemento da página, ignorando
+          // preventDefault() de listeners locais.
+          data-lenis-prevent
           className="absolute left-0 z-50 mt-2 min-w-[180px] rounded-2xl border border-border bg-popover p-3 pt-4 shadow-lg"
         >
           <div className="mb-3 text-center text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">

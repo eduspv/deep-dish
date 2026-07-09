@@ -41,7 +41,6 @@ const Settings: React.FC = () => {
   const [reservationsEnabled, setReservationsEnabled] = useState(restaurante?.reservations_enabled ?? false);
   const [filaAtiva, setFilaAtiva] = useState(restaurante?.fila_ativa ?? false);
   const [description, setDescription] = useState(restaurante?.description ?? '');
-  const [intervaloReserva, setIntervaloReserva] = useState(restaurante?.intervalo_reserva?.toString() ?? '');
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +56,6 @@ const Settings: React.FC = () => {
         reservations_enabled: reservationsEnabled,
         fila_ativa: filaAtiva,
         description: description || null,
-        intervalo_reserva: intervaloReserva ? parseInt(intervaloReserva) : null,
         logradouro,
         numero,
         complemento: complemento || undefined,
@@ -236,6 +234,9 @@ const Settings: React.FC = () => {
           </div>
 
           <div className="space-y-1.5">
+            {/* TODO: hoje o restaurante digita a própria nota, sem verificação.
+                O ideal é substituir por uma média calculada a partir de
+                avaliações reais de clientes (ex.: após reserva finalizada). */}
             <Label>Nota (rating)</Label>
             <Input type="number" min="0" max="5" step="0.1" value={rating} onChange={e => setRating(e.target.value)} placeholder="4.5" />
           </div>
@@ -276,21 +277,6 @@ const Settings: React.FC = () => {
               Fila de espera ativa
             </Label>
           </div>
-
-          {reservationsEnabled && (
-            <div className="space-y-1.5">
-              <Label>Intervalo entre reservas (minutos)</Label>
-              <select value={intervaloReserva} onChange={e => setIntervaloReserva(e.target.value)} className={selectClass}>
-                <option value="">Selecione...</option>
-                <option value="15">15 minutos</option>
-                <option value="30">30 minutos</option>
-                <option value="45">45 minutos</option>
-                <option value="60">1 hora</option>
-                <option value="90">1h30</option>
-                <option value="120">2 horas</option>
-              </select>
-            </div>
-          )}
         </div>
 
         <Button type="submit" disabled={saving} className="min-h-[44px]">

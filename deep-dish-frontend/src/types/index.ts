@@ -32,7 +32,6 @@ export interface Restaurante {
   price_range?: number | null;
   reservations_enabled?: boolean;
   description?: string | null;
-  intervalo_reserva?: number | null;
   // Campo para implementação futura
   averageWaitTime?: number;
 }
@@ -56,12 +55,6 @@ export interface Mesa {
   confirmacao?: string;
   created_at?: string;
   updated_at?: string;
-}
-
-export interface TimeSlot {
-  id: string;
-  time: string;
-  available: boolean;
 }
 
 // Resposta paginada do Laravel (paginate())
