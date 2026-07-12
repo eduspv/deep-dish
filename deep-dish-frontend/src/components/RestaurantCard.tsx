@@ -2,6 +2,7 @@ import { Restaurante } from '@/types';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Users, Star } from 'lucide-react';
 import { storageUrl } from '@/lib/storage';
+import { getTipoLabel } from '@/constants/tipos';
 
 const PRICE_LABELS: Record<number, string> = { 1: 'R$', 2: 'R$$', 3: 'R$$$', 4: 'R$$$$' };
 
@@ -75,7 +76,7 @@ const RestaurantCard = ({ restaurant }: { restaurant: Restaurante }) => {
               )}
             </div>
           </div>
-          <p className="mt-0.5 text-sm text-muted-foreground capitalize">{restaurant.tipo}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">{getTipoLabel(restaurant.tipo)}</p>
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
             {restaurant.cidade && (
               <span className="inline-flex items-center gap-1">

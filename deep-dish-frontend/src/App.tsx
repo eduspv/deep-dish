@@ -62,10 +62,11 @@ const App = () => (
               <Route path="/verify-email" element={<VerifyEmail />} />
             </Route>
 
-            {/* Client App (cliente E restaurante podem acessar) */}
+            {/* Client App (só cliente — reserva/fila são ações do cliente, o
+                backend rejeita token de restaurante nessas rotas de qualquer forma) */}
             <Route
               element={
-                <ProtectedRoute allow={["cliente", "restaurante"]}>
+                <ProtectedRoute allow={["cliente"]}>
                   <AppLayout />
                 </ProtectedRoute>
               }

@@ -12,6 +12,7 @@ import { Restaurante, Mesa } from '@/types';
 import { ArrowLeft, MapPin, Clock, Phone, Star, Users, ListOrdered } from 'lucide-react';
 import { hojeEmBRT, toISOBRT } from '@/lib/utils';
 import { storageUrl } from '@/lib/storage';
+import { getTipoLabel } from '@/constants/tipos';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -215,7 +216,7 @@ const RestaurantDetail: React.FC = () => {
                 {Number(restaurant.rating).toFixed(1)}
               </span>
             )}
-            <span className="capitalize">{restaurant.tipo}</span>
+            <span>{getTipoLabel(restaurant.tipo)}</span>
             {restaurant.price_range && (
               <span className="font-medium">{PRICE_LABELS[restaurant.price_range]}</span>
             )}
@@ -229,7 +230,7 @@ const RestaurantDetail: React.FC = () => {
           {/* Info */}
           <div className="rounded-2xl bg-card p-5 shadow-card">
             <p className="text-foreground leading-relaxed">
-              {restaurant.description || `Restaurante especializado em ${restaurant.tipo}.`}
+              {restaurant.description || `Restaurante especializado em ${getTipoLabel(restaurant.tipo)}.`}
             </p>
             <div className="mt-4 space-y-2 text-sm text-muted-foreground">
               {endereco && (
