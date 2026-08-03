@@ -14,14 +14,14 @@ interface Props {
 
 const ConfirmModal: React.FC<Props> = ({ open, onClose, onConfirm, title, description, confirmLabel = 'Confirmar', isLoading }) => (
   <Dialog open={open} onOpenChange={onClose}>
-    <DialogContent className="bg-card">
+    <DialogContent className="bg-card rounded-2xl">
       <DialogHeader>
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
+        <DialogTitle className="font-display">{title}</DialogTitle>
+        <DialogDescription className="leading-relaxed">{description}</DialogDescription>
       </DialogHeader>
       <DialogFooter className="gap-2">
-        <Button variant="outline" onClick={onClose} disabled={isLoading}>Voltar</Button>
-        <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
+        <Button variant="outline" className="min-h-[40px]" onClick={onClose} disabled={isLoading}>Voltar</Button>
+        <Button variant="destructive" className="min-h-[40px]" onClick={onConfirm} disabled={isLoading}>
           {isLoading ? 'Processando...' : confirmLabel}
         </Button>
       </DialogFooter>

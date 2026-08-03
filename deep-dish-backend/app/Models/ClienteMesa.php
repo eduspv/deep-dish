@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class ClienteMesa extends Model
+{
+    use HasUuids;
+
+    protected $table = 'clientemesa';
+
+    protected $fillable = [
+        'cliente_id',
+        'mesa_id',
+        'horario_reserva',
+        'horario_checkin',
+        'party_size',
+        'status',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'horario_reserva' => 'datetime',
+            'horario_checkin' => 'datetime',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+        ];
+    }
+
+    public function cliente(): BelongsTo
+    {
+        return $this->belongsTo(Cliente::class, 'cliente_id');
+    }
+
+    public function mesa(): BelongsTo
+    {
+        return $this->belongsTo(Mesa::class, 'mesa_id');
+    }
+}

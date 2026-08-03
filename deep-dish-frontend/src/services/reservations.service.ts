@@ -1,40 +1,86 @@
-import { Reservation } from '@/types';
-import { mockReservations } from '@/mocks/reservations';
+import { Paginated, Reserva } from '@/types';
+import { httpClient } from './httpClient';
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+interface CreateReservaPayload {
+  mesa_id:         string;
+  party_size:      number;
+  horario_reserva: string; // ISO datetime ex: "2026-04-13T19:00:00"
+}
+
+interface CreateReservaResponse {
+  message: string;
+  reserva: Reserva;
+}
+
+export interface ReservaListParams {
+  page?:         number;
+  per_page?:     number;
+  status_group?: 'active' | 'finished';
+}
+
+function buildQuery(params?: ReservaListParams): string {
+  if (!params) return '';
+  const q = new URLSearchParams();
+  if (params.page)         q.set('page',         String(params.page));
+  if (params.per_page)     q.set('per_page',     String(params.per_page));
+  if (params.status_group) q.set('status_group', params.status_group);
+  const str = q.toString();
+  return str ? `?${str}` : '';
+}
 
 export const reservationsService = {
-  async listUserReservations(_userId: string): Promise<Reservation[]> {
-    await delay(500);
-    return mockReservations;
+
+  // ─── Cliente: cria reserva ──────────────────────────────
+  async createReservation(payload: CreateReservaPayload): Promise<Reserva> {
+    const res = await httpClient.post<CreateReservaResponse>('/reservas', payload);
+    return res.reserva;
   },
-  async getReservationById(id: string): Promise<Reservation | undefined> {
-    await delay(300);
-    return mockReservations.find(r => r.id === id);
+
+  // ─── Cliente: lista suas reservas (paginado) ────────────
+  async listUserReservations(params?: ReservaListParams): Promise<Paginated<Reserva>> {
+    return httpClient.get<Paginated<Reserva>>(`/reservas${buildQuery(params)}`);
   },
-  async createReservation(payload: Partial<Reservation>): Promise<Reservation> {
-    await delay(700);
-    return {
-      id: 'res-new-' + Date.now(),
-      userId: 'user-1',
-      restaurantId: payload.restaurantId || 'r1',
-      restaurantName: payload.restaurantName || 'Restaurante',
-      restaurantImage: payload.restaurantImage || '',
-      date: payload.date || '2026-02-25',
-      time: payload.time || '20:00',
-      partySize: payload.partySize || 2,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
+
+  // ─── Cliente: busca uma reserva pelo ID ─────────────────
+  async getReservationById(id: string): Promise<Reserva | null> {
+    try {
+      return await httpClient.get<Reserva>(`/reservas/${id}`);
+    } catch {
+      return null;
+    }
   },
-  async cancelReservation(id: string): Promise<Reservation> {
-    await delay(500);
-    const res = mockReservations.find(r => r.id === id);
-    return { ...res!, status: 'cancelled' };
+
+  // ─── Cliente: cancela reserva ───────────────────────────
+  async cancelReservation(id: string): Promise<Reserva> {
+    const res = await httpClient.delete<{ message: string; reserva: Reserva }>(`/reservas/${id}`);
+    return res.reserva;
   },
-  async updateReservationStatus(id: string, status: Reservation['status']): Promise<Reservation> {
-    await delay(400);
-    const res = mockReservations.find(r => r.id === id) || mockReservations[0];
-    return { ...res, status };
+
+  // ─── Restaurante: lista reservas das suas mesas (paginado)
+  async listRestaurantReservations(params?: ReservaListParams): Promise<Paginated<Reserva>> {
+    return httpClient.get<Paginated<Reserva>>(`/restaurante/reservas${buildQuery(params)}`);
+  },
+
+  // ─── Restaurante: faz check-in do cliente ────────────────
+  async checkin(id: string): Promise<Reserva> {
+    const res = await httpClient.patch<{ message: string; reserva: Reserva }>(
+      `/restaurante/reservas/${id}/checkin`,
+      {}
+    );
+    return res.reserva;
+  },
+
+  // ─── Restaurante: marca mesa como liberada ──────────────
+  async liberarMesa(id: string): Promise<Reserva> {
+    const res = await httpClient.patch<{ message: string; reserva: Reserva }>(
+      `/restaurante/reservas/${id}/liberar`,
+      {}
+    );
+    return res.reserva;
+  },
+
+  // ─── Restaurante: exclui permanentemente reserva finalizada
+  async deleteRestaurantReservation(id: string): Promise<void> {
+    await httpClient.delete<{ message: string }>(`/restaurante/reservas/${id}`);
   },
 };

@@ -1,5 +1,5 @@
 <?php
-
+//Essa página define as configurações do nosso middleware como ele vai ser autenticado.
 return [
 
     /*
@@ -14,8 +14,8 @@ return [
     */
 
     'defaults' => [
-        'guard' => env('AUTH_GUARD', 'web'),
-        'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+        'guard' => 'cliente',
+        'passwords' => 'clientes',
     ],
 
     /*
@@ -36,10 +36,23 @@ return [
     */
 
     'guards' => [
-        'web' => [
-            'driver' => 'session',
-            'provider' => 'users',
-        ],
+    // ✅ JWT para cliente
+    'cliente' => [
+        'driver' => 'jwt',
+        'provider' => 'cliente',
+    ],
+
+    // ✅ JWT API (mesmo provider que cliente — tokens emitidos no login de cliente)
+    'api' => [
+        'driver' => 'jwt',
+        'provider' => 'cliente',
+    ],
+
+    // ✅ JWT para restaurante
+    'restaurante' => [
+        'driver' => 'jwt',
+        'provider' => 'restaurante',
+    ],
     ],
 
     /*
@@ -60,15 +73,14 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        'cliente' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            'model' => App\Models\Cliente::class,
         ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'restaurante' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Restaurante::class,
+        ],
     ],
 
     /*
@@ -91,13 +103,20 @@ return [
     */
 
     'passwords' => [
-        'users' => [
-            'provider' => 'users',
-            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
-            'expire' => 60,
-            'throttle' => 60,
-        ],
+    'clientes' => [
+        'provider' => 'cliente',
+        'table' => 'password_reset_tokens',
+        'expire' => 60,
+        'throttle' => 60,
     ],
+
+    'restaurantes' => [
+    'provider' => 'restaurante',
+    'table' => 'password_reset_tokens',
+    'expire' => 60,
+    'throttle' => 60,
+    ],
+],
 
     /*
     |--------------------------------------------------------------------------

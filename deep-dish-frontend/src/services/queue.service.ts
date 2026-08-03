@@ -1,28 +1,34 @@
-import { QueueEntry } from '@/types';
-import { mockUserQueue, mockQueueEntries } from '@/mocks/queue';
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import { ClienteFilaEntry } from '@/types';
+import { httpClient } from './httpClient';
 
 export const queueService = {
-  async joinQueue(payload: { restaurantId: string; partySize: number }): Promise<QueueEntry> {
-    await delay(600);
-    return { ...mockUserQueue, restaurantId: payload.restaurantId, partySize: payload.partySize };
+  // ─── Cliente ────────────────────────────────────────────
+  async joinQueue(payload: {
+    restaurante_id: string;
+    horario_reserva: string;
+    qntd_pessoas: number;
+  }): Promise<{ message: string; data: ClienteFilaEntry }> {
+    return httpClient.post('/fila', payload);
   },
-  async getUserQueueStatus(_userId: string): Promise<QueueEntry | null> {
-    await delay(400);
-    return mockUserQueue;
+
+  async cancelQueue(entryId: string): Promise<void> {
+    return httpClient.delete(`/fila/${entryId}`);
   },
-  async cancelQueue(entryId: string): Promise<QueueEntry> {
-    await delay(400);
-    return { ...mockUserQueue, id: entryId, status: 'cancelled' };
+
+  async consultarPosicao(params: {
+    restaurante_id: string;
+    horario_reserva: string;
+  }): Promise<ClienteFilaEntry> {
+    const qs = new URLSearchParams(params).toString();
+    return httpClient.get(`/fila/posicao?${qs}`);
   },
-  async getRestaurantQueue(_restaurantId: string): Promise<QueueEntry[]> {
-    await delay(500);
-    return mockQueueEntries;
+
+  // ─── Restaurante ────────────────────────────────────────
+  async getRestaurantQueue(): Promise<ClienteFilaEntry[]> {
+    return httpClient.get('/restaurante/fila');
   },
-  async updateQueueEntryStatus(entryId: string, status: QueueEntry['status']): Promise<QueueEntry> {
-    await delay(400);
-    const entry = mockQueueEntries.find(e => e.id === entryId) || mockQueueEntries[0];
-    return { ...entry, status };
+
+  async removeFromQueue(entryId: string): Promise<void> {
+    return httpClient.delete(`/restaurante/fila/${entryId}`);
   },
 };

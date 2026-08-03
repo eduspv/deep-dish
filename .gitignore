@@ -1,0 +1,4 @@
+# Local editor / agent tooling (regenerável ou específico da máquina)
+.cursor/
+.agents/
+.claude/
