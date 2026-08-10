@@ -24,8 +24,10 @@ camadas que responde ao cold start — está em [`visao-produto.md`](./visao-pro
 | `mobile` | Capacitor, push, APK |
 | `fundação` | Bloqueia outras issues — priorizar |
 | `bug` | Corrige comportamento errado já em produção |
+| `chore` | Manutenção, ferramental, CI — não muda comportamento do produto |
 
-**Estimativa:** pontos em escala Fibonacci (1, 2, 3, 5, 8). Total do backlog: **128 pontos**.
+**Estimativa:** pontos em escala Fibonacci (1, 2, 3, 5, 8). Total do backlog: **137 pontos** em
+32 issues (as 29 do roadmap + 3 de CI, no adendo ao fim do documento).
 
 **Convenção de título:** segue o
 [`Deep_Dish_Contributing_Guide.md`](../Deep_Dish_Contributing_Guide.md) — `feature:`, `fix:`,
@@ -205,7 +207,8 @@ As issues citam estes fatos. Todos foram confirmados no código antes de escreve
 
 # Sprint 1 — Fundação: histórico operacional
 
-**Semanas 1-3 · 7 issues · 26 pontos**
+**Semanas 1-3 · 9 issues · 34 pontos** (7 abaixo + as issues de CI **#30** e **#31**, no adendo ao
+fim do documento)
 
 Sem nenhuma IA visível. Este sprint existe porque **hoje o sistema apaga o dado que os outros três
 sprints precisam consumir**. Sem ele, analytics, estimativa de espera e assistente não têm sobre o
@@ -401,7 +404,7 @@ falharia por motivo errado.
 
 # Sprint 2 — Analytics real e estimativa de espera
 
-**Semanas 4-6 · 7 issues · 29 pontos**
+**Semanas 4-6 · 8 issues · 30 pontos** (7 abaixo + a issue de CI **#32**)
 
 O histórico do Sprint 1 vira número visível — para o restaurante (dashboard) e para o cliente
 (quanto vou esperar).
@@ -938,6 +941,127 @@ transforma o retorno em frase.
 
 ---
 
+# Adendo — CI no GitHub Actions (issues #30-#32)
+
+**3 issues · 9 pontos.** Numeradas a partir da #30 porque as 29 anteriores já foram criadas no
+GitHub. Não formam um sprint próprio: a #30 e a #31 pertencem ao **Sprint 1** (protegem todo o
+resto do semestre) e a #32 ao **Sprint 2**.
+
+### Por que só CI, sem CD
+
+Não existe **nenhum** alvo de deploy configurado no repositório — sem Vercel, Netlify, Railway,
+Render, Fly ou Procfile. O único artefato de build é o `Dockerfile` do backend, e o
+`docker-compose.yml` não tem serviço de banco (o Postgres é o Supabase externo). Automatizar deploy
+para lugar nenhum é trabalho jogado fora.
+
+**Pré-requisito para retomar o CD:** decidir onde hospedar. Quando chegar a hora, o frontend é um
+SPA Vite estático (Vercel ou Netlify resolvem sem configuração); o backend precisa de PHP + queue
+worker + scheduler, então Railway ou Render rodando o `Dockerfile` existente. E não ligar deploy
+automático em `main` antes dos testes de verdade da #7 e da #28 — senão é automação para publicar
+bug mais rápido.
+
+### Estado medido hoje (por que a ordem importa)
+
+Os três checks que a CI rodaria estão **reprovando agora**:
+
+| Check | Estado |
+|---|---|
+| `./vendor/bin/pint --test` | ✗ 42 arquivos fora do padrão |
+| `npm run lint` | ✗ 7 erros (o comando sai com código 1) |
+| `composer test` | ✗ `ExampleTest` faz `GET /`, mas `routes/web.php` está vazio → 404 ≠ 200 |
+
+Uma CI que nasce vermelha ensina o time a ignorar o ✗. Por isso a #30 vem antes da #31.
+
+---
+
+### #30 — `chore:` deixar o repositório verde antes de ligar a CI
+
+`labels: chore, testes, fundação` · `3 pontos` · **Sem dependências**
+
+**Contexto.** Pré-requisito da #31. Nenhuma das correções abaixo é difícil — o valor está em fazer
+todas antes de existir um check automático, para a CI nascer verde.
+
+**Tarefas**
+- Rodar `./vendor/bin/pint` (sem `--test`) e commitar os 42 arquivos reformatados. Vai poluir o
+  histórico uma vez; combine com o time para não colidir com PR aberto.
+- Corrigir os **7 erros** de ESLint:
+  - `no-empty-object-type` em `components/ui/command.tsx:24` e `components/ui/textarea.tsx:5` —
+    arquivos gerados do shadcn; a correção honesta é trocar a `interface` vazia por `type`.
+  - `no-explicit-any` em `pages/restaurant/Tables.tsx` linhas 57, 70 e 80 — tipar de verdade, não
+    silenciar com comentário.
+  - `no-require-imports` em `tailwind.config.ts:165-166` — converter para `import`.
+- Remover `tests/Feature/ExampleTest.php` e `tests/Unit/ExampleTest.php` (o primeiro testa uma rota
+  que não existe). Sobrepõe-se à #7 — se a #7 já tiver rodado, esta tarefa é no-op.
+- **Escolher um gerenciador de pacotes no frontend.** Hoje coexistem `package-lock.json` e
+  `bun.lockb`; o `docker-compose` usa `npm install`. Dois lockfiles é armadilha de
+  reprodutibilidade — apagar o que não for usado.
+
+**Critérios de aceite**
+- [ ] `./vendor/bin/pint --test` passa.
+- [ ] `npm run lint` sai com código 0 (avisos podem permanecer; erros não).
+- [ ] `composer test` passa.
+- [ ] Existe **um** lockfile no frontend, e o `Dockerfile`/`docker-compose` usa o gerenciador
+      correspondente.
+
+---
+
+### #31 — `chore:` workflow de CI no GitHub Actions
+
+`labels: chore, infra, testes` · `5 pontos` · **Depende de: #7, #30**
+
+**Contexto.** O repositório não tem diretório `.github/`. Não há verificação automática nenhuma:
+lint, teste e build só rodam se alguém lembrar de rodar na própria máquina.
+
+**Depende da #7** porque o job de backend precisa rodar contra **Postgres**, não sqlite — o
+`phpunit.xml` aponta para sqlite em memória, mas o código tem SQL cru de Postgres
+(`interval '1 hour'` em `ReservaController.php:180,194`). CI e #7 são a mesma correção; façam juntas.
+
+**Tarefas**
+- Criar `.github/workflows/ci.yml` disparando em `pull_request` para `develop` e `main`, e em
+  `push` nessas duas branches.
+- `concurrency` com `cancel-in-progress` para cancelar runs antigos do mesmo PR.
+- Filtro por `paths`: um PR que só toca `docs/` não deve rodar build de frontend nem migrations.
+- **Job `backend`:** `postgres:16` como service container; `setup-php` 8.2 com `pdo_pgsql`,
+  `bcmath` e `zip` (mesmas extensões do `Dockerfile`); cache do Composer; `composer install`;
+  gerar `.env` a partir do `.env.example` com `key:generate` e **`jwt:secret`** (o `.env.example`
+  não tem `JWT_SECRET`, e sem ele o boot quebra); `pint --test`; `php artisan test`.
+- **Job `frontend`:** `setup-node` 20 (mesma versão do `docker-compose`) com cache de npm;
+  `npm ci`; `npm run lint`; `npm test`; `npm run build`.
+- Os dois jobs rodam em paralelo e são independentes.
+- Documentar no `README` o que a CI verifica e como reproduzir localmente.
+
+**Critérios de aceite**
+- [ ] Abrir PR para `develop` dispara os dois jobs e ambos passam no código atual.
+- [ ] PR que quebra lint ou teste fica vermelho, com o erro legível no log.
+- [ ] PR que só altera `docs/` não roda os jobs de build.
+- [ ] Nenhum segredo aparece em log; nenhuma credencial real é necessária (o Postgres é efêmero).
+- [ ] Run completo em menos de ~5 min com cache quente.
+
+---
+
+### #32 — `chore:` tornar os checks obrigatórios (branch protection)
+
+`labels: chore, infra` · `1 ponto` · **Depende de: #31**
+
+**Contexto.** O `Deep_Dish_Contributing_Guide.md` já diz que só o Tech Lead faz merge em `develop`
+e `main`, mas isso é convenção verbal — nada impede tecnicamente um push direto. Esta issue dá
+trava técnica à regra que já existe no papel.
+
+**Só executar depois de a CI rodar verde por pelo menos um sprint.** Tornar obrigatório cedo demais
+transforma falso positivo em bloqueio de trabalho.
+
+**Tarefas**
+- Branch protection em `develop` e `main`: exigir os checks da #31, exigir PR com aprovação,
+  bloquear push direto.
+- Registrar no `Deep_Dish_Contributing_Guide.md` que a regra agora é aplicada automaticamente.
+
+**Critérios de aceite**
+- [ ] Push direto em `develop` é rejeitado pelo GitHub.
+- [ ] PR com CI vermelha não pode ser mergeada.
+- [ ] O guia de contribuição reflete a regra automatizada.
+
+---
+
 ## Tabela-resumo
 
 | # | Título | Sprint | Labels | Pts | Depende de |
@@ -971,13 +1095,15 @@ transforma o retorno em frase.
 | 27 | tela de chat no painel | 4 | frontend, ia | 5 | 26 |
 | 28 | E2E dos fluxos críticos | 4 | testes | 5 | 15, 16, 23 |
 | 29 | roteiro de demo e documentação | 4 | docs | 3 | 27, 28 |
+| 30 | deixar o repositório verde | 1 | chore, testes, fundação | 3 | — |
+| 31 | workflow de CI no GitHub Actions | 1 | chore, infra, testes | 5 | 7, 30 |
+| 32 | checks obrigatórios (branch protection) | 2 | chore, infra | 1 | 31 |
 
-**Distribuição:** Sprint 1 = 7 issues / 26 pts · Sprint 2 = 7 / 29 · Sprint 3 = 9 / **44** ·
-Sprint 4 = 6 / 29. **Total: 29 issues, 128 pontos.**
+**Distribuição:** Sprint 1 = 9 issues / 34 pts · Sprint 2 = 8 / 30 · Sprint 3 = 9 / **44** ·
+Sprint 4 = 6 / 29. **Total: 32 issues, 137 pontos.**
 
-O Sprint 3 concentra 34% dos pontos em 3 das 12 semanas. Ou ele é redistribuído no planejamento
-(empurrando #21 e #18 para o Sprint 2, que está mais folgado), ou entra assumindo que vai
-escorregar.
+O Sprint 3 concentra 32% dos pontos em 3 das 12 semanas. Ou ele é redistribuído no planejamento
+(empurrando #21 e #18 para o Sprint 2), ou entra assumindo que vai escorregar.
 
 ---
 
