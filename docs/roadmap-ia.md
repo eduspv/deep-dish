@@ -1,6 +1,7 @@
 # Roadmap — Diferencial de IA (PI4)
 
 **Status:** planejado, aguardando início do Sprint 1
+**Execução:** as 29 issues derivadas deste roadmap — com critérios de aceite, labels, estimativa e dependências — estão em [`backlog-pi4.md`](./backlog-pi4.md). A direção de produto para além do PI4 está em [`visao-produto.md`](./visao-produto.md).
 **Contexto:** o MVP atual (fila + reserva) resolve o problema básico, mas é funcionalmente igual a qualquer app de reserva de fila do mercado. Este roadmap define o que construir nos 4 sprints do PI4 para dar ao Deep Dish um diferencial real, usando IA de forma verificável (não cosmética).
 
 Origem: análise do backend atual cruzada com o documento de visão "RestaurantOS AI" (rascunho gerado a partir de uma conversa com ChatGPT, sem contexto do estado atual do projeto). O documento original mira um produto de escala de startup financiada (visão computacional, microserviços Node, Kubernetes, marketplace). Este roadmap extrai apenas o que é construível em 12 semanas por uma equipe de 3-4 pessoas em cima do stack já existente (Laravel + PostgreSQL + React), sem reescrever autenticação nem introduzir infraestrutura nova desnecessária.
@@ -14,6 +15,8 @@ Origem: análise do backend atual cruzada com o documento de visão "RestaurantO
 - **LLM via OpenRouter**, não API direta de um único provedor — já há acesso/chaves, mais barato, permite trocar modelo conforme custo/desempenho.
 - **Assistente de IA usa tool-calling sobre dados reais** (nunca deixa o LLM "chutar" número) — a resposta vem de uma função que consulta o banco, o LLM só formata a resposta em linguagem natural.
 - **Estimativa de espera é heurística estatística (média histórica condicionada), não Machine Learning treinado.** É honesto chamar de "previsão v1"; modelo evolui para ML quando houver volume real de dados de uso.
+- **O produto vai para mobile neste semestre, via Capacitor — em caráter de teste.** O app é **só do cliente**; o restaurante continua no painel web, porque gestão de salão precisa de tela grande (o gerente vê muitas mesas ao mesmo tempo num tablet ou no computador do balcão). Capacitor empacota o React/Vite atual como app Android nativo — APK instalável, com push FCM e câmera para o QR — **sem reescrever nenhuma tela**. Entra como 2 issues do Sprint 3 (#22 e #23) em vez de consumir um sprint inteiro. **React Native não está descartado**: continua como alternativa, com gatilhos objetivos de reavaliação registrados no backlog futuro e detalhados na seção *Mobile* do [`backlog-pi4.md`](./backlog-pi4.md).
+- **IA por voz (o sistema ligar para o restaurante) está descartada** como mecanismo central. Não elimina a ligação — transfere o custo para a plataforma; é lenta e frágil, não vira estado no banco, e tem risco regulatório de telemarketing no Brasil. O canal assíncrono (WhatsApp com IA interpretando texto livre) é a troca vencedora, e pertence ao pós-PI4.
 
 ## Achado crítico que motiva o Sprint 1
 
@@ -130,3 +133,23 @@ Cada restaurante usa um PDV diferente; exigiria conectores desacoplados por inte
 
 **Por que não agora:** o Sprint 1 só começa a coletar histórico este semestre; não há volume de dados suficiente para treinar um modelo que supere a média histórica condicionada.
 **Pré-requisito antes de retomar:** meses de dados reais de produção coletados a partir do Sprint 1 (a heurística do Sprint 2 já deixa a base pronta para essa evolução).
+
+### Migração para React Native (alternativa ao Capacitor)
+
+Trocar o app Capacitor por um app React Native de verdade, com componentes nativos em vez de WebView.
+
+**Por que não agora:** o custo está concentrado na UI. `services/`, `contexts/`, `types/` e os schemas Zod (~1.000 linhas) migrariam trocando `localStorage` por `AsyncStorage`, mas as ~12 telas do cliente precisariam ser reescritas — `pages/app/` (1.740 linhas), as telas de auth, e os 53 componentes shadcn de `components/ui/`. É um sprint inteiro no semestre cujo diferencial prometido é a IA, e passaria a existir um segundo frontend para manter ao lado do painel web. Capacitor entrega APK real com push e câmera sem reescrever nada.
+
+**Importante:** as duas opções não se anulam. A camada que sobreviveria a uma migração para RN é exatamente a que o Capacitor não toca — testar Capacitor primeiro não desperdiça trabalho caso a decisão mude.
+
+**Gatilhos para reabrir a decisão** (avaliados ao fim da issue #22, com o APK rodando em aparelho físico — não antes, e não por especulação): lentidão perceptível em rolagem de lista ou transição de tela; recurso nativo necessário sem plugin Capacitor maduro; push ou câmera instáveis pela WebView; exigência de publicação em loja com padrão de UX nativo que a WebView não alcance.
+
+**Pré-requisito antes de retomar:** nenhum técnico — o caminho seria Expo + NativeWind + React Navigation, mantendo o painel do restaurante na web. É questão de escopo/tempo e do veredito da #22.
+
+### Diretório "shadow" + claim, e confirmação por WhatsApp com IA (modelo de duas camadas)
+
+Resposta ao problema de aquisição ("preciso de N contratos com restaurantes"). **Camada 0:** restaurantes listados a partir de dados públicos; o cliente pede reserva, o sistema manda WhatsApp ("Mesa para 4 às 20h? SIM/NÃO"), uma IA interpreta a resposta em texto livre e o cliente é notificado — sem conta, painel ou contrato. Popula o app no dia 1 e gera demanda. **Camada 1:** ao ver a demanda chegando, o restaurante reivindica a listagem (claim) e ganha fila virtual, QR e dashboard. A gestão em tempo real só é exigida de quem optou por ela.
+
+**Por que não agora:** o PI4 constrói a melhor Camada 1 possível — sem ela, não há o que reivindicar. Além disso, a Camada 0 depende de contrato com provedor de WhatsApp Business (custo recorrente e aprovação), já listado acima.
+
+**Pré-requisito antes de retomar:** separar a identidade do estabelecimento das credenciais de acesso. Hoje `Restaurante` **é** a tabela de autenticação (`extends Authenticatable implements JWTSubject, MustVerifyEmail`), com `email`, `cnpj` e `password` obrigatórios — não existe restaurante "reivindicável". Esse é o bloqueio técnico real, e é estrutural.
