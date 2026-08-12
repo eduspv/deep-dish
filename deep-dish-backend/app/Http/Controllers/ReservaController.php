@@ -63,7 +63,7 @@ class ReservaController extends Controller
             ->get();
 
         $sessaoExpirada = $emAndamento->filter(function (ClienteMesa $reserva) {
-            $restaurante   = $reserva->mesa?->restaurante;
+            $restaurante = $reserva->mesa?->restaurante;
             $fechamentoStr = $restaurante?->horario_fechamento; // "HH:MM" ou null
 
             $referencia = $reserva->horario_checkin ?? $reserva->horario_reserva;
@@ -80,7 +80,7 @@ class ReservaController extends Controller
 
             // Monta o datetime de fechamento do dia da reserva
             [$fh, $fm] = array_map('intval', explode(':', substr($fechamentoStr, 0, 5)));
-            $dataBase  = Carbon::parse($referencia)->startOfDay();
+            $dataBase = Carbon::parse($referencia)->startOfDay();
             $fechamento = $dataBase->copy()->setTime($fh, $fm);
 
             // Restaurantes que fecham depois da meia-noite (ex: 02:00)
@@ -115,26 +115,26 @@ class ReservaController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'mesa_id'         => 'required|string|uuid|exists:mesa,id',
-            'party_size'      => 'required|integer|min:1|max:20',
+            'mesa_id' => 'required|string|uuid|exists:mesa,id',
+            'party_size' => 'required|integer|min:1|max:20',
             'horario_reserva' => 'required|date|after:now',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'error'   => 'Dados de entrada inválidos',
+                'error' => 'Dados de entrada inválidos',
                 'details' => $validator->errors(),
             ], 422);
         }
 
-        $clienteId         = auth('api')->id();
-        $mesaId            = $request->input('mesa_id');
-        $partySize         = (int) $request->input('party_size');
-        $horarioInput      = $request->input('horario_reserva');
+        $clienteId = auth('api')->id();
+        $mesaId = $request->input('mesa_id');
+        $partySize = (int) $request->input('party_size');
+        $horarioInput = $request->input('horario_reserva');
         // Mantém o offset original (BRT) para validar o horário de funcionamento
         $horarioReservaBRT = Carbon::parse($horarioInput)->setTimezone('America/Sao_Paulo');
         // Converte para UTC para armazenamento e comparações de sobreposição
-        $horarioReserva    = Carbon::parse($horarioInput)->utc();
+        $horarioReserva = Carbon::parse($horarioInput)->utc();
 
         try {
             return DB::transaction(function () use ($clienteId, $mesaId, $partySize, $horarioReserva, $horarioReservaBRT) {
@@ -152,8 +152,8 @@ class ReservaController extends Controller
                 // Valida horário de funcionamento
                 if ($restaurante->horario_abertura && $restaurante->horario_fechamento) {
                     $horaReserva = $horarioReservaBRT->format('H:i');
-                    $abre        = substr($restaurante->horario_abertura, 0, 5);
-                    $fecha       = substr($restaurante->horario_fechamento, 0, 5);
+                    $abre = substr($restaurante->horario_abertura, 0, 5);
+                    $fecha = substr($restaurante->horario_fechamento, 0, 5);
                     if ($horaReserva < $abre || $horaReserva >= $fecha) {
                         return response()->json([
                             'error' => "Este restaurante funciona das {$abre} às {$fecha}.",
@@ -202,11 +202,11 @@ class ReservaController extends Controller
 
                 // Cria a reserva (mesa permanece 'livre' até o check-in)
                 $reserva = ClienteMesa::create([
-                    'cliente_id'      => $clienteId,
-                    'mesa_id'         => $mesa->id,
+                    'cliente_id' => $clienteId,
+                    'mesa_id' => $mesa->id,
                     'horario_reserva' => $horarioReserva,
-                    'party_size'      => $partySize,
-                    'status'          => 'confirmada',
+                    'party_size' => $partySize,
+                    'status' => 'confirmada',
                 ]);
 
                 $reserva->load(['mesa.restaurante']);
@@ -218,6 +218,7 @@ class ReservaController extends Controller
             });
         } catch (\Throwable $e) {
             Log::error('Erro ao criar reserva', ['message' => $e->getMessage()]);
+
             return response()->json(['error' => 'Erro interno ao criar reserva'], 500);
         }
     }
@@ -231,8 +232,8 @@ class ReservaController extends Controller
         self::expirarReservasVencidas();
 
         $clienteId = auth('api')->id();
-        $perPage   = min((int) $request->query('per_page', 10), 50);
-        $grupo     = $request->query('status_group'); // 'active' | 'finished' | null
+        $perPage = min((int) $request->query('per_page', 10), 50);
+        $grupo = $request->query('status_group'); // 'active' | 'finished' | null
 
         $query = ClienteMesa::with(['mesa.restaurante'])
             ->where('cliente_id', $clienteId)
@@ -301,8 +302,8 @@ class ReservaController extends Controller
         self::expirarReservasVencidas();
 
         $restauranteId = auth('restaurante')->id();
-        $perPage       = min((int) $request->query('per_page', 10), 50);
-        $grupo         = $request->query('status_group'); // 'active' | 'finished' | null
+        $perPage = min((int) $request->query('per_page', 10), 50);
+        $grupo = $request->query('status_group'); // 'active' | 'finished' | null
 
         $statusAtivos = implode("','", self::STATUS_ATIVOS);
 
@@ -339,7 +340,7 @@ class ReservaController extends Controller
         }
 
         $reserva->update([
-            'status'         => 'em_andamento',
+            'status' => 'em_andamento',
             'horario_checkin' => now(),
         ]);
 

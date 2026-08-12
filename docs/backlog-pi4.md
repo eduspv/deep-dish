@@ -7,11 +7,77 @@ camadas que responde ao cold start — está em [`visao-produto.md`](./visao-pro
 
 ---
 
+## ⚠️ Numeração: este documento vs. GitHub
+
+As issues foram criadas no GitHub e receberam **números próprios**, que não batem com a numeração
+`#1`–`#32` usada aqui. Toda referência `#N` **neste arquivo** aponta para a numeração *deste
+documento*.
+
+| Neste documento | No GitHub | Conversão |
+|---|---|---|
+| `#1` – `#6` | **#153 – #158** | `GitHub = local + 152` |
+| `#7` – `#32` | **#160 – #185** | `GitHub = local + 153` |
+
+O salto de +1 acontece porque a issue **#159** foi criada no meio da leva.
+
+**Ao colar texto daqui em comentários do GitHub, converta os `#N`** — caso contrário o GitHub
+cria link para a issue errada. Exemplo real: `#7` (infra de testes) vira link para o
+`[EPIC] Status & Fluxo Operacional`, que é a issue 7 do repositório.
+
+Pares mais citados:
+
+| Local | GitHub | Título |
+|---|---|---|
+| `#5` | **#157** | `chore: factories dos models + conserto do DatabaseSeeder` |
+| `#7` | **#160** | `test: infraestrutura de testes + suíte do FilaService` |
+| `#30` | **#183** | `chore: deixar o repositório verde antes de ligar a CI` |
+| `#31` | **#184** | `chore: workflow de CI no GitHub Actions` |
+| `#32` | **#185** | `chore: tornar os checks obrigatórios (branch protection)` |
+
+## Relação com as issues RF-* antigas
+
+O repositório tinha **34 issues abertas** anteriores (11 EPICs + 23 `RF-*`), que descreviam
+**requisitos funcionais** — *o que o sistema deve fazer*. Este backlog descreve **trabalho de
+execução** — *o que alguém programa nesta semana*. São documentos de naturezas diferentes, e rodar
+sprint com as duas listas sobrepostas é pior que qualquer uma sozinha.
+
+**Decisão:** as 4 sprints do PI4 são guiadas **exclusivamente por este backlog**. As RF-* saem do
+board de sprint, mas continuam consultáveis para a banca.
+
+Importante: **boa parte das RF-* já foi implementada** e apenas nunca foi fechada. Elas não são um
+bloco homogêneo, e o encerramento precisa distinguir três casos:
+
+| Caso | Como encerrar |
+|---|---|
+| Já implementada (ex.: painel administrativo, feedback visual de ações) | fechar como **concluída** — é evidência de trabalho entregue |
+| Não implementada, coberta por uma issue deste backlog | fechar apontando **qual issue absorveu** |
+| Não implementada e fora do escopo do PI4 | fechar com o **motivo do adiamento** registrado |
+
+Fechar as três categorias com o mesmo texto destruiria a rastreabilidade em vez de preservá-la.
+
+### Escopo das RF-* deliberadamente descartado
+
+**Central de notificações in-app** (RF-59 a RF-65 — tabela de notificações, listar, marcar como
+lida, sininho no app). Avaliado e **adiado para depois do PI4**.
+
+*Por quê:* é um canal **diferente** do push nativo da `#23`, não uma duplicata — push aparece na
+tela de bloqueio do celular; a central in-app é histórico dentro do app. Para a demo da banca, o
+push já demonstra o aviso ao cliente chegando, que é o momento que importa. O Sprint 3 já está com
+44 pontos (32% do backlog), e a central seria uma frente inteira a mais: migration, endpoints,
+componente de UI e estado de leitura.
+
+*Quando retomar:* depois do PI4, junto do item de "estados de mesa estendidos + tarefas de equipe"
+listado em [`visao-produto.md`](./visao-produto.md).
+
+---
+
 ## Como usar no GitHub Projects
 
 **Milestones:** crie 4 — `Sprint 1`, `Sprint 2`, `Sprint 3`, `Sprint 4`.
 
-**Labels sugeridas** (o repositório não tem labels versionadas hoje):
+**Labels sugeridas** (o repositório já tem `Sprint 1`–`Sprint 4`, `bug`, `documentation`,
+`feature`, `epic`, `easy`/`medium`/`hard`, `role: junior`/`pleno`/`senior`/`teach-lead`,
+`mvp`/`post-mvp`; as abaixo são complementares):
 
 | Label | Uso |
 |---|---|
@@ -207,7 +273,7 @@ As issues citam estes fatos. Todos foram confirmados no código antes de escreve
 
 # Sprint 1 — Fundação: histórico operacional
 
-**Semanas 1-3 · 9 issues · 34 pontos** (7 abaixo + as issues de CI **#30** e **#31**, no adendo ao
+**Semanas 1-3 · 10 issues · 35 pontos** (7 abaixo + as issues de CI **#30**, **#31** e **#32**, no adendo ao
 fim do documento)
 
 Sem nenhuma IA visível. Este sprint existe porque **hoje o sistema apaga o dado que os outros três
@@ -404,7 +470,7 @@ falharia por motivo errado.
 
 # Sprint 2 — Analytics real e estimativa de espera
 
-**Semanas 4-6 · 8 issues · 30 pontos** (7 abaixo + a issue de CI **#32**)
+**Semanas 4-6 · 7 issues · 29 pontos**
 
 O histórico do Sprint 1 vira número visível — para o restaurante (dashboard) e para o cliente
 (quanto vou esperar).
@@ -944,8 +1010,12 @@ transforma o retorno em frase.
 # Adendo — CI no GitHub Actions (issues #30-#32)
 
 **3 issues · 9 pontos.** Numeradas a partir da #30 porque as 29 anteriores já foram criadas no
-GitHub. Não formam um sprint próprio: a #30 e a #31 pertencem ao **Sprint 1** (protegem todo o
-resto do semestre) e a #32 ao **Sprint 2**.
+GitHub. As três ficam no **Sprint 1**: elas protegem todo o resto do semestre, e separar a
+ativação dos checks (#32) do workflow que os produz (#31) só criaria dependência entre sprints
+sem ganho nenhum.
+
+A ordem entre elas é obrigatória — **#30 → #31 → #32** — mas a #32 só deve ser ativada depois de
+a CI rodar verde num PR real, não por cronograma.
 
 ### Por que só CI, sem CD
 
@@ -1097,7 +1167,7 @@ transforma falso positivo em bloqueio de trabalho.
 | 29 | roteiro de demo e documentação | 4 | docs | 3 | 27, 28 |
 | 30 | deixar o repositório verde | 1 | chore, testes, fundação | 3 | — |
 | 31 | workflow de CI no GitHub Actions | 1 | chore, infra, testes | 5 | 7, 30 |
-| 32 | checks obrigatórios (branch protection) | 2 | chore, infra | 1 | 31 |
+| 32 | checks obrigatórios (branch protection) | 1 | chore, infra | 1 | 31 |
 
 **Distribuição:** Sprint 1 = 9 issues / 34 pts · Sprint 2 = 8 / 30 · Sprint 3 = 9 / **44** ·
 Sprint 4 = 6 / 29. **Total: 32 issues, 137 pontos.**

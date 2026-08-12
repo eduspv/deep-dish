@@ -26,14 +26,14 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
             now()->addHours(24),
             [
                 'tipo' => $this->tipo,
-                'id'   => $notifiable->getKey(),
+                'id' => $notifiable->getKey(),
                 'hash' => sha1($notifiable->getEmailForVerification()),
             ]
         );
 
         return (new MailMessage)
             ->subject('Verifique seu e-mail — Deep Dish')
-            ->greeting('Olá, ' . $notifiable->name . '!')
+            ->greeting('Olá, '.$notifiable->name.'!')
             ->line('Clique no botão abaixo para confirmar seu endereço de e-mail.')
             ->action('Verificar e-mail', $verificationUrl)
             ->line('Este link expira em **24 horas**.')

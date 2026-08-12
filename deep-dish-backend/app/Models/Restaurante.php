@@ -14,10 +14,11 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class Restaurante extends Authenticatable implements JWTSubject, MustVerifyEmail
 {
-    use HasFactory, Notifiable, HasUuids; // adicionado HasUuids
+    use HasFactory, HasUuids, Notifiable; // adicionado HasUuids
 
-    protected $keyType = 'string';   
-    public $incrementing = false;    
+    protected $keyType = 'string';
+
+    public $incrementing = false;
 
     protected $table = 'restaurante';
 
@@ -59,12 +60,12 @@ class Restaurante extends Authenticatable implements JWTSubject, MustVerifyEmail
     protected function casts(): array
     {
         return [
-            'password'      => 'hashed',
-            'created_at'    => 'datetime',
-            'updated_at'    => 'datetime',
-            'token_version'       => 'integer',
-            'rating'              => 'decimal:1',
-            'price_range'         => 'integer',
+            'password' => 'hashed',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+            'token_version' => 'integer',
+            'rating' => 'decimal:1',
+            'price_range' => 'integer',
             'reservations_enabled' => 'boolean',
         ];
     }
