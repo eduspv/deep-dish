@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\ClienteMesa;
 use App\Models\Mesa;
-use App\Http\Controllers\ReservaController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -33,7 +32,7 @@ class MesaController extends Controller
 
         if ($horarioParam) {
             $inicio = \Carbon\Carbon::parse($horarioParam)->utc();
-            $fim    = $inicio->copy()->addMinutes(ReservaController::DURACAO_RESERVA_MINUTOS);
+            $fim = $inicio->copy()->addMinutes(ReservaController::DURACAO_RESERVA_MINUTOS);
 
             // Exclui apenas mesas com reserva ativa que se sobreponha à janela pedida.
             // Mesma lógica de ReservaController::store (sintaxe Postgres).
@@ -80,7 +79,7 @@ class MesaController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'error'   => 'Dados inválidos',
+                'error' => 'Dados inválidos',
                 'details' => $validator->errors(),
             ], 422);
         }
@@ -88,18 +87,19 @@ class MesaController extends Controller
         try {
             $mesa = Mesa::create([
                 'restaurante_id' => $restauranteId,
-                'numero'         => $request->input('numero'),
-                'capacidade'     => $request->input('capacidade'),
-                'status'         => 'livre',
-                'confirmacao'    => 'pendente',
+                'numero' => $request->input('numero'),
+                'capacidade' => $request->input('capacidade'),
+                'status' => 'livre',
+                'confirmacao' => 'pendente',
             ]);
 
             return response()->json([
                 'message' => 'Mesa criada com sucesso!',
-                'mesa'    => $mesa,
+                'mesa' => $mesa,
             ], 201);
         } catch (\Throwable $e) {
             Log::error('Erro ao criar mesa', ['message' => $e->getMessage()]);
+
             return response()->json(['error' => 'Erro interno ao criar mesa'], 500);
         }
     }
@@ -127,12 +127,12 @@ class MesaController extends Controller
                     ->ignore($mesa->id),
             ],
             'capacidade' => 'sometimes|integer|min:1|max:30',
-            'status'     => 'sometimes|string|in:livre,bloqueada',
+            'status' => 'sometimes|string|in:livre,bloqueada',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'error'   => 'Dados inválidos',
+                'error' => 'Dados inválidos',
                 'details' => $validator->errors(),
             ], 422);
         }
@@ -154,10 +154,11 @@ class MesaController extends Controller
 
             return response()->json([
                 'message' => 'Mesa atualizada!',
-                'mesa'    => $mesa->fresh(),
+                'mesa' => $mesa->fresh(),
             ]);
         } catch (\Throwable $e) {
             Log::error('Erro ao atualizar mesa', ['message' => $e->getMessage()]);
+
             return response()->json(['error' => 'Erro interno ao atualizar mesa'], 500);
         }
     }

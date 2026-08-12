@@ -101,9 +101,9 @@ class FilaService
     {
         return DB::transaction(function () use ($restauranteId, $mesa) {
             $proximo = ClienteFila::whereHas('fila', fn ($q) => $q
-                    ->where('restaurante_id', $restauranteId)
-                    ->where('status', Fila::STATUS_ABERTA)
-                )
+                ->where('restaurante_id', $restauranteId)
+                ->where('status', Fila::STATUS_ABERTA)
+            )
                 ->orderBy('created_at')
                 ->orderBy('id')
                 ->lockForUpdate()
@@ -114,11 +114,11 @@ class FilaService
             }
 
             $clienteMesa = ClienteMesa::create([
-                'cliente_id'      => $proximo->cliente_id,
-                'mesa_id'         => $mesa->id,
+                'cliente_id' => $proximo->cliente_id,
+                'mesa_id' => $mesa->id,
                 'horario_reserva' => now()->utc(),
-                'party_size'      => $proximo->qntd_pessoas,
-                'status'          => 'confirmada',
+                'party_size' => $proximo->qntd_pessoas,
+                'status' => 'confirmada',
             ]);
 
             $fila = $proximo->fila;

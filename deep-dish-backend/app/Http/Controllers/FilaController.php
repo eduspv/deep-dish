@@ -12,16 +12,14 @@ use InvalidArgumentException;
 
 class FilaController extends Controller
 {
-    public function __construct(private FilaService $filaService)
-    {
-    }
+    public function __construct(private FilaService $filaService) {}
 
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'restaurante_id' => ['required', 'string', 'uuid', 'exists:restaurante,id'],
             'horario_reserva' => ['required', 'date', 'after:now'],
-            'qntd_pessoas'   => ['required', 'integer', 'min:1'],
+            'qntd_pessoas' => ['required', 'integer', 'min:1'],
         ]);
 
         $horarioUTC = Carbon::parse($validated['horario_reserva'])->utc()->format('Y-m-d H:i:s');
@@ -40,7 +38,7 @@ class FilaController extends Controller
         $clienteFila->load('fila');
 
         return response()->json([
-            'message' => 'Você está na posição ' . $clienteFila->posicao . ' da fila.',
+            'message' => 'Você está na posição '.$clienteFila->posicao.' da fila.',
             'data' => $clienteFila,
         ], 201);
     }

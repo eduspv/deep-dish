@@ -30,7 +30,7 @@ class Funcionario extends Model
     {
         return [
             'data_nascimento' => 'date',
-            'ativo'           => 'boolean',
+            'ativo' => 'boolean',
         ];
     }
 
