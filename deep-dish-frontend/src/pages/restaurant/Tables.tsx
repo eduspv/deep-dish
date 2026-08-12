@@ -54,7 +54,7 @@ const Tables: React.FC = () => {
         toast.success('Mesa criada!');
       }
       setDialogOpen(false);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err?.message || 'Erro ao salvar mesa.');
     } finally {
       setSaving(false);
@@ -67,7 +67,7 @@ const Tables: React.FC = () => {
       const updated = await mesasService.update(t.id, { status: next });
       setTables(prev => prev.map(tb => tb.id === t.id ? updated : tb));
       toast.success(`Mesa ${t.numero} ${next === 'bloqueada' ? 'bloqueada' : 'liberada'}.`);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err?.message || 'Erro ao atualizar status.');
     }
   };
@@ -77,7 +77,7 @@ const Tables: React.FC = () => {
       await mesasService.remove(t.id);
       setTables(prev => prev.filter(tb => tb.id !== t.id));
       toast.success(`Mesa ${t.numero} removida.`);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err?.message || 'Erro ao remover mesa.');
     }
   };
