@@ -64,6 +64,10 @@ class FilaService
             }
 
             $fila = $registro->fila;
+            $registro->status_saida = 'desistiu';
+            $registro->saiu_em = now();
+            $registro->tempo_espera_segundos = $registro->created_at->diffInSeconds(now());
+            $registro->save();
 
             $registro->delete();
 
@@ -122,6 +126,12 @@ class FilaService
             ]);
 
             $fila = $proximo->fila;
+            $fila = $proximo->fila;
+            $proximo->status_saida = 'desistiu';
+            $proximo->saiu_em = now();
+            $proximo->tempo_espera_segundos = $proximo->created_at->diffInSeconds(now());
+            $proximo->save();
+
             $proximo->delete();
             $this->encerrarFilaSeVazia($fila);
 
