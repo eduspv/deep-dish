@@ -16,7 +16,7 @@ class FilaService
     {
         return DB::transaction(function () use ($clienteId, $restauranteId, $horarioReserva, $qntdPessoas) {
             // Impede entrada dupla na fila do mesmo restaurante
-            $jaEmFila = ClienteFila::where('cliente_id', $clienteId)
+            $jaEmFila = ClienteFila::ativas()
                 ->whereHas('fila', fn ($q) => $q
                     ->where('restaurante_id', $restauranteId)
                     ->where('status', Fila::STATUS_ABERTA)
@@ -64,7 +64,7 @@ class FilaService
             }
 
             $fila = $registro->fila;
-            $registro->status_saida = 'desistiu';
+            $registro->status_saida = ClienteFila::STATUS_SAIDA_DESISTIU;
             $registro->saiu_em = now();
             $registro->tempo_espera_segundos = $registro->created_at->diffInSeconds(now());
             $registro->save();
@@ -127,7 +127,7 @@ class FilaService
 
             $fila = $proximo->fila;
             $fila = $proximo->fila;
-            $proximo->status_saida = 'desistiu';
+            $proximo->status_saida = ClienteFila::STATUS_SAIDA_ATENDIDO;
             $proximo->saiu_em = now();
             $proximo->tempo_espera_segundos = $proximo->created_at->diffInSeconds(now());
             $proximo->save();

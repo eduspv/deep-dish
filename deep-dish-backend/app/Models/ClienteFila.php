@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 
 class ClienteFila extends Model
 {
@@ -15,10 +16,10 @@ class ClienteFila extends Model
     public const STATUS_SAIDA_DESISTIU = 'desistiu';
     public const STATUS_SAIDA_ATENDIDO = 'atendido';
 
-    public function scopeAtivas($query)
-    {
-        return $query->whereNull('status_saida');
-    }
+    public function scopeAtivas(Builder $query): Builder
+{
+    return $query->whereNull('status_saida');
+}
 
     public $incrementing = false;
 
