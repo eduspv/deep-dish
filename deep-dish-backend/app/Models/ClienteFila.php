@@ -2,24 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 
 class ClienteFila extends Model
 {
-    use SoftDeletes;
     use HasUuids;
+    use SoftDeletes;
 
     public const STATUS_SAIDA_DESISTIU = 'desistiu';
     public const STATUS_SAIDA_ATENDIDO = 'atendido';
-
-    public function scopeAtivas(Builder $query): Builder
-{
-    return $query->whereNull('status_saida');
-}
+    public const STATUS_SAIDA_REMOVIDO = 'removido'; // ação administrativa (item 6)
 
     public $incrementing = false;
 
@@ -33,35 +29,76 @@ class ClienteFila extends Model
         'qntd_pessoas',
     ];
 
-    protected $appends = [
-        'posicao',
-    ];
+    // 'posicao' saiu do $appends de propósito: dispara um COUNT por registro.
+    // Use ->append('posicao') apenas onde a posição é realmente necessária.
 
     protected function casts(): array
     {
         return [
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
-            'saiu_em' => 'datetime',
+            'created_at'            => 'datetime',
+            'updated_at'            => 'datetime',
+            'saiu_em'               => 'datetime',
             'tempo_espera_segundos' => 'integer',
         ];
     }
 
-    /**
-     * Posição atual do cliente na fila.
-     * Considera apenas clientes que ainda estão ativos.
-     */
-    public function getPosicaoAttribute(): int
+    protected static function booted(): void
     {
+        static::deleting(function (self $registro) {
+            if ($registro->status_saida === null && ! $registro->isForceDeleting()) {
+                throw new \LogicException(
+                    'ClienteFila: use registrarSaida($status) em vez de delete(). '
+                    . 'Apagar sem status_saida cria registro fantasma na fila.'
+                );
+            }
+        });
+    }
+
+    public function scopeAtivas(Builder $query): Builder
+    {
+        return $query->whereNull('status_saida');
+    }
+
+    /**
+     * Única porta de saída da fila. Idempotente.
+     * Campos de saída ficam fora do $fillable — a escrita é feita aqui via forceFill.
+     */
+    public function registrarSaida(string $status): void
+    {
+        if ($this->status_saida !== null) {
+            return;
+        }
+
+        $agora = now();
+
+        $this->forceFill([
+            'status_saida'          => $status,
+            'saiu_em'               => $agora,
+            'tempo_espera_segundos' => (int) abs($this->created_at->diffInSeconds($agora)),
+        ])->save();
+
+        $this->delete(); // soft
+    }
+
+    /**
+     * Posição atual na fila, contando apenas clientes ativos.
+     * Retorna null para quem já saiu — não existe "posição" de quem não está na fila.
+     */
+    public function getPosicaoAttribute(): ?int
+    {
+        if ($this->status_saida !== null || $this->trashed()) {
+            return null;
+        }
+
         return 1 + (int) static::query()
             ->ativas()
             ->where('fila_id', $this->fila_id)
-            ->where(function ($q) {
+            ->where(function (Builder $q) {
                 $q->where('created_at', '<', $this->created_at)
-                    ->orWhere(function ($q2) {
-                        $q2->where('created_at', '=', $this->created_at)
-                            ->where('id', '<', $this->id);
-                    });
+                  ->orWhere(function (Builder $q2) {
+                      $q2->where('created_at', '=', $this->created_at)
+                         ->where('id', '<', $this->id);
+                  });
             })
             ->count();
     }

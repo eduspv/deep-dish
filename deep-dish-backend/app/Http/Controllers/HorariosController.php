@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\Fila;
 use App\Models\Restaurante;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,10 +40,14 @@ class HorariosController extends Controller
 
             $relations = [];
             if ($tipo === null || $tipo === 'reservas') {
-                $relations[] = 'mesas.clienteMesas';
+                $relations['mesas.clienteMesas'] = fn ($q) => $q;
             }
-            if ($tipo === null || $tipo === 'fila') {
-                $relations[] = 'filas.clienteFilas';
+           if ($tipo === null || $tipo === 'fila') {
+                $relations['filas'] = fn ($q) => $q->where('status', Fila::STATUS_ABERTA);
+                $relations['filas.clienteFilas'] = fn ($q) => $q
+                    ->ativas()
+                    ->orderBy('created_at')
+                    ->orderBy('id');
             }
 
             if ($relations !== []) {
@@ -66,12 +70,12 @@ class HorariosController extends Controller
             $horariosFila = [];
             if ($tipo === null || $tipo === 'fila') {
                 foreach ($restaurante->filas as $fila) {
-                    foreach ($fila->clienteFilas as $clienteFila) {
+                    foreach ($fila->clienteFilas->values() as $i => $clienteFila) {
                         $horariosFila[] = [
                             'horario_reserva' => $fila->horario_reserva?->format(\DateTimeInterface::ATOM),
                             'horario_entrada' => $clienteFila->created_at->format(\DateTimeInterface::ATOM),
                             'qntd_pessoas' => $clienteFila->qntd_pessoas,
-                            'posicao' => $clienteFila->posicao,
+                            'posicao' => $i + 1, // relação já vem ativas() e ordenada
                             'fila_id' => $fila->id,
                         ];
                     }

@@ -7,16 +7,22 @@ use App\Models\ClienteMesa;
 use App\Models\Fila;
 use App\Models\Mesa;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class FilaService
 {
-    public function enfileirar(string $clienteId, string $restauranteId, string $horarioReserva, int $qntdPessoas): ClienteFila
-    {
+    public function enfileirar(
+        string $clienteId,
+        string $restauranteId,
+        string $horarioReserva,
+        int $qntdPessoas
+    ): ClienteFila {
         return DB::transaction(function () use ($clienteId, $restauranteId, $horarioReserva, $qntdPessoas) {
-            // Impede entrada dupla na fila do mesmo restaurante
+            // BUG CORRIGIDO: sem o cliente_id, o primeiro da fila bloqueava todos os outros.
             $jaEmFila = ClienteFila::ativas()
+                ->where('cliente_id', $clienteId)
                 ->whereHas('fila', fn ($q) => $q
                     ->where('restaurante_id', $restauranteId)
                     ->where('status', Fila::STATUS_ABERTA)
@@ -24,30 +30,39 @@ class FilaService
                 ->exists();
 
             if ($jaEmFila) {
-                throw new \InvalidArgumentException('Você já está na fila deste restaurante.');
+                throw new InvalidArgumentException('Você já está na fila deste restaurante.');
             }
 
             $horario = Carbon::parse($horarioReserva);
 
-            $fila = Fila::query()
-                ->where('restaurante_id', $restauranteId)
-                ->where('horario_reserva', $horario)
-                ->where('status', Fila::STATUS_ABERTA)
-                ->first();
-
-            if (! $fila) {
-                $fila = Fila::create([
-                    'restaurante_id' => $restauranteId,
-                    'horario_reserva' => $horario,
-                    'status' => Fila::STATUS_ABERTA,
-                ]);
+            // firstOrCreate + unique em (restaurante_id, horario_reserva) evita fila duplicada
+            try {
+                $fila = Fila::firstOrCreate(
+                    [
+                        'restaurante_id'  => $restauranteId,
+                        'horario_reserva' => $horario,
+                        'status'          => Fila::STATUS_ABERTA,
+                    ]
+                );
+            } catch (QueryException $e) {
+                // corrida perdida: outra requisição criou a fila entre o select e o insert
+                $fila = Fila::query()
+                    ->where('restaurante_id', $restauranteId)
+                    ->where('horario_reserva', $horario)
+                    ->where('status', Fila::STATUS_ABERTA)
+                    ->firstOrFail();
             }
 
-            return ClienteFila::create([
-                'fila_id' => $fila->id,
-                'cliente_id' => $clienteId,
-                'qntd_pessoas' => $qntdPessoas,
-            ]);
+            try {
+                return ClienteFila::create([
+                    'fila_id'      => $fila->id,
+                    'cliente_id'   => $clienteId,
+                    'qntd_pessoas' => $qntdPessoas,
+                ]);
+            } catch (QueryException $e) {
+                // violação do índice parcial único (fila_id, cliente_id) WHERE status_saida IS NULL
+                throw new InvalidArgumentException('Você já está na fila deste restaurante.');
+            }
         });
     }
 
@@ -55,8 +70,10 @@ class FilaService
     {
         return DB::transaction(function () use ($clienteFilaId, $clienteId) {
             $registro = ClienteFila::query()
+                ->ativas()
                 ->whereKey($clienteFilaId)
                 ->where('cliente_id', $clienteId)
+                ->lockForUpdate()
                 ->first();
 
             if (! $registro) {
@@ -64,12 +81,8 @@ class FilaService
             }
 
             $fila = $registro->fila;
-            $registro->status_saida = ClienteFila::STATUS_SAIDA_DESISTIU;
-            $registro->saiu_em = now();
-            $registro->tempo_espera_segundos = $registro->created_at->diffInSeconds(now());
-            $registro->save();
 
-            $registro->delete();
+            $registro->registrarSaida(ClienteFila::STATUS_SAIDA_DESISTIU);
 
             $this->encerrarFilaSeVazia($fila);
 
@@ -77,8 +90,11 @@ class FilaService
         });
     }
 
-    public function consultarPosicao(string $clienteId, string $restauranteId, string $horarioReserva): ?ClienteFila
-    {
+    public function consultarPosicao(
+        string $clienteId,
+        string $restauranteId,
+        string $horarioReserva
+    ): ?ClienteFila {
         $horario = Carbon::parse($horarioReserva);
 
         $fila = Fila::query()
@@ -91,10 +107,15 @@ class FilaService
             return null;
         }
 
-        return ClienteFila::query()
+        $registro = ClienteFila::query()
+            ->ativas()
             ->where('fila_id', $fila->id)
             ->where('cliente_id', $clienteId)
             ->first();
+
+        // 'posicao' saiu do $appends do model (era N+1 em listagens);
+        // aqui a posição é o objetivo da chamada, então anexamos explicitamente.
+        return $registro?->append('posicao');
     }
 
     /**
@@ -104,44 +125,52 @@ class FilaService
     public function promoverProximoParaMesa(string $restauranteId, Mesa $mesa): ?ClienteMesa
     {
         return DB::transaction(function () use ($restauranteId, $mesa) {
-            $proximo = ClienteFila::whereHas('fila', fn ($q) => $q
+            $proximo = ClienteFila::query()
+                ->ativas()
+                ->whereHas('fila', fn ($q) => $q
                     ->where('restaurante_id', $restauranteId)
                     ->where('status', Fila::STATUS_ABERTA)
                 )
+                // OPÇÃO B — "chama o próximo que caiba na mesa":
+                // ->where('qntd_pessoas', '<=', $mesa->capacidade)
                 ->orderBy('created_at')
                 ->orderBy('id')
                 ->lockForUpdate()
                 ->first();
 
-            if (! $proximo || $mesa->capacidade < $proximo->qntd_pessoas) {
+            if (! $proximo) {
+                return null;
+            }
+
+            // OPÇÃO A (atual) — respeita FIFO estrito: se o primeiro não cabe, ninguém é chamado.
+            // Remova este bloco se adotar a OPÇÃO B acima.
+            if ($mesa->capacidade < $proximo->qntd_pessoas) {
                 return null;
             }
 
             $clienteMesa = ClienteMesa::create([
                 'cliente_id'      => $proximo->cliente_id,
                 'mesa_id'         => $mesa->id,
-                'horario_reserva' => now()->utc(),
+                'horario_reserva' => now(),
                 'party_size'      => $proximo->qntd_pessoas,
                 'status'          => 'confirmada',
             ]);
 
             $fila = $proximo->fila;
-            $fila = $proximo->fila;
-            $proximo->status_saida = ClienteFila::STATUS_SAIDA_ATENDIDO;
-            $proximo->saiu_em = now();
-            $proximo->tempo_espera_segundos = $proximo->created_at->diffInSeconds(now());
-            $proximo->save();
 
-            $proximo->delete();
+            $proximo->registrarSaida(ClienteFila::STATUS_SAIDA_ATENDIDO);
+
             $this->encerrarFilaSeVazia($fila);
 
             return $clienteMesa;
         });
     }
 
-    private function encerrarFilaSeVazia(Fila $fila): void
+    /** Público: o FilaController::removerRestaurante também precisa desta regra. */
+    public function encerrarFilaSeVazia(Fila $fila): void
     {
         $temNaFila = ClienteFila::query()
+            ->ativas()
             ->where('fila_id', $fila->id)
             ->exists();
 

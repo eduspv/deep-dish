@@ -37,7 +37,7 @@ class FilaController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
-        $clienteFila->load('fila');
+        $clienteFila->load('fila')->append('posicao');
 
         return response()->json([
             'message' => 'Você está na posição ' . $clienteFila->posicao . ' da fila.',
@@ -66,12 +66,22 @@ class FilaController extends Controller
         $restauranteId = auth('restaurante')->id();
 
         $entries = ClienteFila::with(['fila', 'cliente'])
-            ->whereHas('fila', fn ($q) => $q
-                ->where('restaurante_id', $restauranteId)
-                ->where('status', Fila::STATUS_ABERTA)
-            )
-            ->orderBy('created_at')
-            ->get();
+        ->ativas()
+        ->whereHas('fila', fn ($q) => $q
+            ->where('restaurante_id', $restauranteId)
+            ->where('status', Fila::STATUS_ABERTA)
+        )
+        ->orderBy('created_at')
+        ->orderBy('id')
+        ->get();
+
+        // Posição calculada em memória: a lista já está ordenada e contém só ativos.
+        // Usar ->append('posicao') aqui dispararia um COUNT por registro.
+        $entries->groupBy('fila_id')->each(function ($daFila) {
+            $daFila->values()->each(function ($registro, $i) {
+                $registro->setAttribute('posicao', $i + 1);
+            });
+        });
 
         return response()->json($entries);
     }
@@ -81,22 +91,23 @@ class FilaController extends Controller
     {
         $restauranteId = auth('restaurante')->id();
 
-        $registro = ClienteFila::whereKey($id)
-            ->whereHas('fila', fn ($q) => $q->where('restaurante_id', $restauranteId))
-            ->first();
+        $registro = ClienteFila::query()
+    ->ativas()
+    ->whereKey($id)
+    ->whereHas('fila', fn ($q) => $q->where('restaurante_id', $restauranteId))
+    ->first();
 
-        if (! $registro) {
-            return response()->json(['message' => 'Entrada não encontrada.'], 404);
-        }
+if (! $registro) {
+    return response()->json(['message' => 'Entrada não encontrada.'], 404);
+}
 
-        $fila = $registro->fila;
-        $registro->delete();
+$fila = $registro->fila;
 
-        if (! $fila->clienteFilas()->exists()) {
-            $fila->update(['status' => Fila::STATUS_ENCERRADA]);
-        }
+$registro->registrarSaida(ClienteFila::STATUS_SAIDA_REMOVIDO);
 
-        return response()->json(['message' => 'Removido da fila.']);
+$this->filaService->encerrarFilaSeVazia($fila);
+
+return response()->json(['message' => 'Removido da fila.']);
     }
 
     public function consultarPosicao(Request $request): JsonResponse
