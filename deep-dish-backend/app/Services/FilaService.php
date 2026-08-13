@@ -149,11 +149,11 @@ class FilaService
             }
 
             $clienteMesa = ClienteMesa::create([
-                'cliente_id'      => $proximo->cliente_id,
-                'mesa_id'         => $mesa->id,
-                'horario_reserva' => now(),
-                'party_size'      => $proximo->qntd_pessoas,
-                'status'          => 'confirmada',
+                'cliente_id' => $proximo->cliente_id,
+                'mesa_id' => $mesa->id,
+                'horario_reserva' => now()->utc(),
+                'party_size' => $proximo->qntd_pessoas,
+                'status' => 'confirmada',
             ]);
 
             $fila = $proximo->fila;

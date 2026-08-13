@@ -30,16 +30,16 @@ class DashboardController extends Controller
             ->whereNotIn('status', ['cancelada', 'liberada', 'expirada'])
             ->count();
 
-        $totalTables    = Mesa::where('restaurante_id', $restauranteId)->count();
+        $totalTables = Mesa::where('restaurante_id', $restauranteId)->count();
         $tablesAvailable = Mesa::where('restaurante_id', $restauranteId)
             ->where('status', 'livre')
             ->count();
 
         return response()->json([
-            'queue_size'         => $queueSize,
+            'queue_size' => $queueSize,
             'reservations_today' => $reservationsToday,
-            'tables_available'   => $tablesAvailable,
-            'total_tables'       => $totalTables,
+            'tables_available' => $tablesAvailable,
+            'total_tables' => $totalTables,
         ]);
     }
 }

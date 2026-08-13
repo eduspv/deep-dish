@@ -83,11 +83,11 @@ class HorariosController extends Controller
             }
 
             $data = [
-                'restaurante_id'     => $restaurante->id,
-                'nome'               => $restaurante->name,
-                'horario_abertura'   => $restaurante->horario_abertura,
+                'restaurante_id' => $restaurante->id,
+                'nome' => $restaurante->name,
+                'horario_abertura' => $restaurante->horario_abertura,
                 'horario_fechamento' => $restaurante->horario_fechamento,
-                'fila_ativa'         => (bool) $restaurante->fila_ativa,
+                'fila_ativa' => (bool) $restaurante->fila_ativa,
             ];
 
             if ($tipo === null || $tipo === 'reservas') {
