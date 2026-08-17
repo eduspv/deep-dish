@@ -1,0 +1,158 @@
+name: CI
+
+# Roda a cada PR para develop/main e nos merges nessas branches.
+#
+# Nao usamos filtro por `paths` de proposito: quando os checks virarem
+# obrigatorios (issue #185), um job que nao roda nunca reporta status e o PR
+# trava para sempre em "waiting for status". Rodar sempre custa ~4 min.
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+# Cancela runs antigos do mesmo PR quando chega commit novo.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # Backend — Laravel 12 / PHP 8.2 / PostgreSQL
+  # ─────────────────────────────────────────────────────────────
+  backend:
+    name: Backend (PHP 8.2)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: deep-dish-backend
+
+    services:
+      # Postgres efemero, criado e destruido a cada run.
+      # Nunca encosta no Supabase do time.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: deepdish_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      # Estas variaveis VENCEM o phpunit.xml, que fixa sqlite.
+      # O PHPUnit so define um <env> se a variavel ainda nao existir
+      # (PhpHandler.php: `if ($force || getenv($name) === false)`), e o
+      # phpunit.xml deste projeto nao usa force="true".
+      #
+      # Assim os testes rodam contra Postgres sem alterar o phpunit.xml,
+      # que e escopo da issue #160.
+      #
+      # ATENCAO: se alguem adicionar force="true" ao phpunit.xml, os testes
+      # voltam para sqlite silenciosamente e este job perde o sentido.
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: deepdish_test
+      DB_USERNAME: postgres
+      DB_PASSWORD: secret
+      # O .env.example usa sslmode=require (Supabase); o container nao tem TLS.
+      DB_SSLMODE: disable
+      # A aplicacao boota sem Reverb; nao subimos o servidor de broadcast aqui.
+      BROADCAST_CONNECTION: "null"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          # Mesmas extensoes do deep-dish-backend/Dockerfile.
+          extensions: pdo, pdo_pgsql, bcmath, zip, pcntl
+          coverage: none
+
+      - name: Localizar o cache do Composer
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Restaurar cache do Composer
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('deep-dish-backend/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Instalar dependencias
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Preparar o .env
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          # JWT_SECRET nao vem preenchido no .env.example e sem ele o
+          # tymon/jwt-auth derruba o boot da aplicacao.
+          php artisan jwt:secret --force
+
+      - name: Rodar as migrations em banco virgem
+        run: php artisan migrate --force
+
+      - name: Formatacao (Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Testes (PHPUnit)
+        run: php artisan test
+
+  # ─────────────────────────────────────────────────────────────
+  # Frontend — React 18 / Vite / Node 20
+  # ─────────────────────────────────────────────────────────────
+  frontend:
+    name: Frontend (Node 20)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: deep-dish-frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          # Mesma versao do servico frontend no docker-compose.yml.
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: deep-dish-frontend/package-lock.json
+
+      - name: Instalar dependencias
+        # npm ci exige package-lock.json em sincronia com package.json.
+        run: npm ci
+
+      - name: Preparar o .env
+        # O build le import.meta.env.VITE_*; sem o arquivo os valores ficam
+        # undefined e o resultado deixa de ser deterministico.
+        run: cp .env.example .env
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Checagem de tipos (TypeScript)
+        # O `vite build` usa esbuild, que APAGA os tipos sem verifica-los.
+        # Sem este passo, nada no projeto valida TypeScript.
+        run: npx tsc --noEmit
+
+      - name: Testes (Vitest)
+        run: npm test
+
+      - name: Build de producao
+        run: npm run build
