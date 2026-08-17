@@ -1090,22 +1090,42 @@ lint, teste e build só rodam se alguém lembrar de rodar na própria máquina.
 - Criar `.github/workflows/ci.yml` disparando em `pull_request` para `develop` e `main`, e em
   `push` nessas duas branches.
 - `concurrency` com `cancel-in-progress` para cancelar runs antigos do mesmo PR.
-- Filtro por `paths`: um PR que só toca `docs/` não deve rodar build de frontend nem migrations.
+- ~~Filtro por `paths`~~ — **revertido durante a execução.** Se um job não roda por causa de filtro,
+  ele nunca reporta status, e o check obrigatório da `#32` deixa o PR travado para sempre em
+  *waiting for status*. Os dois jobs rodam sempre; custa ~4 min por PR.
 - **Job `backend`:** `postgres:16` como service container; `setup-php` 8.2 com `pdo_pgsql`,
-  `bcmath` e `zip` (mesmas extensões do `Dockerfile`); cache do Composer; `composer install`;
-  gerar `.env` a partir do `.env.example` com `key:generate` e **`jwt:secret`** (o `.env.example`
-  não tem `JWT_SECRET`, e sem ele o boot quebra); `pint --test`; `php artisan test`.
+  `bcmath`, `zip` e `pcntl` (mesmas extensões do `Dockerfile`); cache do Composer;
+  `composer install`; gerar `.env` a partir do `.env.example` com `key:generate` e **`jwt:secret`**;
+  `php artisan migrate --force` (valida a cadeia de migrations em banco virgem); `pint --test`;
+  `php artisan test`.
 - **Job `frontend`:** `setup-node` 20 (mesma versão do `docker-compose`) com cache de npm;
-  `npm ci`; `npm run lint`; `npm test`; `npm run build`.
+  `npm ci`; `npm run lint`; **`npx tsc --noEmit`**; `npm test`; `npm run build`.
 - Os dois jobs rodam em paralelo e são independentes.
 - Documentar no `README` o que a CI verifica e como reproduzir localmente.
 
 **Critérios de aceite**
 - [ ] Abrir PR para `develop` dispara os dois jobs e ambos passam no código atual.
 - [ ] PR que quebra lint ou teste fica vermelho, com o erro legível no log.
-- [ ] PR que só altera `docs/` não roda os jobs de build.
 - [ ] Nenhum segredo aparece em log; nenhuma credencial real é necessária (o Postgres é efêmero).
 - [ ] Run completo em menos de ~5 min com cache quente.
+
+**Descobertas durante a execução**
+
+- **Os testes rodam contra Postgres sem alterar o `phpunit.xml`.** O PHPUnit só aplica um `<env>`
+  se a variável ainda não existir no ambiente (`PhpHandler.php:112`:
+  `if ($force || getenv($name) === false)`), e o `phpunit.xml` deste projeto não usa `force="true"`.
+  Logo, o `env:` do job vence o XML. Verificado: com as variáveis, `database.default` é `pgsql`;
+  sem elas, `sqlite`. Isso desacopla esta issue da `#7`. **Se a `#7` adicionar `force="true"`, a CI
+  volta silenciosamente para SQLite.**
+- **`npx tsc --noEmit` entrou no job de frontend.** O `vite build` usa esbuild, que apaga os tipos
+  sem verificá-los — hoje nada no projeto valida TypeScript. Ressalva: o `tsconfig.json` tem
+  `strictNullChecks` e `noImplicitAny` desligados, então a checagem é de malha larga (ver a seção
+  de ideias futuras).
+- **Bug encontrado e corrigido junto:** o `.env.example` define `BROADCAST_CONNECTION=reverb`, mas
+  o `pusher/pusher-php-server` não estava instalado. Como o broadcaster do Reverb fala o protocolo
+  Pusher, **qualquer comando `artisan` falhava** após um `cp .env.example .env` — quem clonasse o
+  repositório travava no primeiro comando. Resolvido com
+  `composer require pusher/pusher-php-server`.
 
 ---
 

@@ -13,11 +13,13 @@
 
 **Fila inteligente. Reservas sem fricção. Restaurantes no controle.**
 
+[![CI](https://github.com/joaogpereira/deep-dish/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/joaogpereira/deep-dish/actions/workflows/ci.yml)
+
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com/)
+[![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
 
 </div>
@@ -191,6 +193,65 @@ VITE_API_URL=http://127.0.0.1:8000/api
 ```
 
 **Backend** — copie `deep-dish-backend/.env.example` e preencha banco de dados, JWT e SMTP.
+
+Gere as duas chaves obrigatórias (sem elas a aplicação não sobe):
+
+```bash
+php artisan key:generate   # APP_KEY
+php artisan jwt:secret     # JWT_SECRET
+```
+
+---
+
+## ✅ Integração Contínua
+
+Todo Pull Request para `develop` ou `main` dispara automaticamente o workflow
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml), com dois jobs em paralelo:
+
+| Job | O que verifica |
+|---|---|
+| **Backend** (PHP 8.2) | Formatação com Pint · migrations em banco virgem · testes PHPUnit |
+| **Frontend** (Node 20) | ESLint · checagem de tipos · Vitest · build de produção |
+
+O job de backend sobe um **PostgreSQL 16 efêmero** como *service container* — criado e destruído a
+cada execução, sem nunca encostar no banco compartilhado do time.
+
+### Reproduzindo localmente
+
+Rode antes de abrir o PR; os seis comandos precisam passar:
+
+```bash
+# backend
+cd deep-dish-backend
+./vendor/bin/pint --test      # formatação (sem --test, ele corrige)
+composer test                 # PHPUnit
+
+# frontend
+cd ../deep-dish-frontend
+npm run lint                  # ESLint
+npx tsc --noEmit              # tipos — o build NÃO checa isso
+npm test                      # Vitest
+npm run build                 # build de produção
+```
+
+> **Por que `npx tsc --noEmit` existe:** o `npm run build` usa esbuild, que *apaga* as anotações de
+> tipo sem verificá-las. Sem esse comando, nenhum erro de tipo é detectado antes de chegar no
+> navegador.
+
+Os testes rodam em SQLite na sua máquina e em PostgreSQL na CI. Se precisar reproduzir o ambiente
+da CI localmente, suba um Postgres descartável e aponte as variáveis para ele:
+
+```bash
+docker run -d --name dd-test -e POSTGRES_PASSWORD=secret \
+  -e POSTGRES_DB=deepdish_test -p 55432:5432 postgres:16
+
+cd deep-dish-backend
+DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=55432 DB_DATABASE=deepdish_test \
+DB_USERNAME=postgres DB_PASSWORD=secret DB_SSLMODE=disable \
+  php artisan migrate --force && php artisan test
+
+docker rm -f dd-test
+```
 
 ---
 
