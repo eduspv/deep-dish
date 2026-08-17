@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\Fila;
 use App\Models\Restaurante;
 use Illuminate\Http\JsonResponse;
@@ -42,7 +43,7 @@ class HorariosController extends Controller
             if ($tipo === null || $tipo === 'reservas') {
                 $relations['mesas.clienteMesas'] = fn ($q) => $q;
             }
-           if ($tipo === null || $tipo === 'fila') {
+            if ($tipo === null || $tipo === 'fila') {
                 $relations['filas'] = fn ($q) => $q->where('status', Fila::STATUS_ABERTA);
                 $relations['filas.clienteFilas'] = fn ($q) => $q
                     ->ativas()
