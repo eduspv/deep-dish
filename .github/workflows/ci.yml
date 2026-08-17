@@ -104,13 +104,44 @@ jobs:
           php artisan jwt:secret --force
 
       - name: Rodar as migrations em banco virgem
-        run: php artisan migrate --force
+        id: migrate
+        run: |
+          saida=$(php artisan migrate --force)
+          echo "$saida"
+          total=$(echo "$saida" | grep -c "DONE" || true)
+          echo "total=$total" >> "$GITHUB_OUTPUT"
 
       - name: Formatacao (Pint)
+        id: pint
         run: ./vendor/bin/pint --test
 
       - name: Testes (PHPUnit)
-        run: php artisan test
+        id: phpunit
+        run: |
+          saida=$(php artisan test)
+          echo "$saida"
+          # A saida vem com codigos de cor ANSI; sem remover, o resumo fica ilegivel.
+          resumo=$(echo "$saida" | sed 's/\x1b\[[0-9;]*m//g' \
+            | grep -oE "Tests:.*" | tail -1 | sed 's/Tests:[[:space:]]*//')
+          echo "resumo=${resumo:-sem resumo}" >> "$GITHUB_OUTPUT"
+
+      # Escreve um resumo em markdown no topo da pagina do run.
+      # `if: always()` faz o resumo aparecer tambem quando algum passo falha —
+      # que e justamente quando ele mais ajuda.
+      - name: Resumo
+        if: always()
+        run: |
+          {
+            echo "## Backend — PHP 8.2 · PostgreSQL 16"
+            echo ""
+            echo "| Verificação | Resultado |"
+            echo "|---|---|"
+            echo "| Migrations em banco virgem | ${{ steps.migrate.outcome == 'success' && '✅' || '❌' }} ${{ steps.migrate.outputs.total }} passos |"
+            echo "| Formatação (Pint) | ${{ steps.pint.outcome == 'success' && '✅' || '❌' }} |"
+            echo "| Testes (PHPUnit) | ${{ steps.phpunit.outcome == 'success' && '✅' || '❌' }} ${{ steps.phpunit.outputs.resumo }} |"
+            echo ""
+            echo "Banco: container \`postgres:16\` efêmero — o Supabase do time não é tocado."
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # ─────────────────────────────────────────────────────────────
   # Frontend — React 18 / Vite / Node 20
@@ -144,15 +175,46 @@ jobs:
         run: cp .env.example .env
 
       - name: Lint (ESLint)
+        id: lint
         run: npm run lint
 
       - name: Checagem de tipos (TypeScript)
+        id: tipos
         # O `vite build` usa esbuild, que APAGA os tipos sem verifica-los.
         # Sem este passo, nada no projeto valida TypeScript.
         run: npx tsc --noEmit
 
       - name: Testes (Vitest)
-        run: npm test
+        id: vitest
+        run: |
+          saida=$(npm test)
+          echo "$saida"
+          # Remove os codigos de cor ANSI antes de extrair o resumo.
+          resumo=$(echo "$saida" | sed 's/\x1b\[[0-9;]*m//g' \
+            | grep -oE "Tests +[0-9]+ passed.*" | tail -1 | sed 's/Tests  *//')
+          echo "resumo=${resumo:-sem resumo}" >> "$GITHUB_OUTPUT"
 
       - name: Build de producao
-        run: npm run build
+        id: build
+        run: |
+          saida=$(npm run build)
+          echo "$saida"
+          tempo=$(echo "$saida" | sed 's/\x1b\[[0-9;]*m//g' \
+            | grep -oE "built in [0-9.]+s" | tail -1)
+          echo "tempo=${tempo:-concluido}" >> "$GITHUB_OUTPUT"
+
+      - name: Resumo
+        if: always()
+        run: |
+          {
+            echo "## Frontend — Node 20 · Vite"
+            echo ""
+            echo "| Verificação | Resultado |"
+            echo "|---|---|"
+            echo "| Lint (ESLint) | ${{ steps.lint.outcome == 'success' && '✅' || '❌' }} |"
+            echo "| Tipos (tsc --noEmit) | ${{ steps.tipos.outcome == 'success' && '✅' || '❌' }} |"
+            echo "| Testes (Vitest) | ${{ steps.vitest.outcome == 'success' && '✅' || '❌' }} ${{ steps.vitest.outputs.resumo }} |"
+            echo "| Build de produção | ${{ steps.build.outcome == 'success' && '✅' || '❌' }} ${{ steps.build.outputs.tempo }} |"
+            echo ""
+            echo "> O \`vite build\` não verifica tipos — quem faz isso é o passo \`tsc --noEmit\`."
+          } >> "$GITHUB_STEP_SUMMARY"
