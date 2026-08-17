@@ -14,7 +14,9 @@ class ClienteFila extends Model
     use SoftDeletes;
 
     public const STATUS_SAIDA_DESISTIU = 'desistiu';
+
     public const STATUS_SAIDA_ATENDIDO = 'atendido';
+
     public const STATUS_SAIDA_REMOVIDO = 'removido'; // ação administrativa (item 6)
 
     public $incrementing = false;
@@ -35,9 +37,9 @@ class ClienteFila extends Model
     protected function casts(): array
     {
         return [
-            'created_at'            => 'datetime',
-            'updated_at'            => 'datetime',
-            'saiu_em'               => 'datetime',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+            'saiu_em' => 'datetime',
             'tempo_espera_segundos' => 'integer',
         ];
     }
@@ -48,7 +50,7 @@ class ClienteFila extends Model
             if ($registro->status_saida === null && ! $registro->isForceDeleting()) {
                 throw new \LogicException(
                     'ClienteFila: use registrarSaida($status) em vez de delete(). '
-                    . 'Apagar sem status_saida cria registro fantasma na fila.'
+                    .'Apagar sem status_saida cria registro fantasma na fila.'
                 );
             }
         });
@@ -72,8 +74,8 @@ class ClienteFila extends Model
         $agora = now();
 
         $this->forceFill([
-            'status_saida'          => $status,
-            'saiu_em'               => $agora,
+            'status_saida' => $status,
+            'saiu_em' => $agora,
             'tempo_espera_segundos' => (int) abs($this->created_at->diffInSeconds($agora)),
         ])->save();
 
@@ -95,10 +97,10 @@ class ClienteFila extends Model
             ->where('fila_id', $this->fila_id)
             ->where(function (Builder $q) {
                 $q->where('created_at', '<', $this->created_at)
-                  ->orWhere(function (Builder $q2) {
-                      $q2->where('created_at', '=', $this->created_at)
-                         ->where('id', '<', $this->id);
-                  });
+                    ->orWhere(function (Builder $q2) {
+                        $q2->where('created_at', '=', $this->created_at)
+                            ->where('id', '<', $this->id);
+                    });
             })
             ->count();
     }

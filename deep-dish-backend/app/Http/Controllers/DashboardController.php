@@ -16,12 +16,12 @@ class DashboardController extends Controller
         $restauranteId = auth('restaurante')->id();
 
         $queueSize = ClienteFila::query()
-        ->ativas()
-        ->whereHas('fila', fn ($q) => $q
-            ->where('restaurante_id', $restauranteId)
-            ->where('status', Fila::STATUS_ABERTA)
-        )
-        ->count();
+            ->ativas()
+            ->whereHas('fila', fn ($q) => $q
+                ->where('restaurante_id', $restauranteId)
+                ->where('status', Fila::STATUS_ABERTA)
+            )
+            ->count();
 
         $reservationsToday = ClienteMesa::whereHas('mesa', fn ($q) => $q
             ->where('restaurante_id', $restauranteId)
