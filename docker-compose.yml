@@ -30,6 +30,23 @@ services:
       - backend
     restart: unless-stopped
 
+  reverb:
+    build:
+      context: ./deep-dish-backend
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./deep-dish-backend:/var/www/html
+      - backend_vendor:/var/www/html/vendor
+    env_file:
+      - ./deep-dish-backend/.env
+    command: >
+      sh -c "composer install --no-interaction --prefer-dist --quiet
+      && php artisan reverb:start --host=0.0.0.0 --port=8081"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   frontend:
     image: node:20-alpine
     working_dir: /app

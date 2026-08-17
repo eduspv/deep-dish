@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/StatusBadge';
@@ -11,6 +11,7 @@ import { ClienteFilaEntry, Reserva } from '@/types';
 import { Users, Clock, Hash, ListOrdered, Home, PartyPopper, CalendarCheck, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatBRT } from '@/lib/utils';
+import { useRealtime } from '@/hooks/useRealtime';
 
 const STORAGE_KEY = 'deepdish_fila';
 
@@ -97,11 +98,36 @@ const Queue: React.FC = () => {
     }
   }, [verificarPromocao]);
 
-  useEffect(() => {
-    if (!state) return;
-    const interval = setInterval(() => refreshPosicao(state), 30_000);
-    return () => clearInterval(interval);
-  }, [state, refreshPosicao]);
+  // O state é reescrito a cada atualização de posição, então os handlers leem a
+  // versão corrente por uma ref em vez de capturá-la no fechamento.
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
+
+  // Tempo real, no lugar do polling de 30s: o canal da fila avisa que a
+  // composição mudou, e o canal pessoal avisa a promoção para mesa.
+  const filaId    = state?.entry.fila?.id ?? state?.entry.fila_id;
+  const clienteId = state?.entry.cliente_id;
+
+  const aoMudarFila = useCallback(() => {
+    const s = stateRef.current;
+    if (s) refreshPosicao(s);
+  }, [refreshPosicao]);
+
+  useRealtime(
+    filaId ? `fila.${filaId}` : undefined,
+    { 'posicao.atualizada': aoMudarFila },
+    aoMudarFila
+  );
+
+  useRealtime(
+    clienteId ? `cliente.${clienteId}` : undefined,
+    {
+      'cliente.promovido': () => {
+        const s = stateRef.current;
+        if (s) verificarPromocao(s);
+      },
+    }
+  );
 
   const handleCancel = async () => {
     if (!state) return;

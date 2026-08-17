@@ -1,6 +1,6 @@
 # Roadmap — Diferencial de IA (PI4)
 
-**Status:** planejado, aguardando início do Sprint 1
+**Status:** Sprint 1 em andamento — a fundação de histórico da fila foi entregue pelo PR #188 (merge em 16/08/2026); o restante do sprint segue aberto (ver seção do Sprint 1).
 **Execução:** as 29 issues derivadas deste roadmap — com critérios de aceite, labels, estimativa e dependências — estão em [`backlog-pi4.md`](./backlog-pi4.md). A direção de produto para além do PI4 está em [`visao-produto.md`](./visao-produto.md).
 **Contexto:** o MVP atual (fila + reserva) resolve o problema básico, mas é funcionalmente igual a qualquer app de reserva de fila do mercado. Este roadmap define o que construir nos 4 sprints do PI4 para dar ao Deep Dish um diferencial real, usando IA de forma verificável (não cosmética).
 
@@ -18,11 +18,20 @@ Origem: análise do backend atual cruzada com o documento de visão "RestaurantO
 - **O produto vai para mobile neste semestre, via Capacitor — em caráter de teste.** O app é **só do cliente**; o restaurante continua no painel web, porque gestão de salão precisa de tela grande (o gerente vê muitas mesas ao mesmo tempo num tablet ou no computador do balcão). Capacitor empacota o React/Vite atual como app Android nativo — APK instalável, com push FCM e câmera para o QR — **sem reescrever nenhuma tela**. Entra como 2 issues do Sprint 3 (#22 e #23) em vez de consumir um sprint inteiro. **React Native não está descartado**: continua como alternativa, com gatilhos objetivos de reavaliação registrados no backlog futuro e detalhados na seção *Mobile* do [`backlog-pi4.md`](./backlog-pi4.md).
 - **IA por voz (o sistema ligar para o restaurante) está descartada** como mecanismo central. Não elimina a ligação — transfere o custo para a plataforma; é lenta e frágil, não vira estado no banco, e tem risco regulatório de telemarketing no Brasil. O canal assíncrono (WhatsApp com IA interpretando texto livre) é a troca vencedora, e pertence ao pós-PI4.
 
-## Achado crítico que motiva o Sprint 1
+## Achado crítico que motivou o Sprint 1 — **resolvido para a fila**
 
-Hoje `ClienteFila` é **deletado (hard delete)** quando o cliente é promovido, cancela ou é removido da fila (`FilaService::cancelarPosicao`, `promoverProximoParaMesa`, `FilaController::removerRestaurante`). Não existe nenhum histórico de tempo de espera, taxa de abandono ou tempo de permanência. Sem isso, nenhuma das features de analytics/previsão/assistente tem dado real para usar — por isso o Sprint 1 é 100% fundação, sem "IA" nenhuma.
+> **Histórico:** até `3de4f0b`, `ClienteFila` era **deletado (hard delete)** quando o cliente era promovido, cancelava ou era removido da fila. Não existia histórico de tempo de espera nem de taxa de abandono — e sem isso nenhuma feature de analytics/previsão/assistente teria dado real para usar. É por isso que o Sprint 1 é 100% fundação, sem "IA" nenhuma.
 
-Sinal correlato: já existiu um campo `estimated_time` em `clientefila` (migration `2026_03_10_002939`), removido um mês depois — indício de que uma tentativa anterior de estimar espera foi abandonada, provavelmente por falta de dado para sustentar o número.
+O PR #188 fechou essa lacuna **para a fila**: a migration `2026_08_12_175616` acrescentou `status_saida`, `saiu_em`, `tempo_espera_segundos` e soft deletes em `clientefila`, e os três pontos de hard delete passaram a chamar `ClienteFila::registrarSaida()`. A saída da fila agora tem uma porta única, com escopo `ativas()` e um hook `deleting` que barra qualquer `delete()` sem `status_saida`.
+
+**O que ainda falta para a fundação ficar completa:**
+
+- **`ClienteMesa` continua sem histórico de permanência** — não há registro de duração real entre check-in e liberação. Esta metade do achado original segue aberta e é pré-requisito das métricas de giro de mesa e tempo de limpeza.
+- **Falta o status de saída `expirado`.** As constantes hoje são `desistiu`, `atendido` e `removido`. `expirado` é justamente o que a detecção automática de desistência do Sprint 2 precisa gravar.
+- **Os índices únicos que o código pressupõe não existem.** `FilaService::enfileirar` tem dois `catch (QueryException)` que citam um unique em `fila (restaurante_id, horario_reserva)` e um índice parcial em `clientefila (fila_id, cliente_id) WHERE status_saida IS NULL` — nenhum dos dois foi criado em migration alguma. Enquanto isso, as corridas que eles dizem cobrir seguem abertas e os blocos são código morto. Vale lembrar que, no PostgreSQL, capturar `QueryException` **dentro** de `DB::transaction()` não basta: a transação entra em estado abortado (`25P02`) e a consulta de recuperação dentro do `catch` também falha — é preciso savepoint, ou deixar a exceção subir e tratar no controller.
+- **Nenhum teste cobre a lógica nova.** O backend tem apenas `ApplicationBootTest` (fumaça). O `FilaService` acabou de ser reescrito de forma significativa e está descoberto.
+
+Sinal correlato que continua válido: já existiu um campo `estimated_time` em `clientefila` (migration `2026_03_10_002939`), removido um mês depois — indício de que uma tentativa anterior de estimar espera foi abandonada, provavelmente por falta de dado para sustentar o número.
 
 ---
 
@@ -30,11 +39,21 @@ Sinal correlato: já existiu um campo `estimated_time` em `clientefila` (migrati
 
 **Objetivo:** parar de perder dado. Sem "IA" visível ainda, mas é o que sustenta os 3 sprints seguintes.
 
-- Capturar saída da fila em vez de hard delete: `status_saida` (atendido/desistiu/removido/expirado), `tempo_espera_segundos`.
+**Entregue (PR #188):**
+
+- ✅ Capturar saída da fila em vez de hard delete: `status_saida`, `saiu_em`, `tempo_espera_segundos` e soft deletes (migration `2026_08_12_175616`).
+- ✅ `FilaService::cancelarPosicao`, `promoverProximoParaMesa` e `FilaController::removerRestaurante` gravam o histórico via `registrarSaida()` antes de remover o registro ativo.
+- ✅ Bônus não previsto: `posicao` saiu do `$appends` do `ClienteFila` (era um `COUNT` por registro serializado) e `FilaController::indexRestaurante` passou a calcular a posição em memória. Isso importa para o Sprint 3 — cada broadcast de fila via Reverb amplificaria esse N+1.
+
+**Em aberto:**
+
+- Acrescentar `expirado` às constantes de `status_saida` (necessário para o Sprint 2).
 - Capturar duração real de permanência em `ClienteMesa` (checkin → liberação).
-- Atualizar `FilaService::cancelarPosicao`, `promoverProximoParaMesa`, `FilaController::removerRestaurante` para gravar o histórico antes de remover o registro ativo.
+- Criar os índices únicos que `FilaService::enfileirar` já pressupõe (ver seção anterior) — sem eles o tratamento de corrida escrito no PR #188 não tem efeito.
+- **Corrigir os gatilhos de promoção da fila.** `promoverProximoParaMesa` é invocado de um único lugar: `ReservaController::liberar` (liberação manual pelo restaurante). Os outros dois caminhos que devolvem uma mesa para `livre` — `expirarReservasVencidas()` e o desbloqueio manual em `MesaController` — não promovem ninguém. Na prática a fila não anda quando uma reserva expira por no-show, que é o caminho automático. Isso deixou de ser só uma limitação de UX e virou problema de **qualidade de dado**: com o histórico agora sendo gravado, quem fica preso numa fila travada registra `tempo_espera_segundos` inflado, contaminando na origem a heurística do Sprint 2.
 - Seeder de dados sintéticos (realistas) — necessário porque 12 semanas de uso real não vão gerar volume suficiente para o dashboard/assistente ficarem interessantes na apresentação final. Deixar claro na entrega o que é dado sintético vs real.
-- Testes PHPUnit no `FilaService` cobrindo a escrita de histórico.
+- Testes PHPUnit no `FilaService` cobrindo a escrita de histórico. Atenção: não existe suíte a que acrescentar — o backend só tem o teste de fumaça `ApplicationBootTest`, e o `FilaService` foi reescrito sem rede de segurança.
+- Rodar `./vendor/bin/pint` no backend: os 6 arquivos tocados pelo PR #188 reprovam no check e desfazem o commit `06ca70b`, cujo objetivo declarado era deixar o repositório verde antes de ligar a CI (issue #31).
 
 **Divisão sugerida:** 2 pessoas em backend (migration + service), 1 em testes, 1 no seeder + wireframe do dashboard do Sprint 2.
 
@@ -44,14 +63,16 @@ Sinal correlato: já existiu um campo `estimated_time` em `clientefila` (migrati
 
 - `AnalyticsService`: tempo médio de espera por dia da semana/horário, taxa de abandono, ocupação, giro de mesa, mapa de calor de demanda por horário — consultando o histórico do Sprint 1.
 - Estimativa de espera ao entrar na fila: média histórica condicionada a restaurante + dia + faixa de horário + tamanho da fila atual.
-- **Detecção automática de desistência na fila:** hoje só existe expiração de no-show para *reserva* (`ExpirarReservasCommand`); a fila não tem equivalente. Adicionar: quando o cliente é chamado e não confirma em X minutos, marcar `status_saida = 'desistiu'` automaticamente (mesmo mecanismo de job agendado, aplicado à fila). Sem isso a "taxa de abandono" do Analytics fica sub-registrada (só captura quem cancelou manualmente).
+- **Detecção automática de desistência na fila:** hoje só existe expiração de no-show para *reserva* (`ExpirarReservasCommand`); a fila não tem equivalente. Adicionar: quando o cliente é chamado e não confirma em X minutos, marcar `status_saida = 'expirado'` automaticamente (mesmo mecanismo de job agendado, aplicado à fila). Sem isso a "taxa de abandono" do Analytics fica sub-registrada (só captura quem cancelou manualmente).
+  **Cuidado de escopo:** isto é maior do que "mais um job agendado". Não existe o estado *"foi chamado"* no modelo — a promoção é atômica hoje: o `ClienteFila` recebe `status_saida = 'atendido'` e um `ClienteMesa` `'confirmada'` nasce no mesmo instante, sem janela entre chamar e confirmar. Implementar a detecção exige **introduzir esse estado intermediário na fila** e alterar o fluxo de promoção — não só agendar um comando.
 - Frontend: dashboard do restaurante com os indicadores; tela do cliente mostrando "~X min de espera estimados" ao entrar na fila.
 
 ---
 
 ## Sprint 3 (semanas 7-9) — Alocação inteligente de mesa + tempo real
 
-- Hoje `promoverProximoParaMesa` é greedy (primeira mesa liberada vai pro primeiro da fila que couber, sem otimizar). Trocar por uma passada que olha todas as mesas livres e todas as entradas de fila abertas, minimizando desperdício de capacidade. Diferencial mais defensável tecnicamente — dá pra apresentar com números ("antes: X% de capacidade desperdiçada, depois: Y%").
+- Hoje `promoverProximoParaMesa` não é sequer "greedy com melhor encaixe": ele olha **apenas o primeiro da fila** e, se esse grupo não couber na mesa liberada, retorna `null` e **ninguém** é promovido — não há busca por quem caberia. Um grupo de 8 na cabeça da fila trava indefinidamente a mesa de 2 lugares que acabou de vagar, para todos os grupos de 2 atrás dele (*head-of-line blocking*). O PR #188 deixou essa escolha explícita no código como `OPÇÃO A` (FIFO estrito, atual) vs `OPÇÃO B` (primeiro que couber, uma linha comentada) — decidir entre as duas é pré-requisito deste sprint, e a OPÇÃO B sozinha já resolve o pior caso.
+  Trocar então por uma passada que olha todas as mesas livres e todas as entradas de fila abertas, minimizando desperdício de capacidade. Diferencial mais defensável tecnicamente — dá pra apresentar com números ("antes: X% de capacidade desperdiçada, depois: Y%"). **Medir o baseline antes de corrigir**, senão o número da apresentação se perde.
 - **Priorização inteligente da fila:** hoje é FCFS puro. Adicionar reordenação por critério simples (ex.: grupo que cabe exatamente numa mesa prestes a vagar sobe na prioridade) — mesma "IA de otimização" do doc original, aplicada à ordem da fila e não só à alocação de mesa.
 - **QR Code de entrada na fila:** gerar um QR por restaurante que leva direto à tela de entrar na fila — reduz atrito de entrada, cabe junto do resto do módulo de fila deste sprint.
 - **Estados intermediários da mesa** (`aguardando_limpeza`, `em_limpeza`, além dos já existentes `livre/reservada/ocupada/bloqueada`): marcação manual pelo restaurante (não depende de RBAC nem de visão computacional — a própria conta do restaurante marca). Alimenta a métrica de "tempo médio de limpeza" no Analytics do Sprint 2/4.

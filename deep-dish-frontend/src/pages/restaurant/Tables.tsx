@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRealtime } from '@/hooks/useRealtime';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import StatusBadge from '@/components/StatusBadge';
@@ -11,6 +13,7 @@ import { Plus, Pencil, Lock, Unlock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Tables: React.FC = () => {
+  const { user } = useAuth();
   const [tables, setTables] = useState<Mesa[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -19,18 +22,27 @@ const Tables: React.FC = () => {
   const [formNumber, setFormNumber] = useState('');
   const [formCapacity, setFormCapacity] = useState('4');
 
-  const fetchTables = async () => {
+  const fetchTables = useCallback(async (silent = false) => {
     try {
       const data = await mesasService.list();
       setTables(data);
     } catch {
-      toast.error('Erro ao carregar mesas.');
+      if (!silent) toast.error('Erro ao carregar mesas.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { fetchTables(); }, []);
+  useEffect(() => { fetchTables(); }, [fetchTables]);
+
+  // Mapa de mesas ao vivo: check-in ocupa, liberação devolve para livre.
+  const recarregar = useCallback(() => { fetchTables(true); }, [fetchTables]);
+
+  useRealtime(
+    user?.id ? `restaurante.${user.id}` : undefined,
+    { 'operacao.atualizada': recarregar },
+    recarregar
+  );
 
   const openNew = () => { setEditTable(null); setFormNumber(''); setFormCapacity('4'); setDialogOpen(true); };
   const openEdit = (t: Mesa) => { setEditTable(t); setFormNumber(String(t.numero)); setFormCapacity(String(t.capacidade)); setDialogOpen(true); };

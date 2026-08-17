@@ -13,6 +13,7 @@ import { Paginated, Reserva, ClienteFilaEntry } from '@/types';
 import { toast } from 'sonner';
 import { formatBRT } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRealtime } from '@/hooks/useRealtime';
 
 const formatDate = (iso: string) => formatBRT(iso, { day: '2-digit', month: '2-digit', year: 'numeric' });
 const formatTime = (iso: string) => formatBRT(iso, { hour: '2-digit', minute: '2-digit' });
@@ -344,15 +345,21 @@ const AppHome: React.FC = () => {
   useEffect(() => { fetchActive(activePage); },    [fetchActive, activePage]);
   useEffect(() => { fetchFinished(finishedPage); }, [fetchFinished, finishedPage]);
 
-  // Polling de 30s — atualiza reservas e fila simultaneamente
-  useEffect(() => {
-    const tick = () => {
-      checkFilaStatus();
-      fetchActive(activePage, true);
-    };
-    const interval = setInterval(tick, 30_000);
-    return () => clearInterval(interval);
+  // Tempo real, no lugar do polling de 30s. 'cliente.promovido' entra aqui também
+  // porque a promoção cria uma reserva — a lista de ativas muda junto.
+  const sincronizar = useCallback(() => {
+    checkFilaStatus();
+    fetchActive(activePage, true);
   }, [checkFilaStatus, fetchActive, activePage]);
+
+  useRealtime(
+    user?.id ? `cliente.${user.id}` : undefined,
+    {
+      'reserva.atualizada': sincronizar,
+      'cliente.promovido': sincronizar,
+    },
+    sincronizar
+  );
 
   // Refetch ao voltar para a aba
   useEffect(() => {

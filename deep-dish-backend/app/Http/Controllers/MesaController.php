@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OperacaoAtualizada;
 use App\Models\ClienteMesa;
 use App\Models\Mesa;
 use Illuminate\Http\JsonResponse;
@@ -93,6 +94,8 @@ class MesaController extends Controller
                 'confirmacao' => 'pendente',
             ]);
 
+            OperacaoAtualizada::dispatch((string) $restauranteId);
+
             return response()->json([
                 'message' => 'Mesa criada com sucesso!',
                 'mesa' => $mesa,
@@ -152,6 +155,8 @@ class MesaController extends Controller
         try {
             $mesa->update($validator->validated());
 
+            OperacaoAtualizada::dispatch((string) $restauranteId);
+
             return response()->json([
                 'message' => 'Mesa atualizada!',
                 'mesa' => $mesa->fresh(),
@@ -187,6 +192,8 @@ class MesaController extends Controller
         }
 
         $mesa->delete();
+
+        OperacaoAtualizada::dispatch((string) $restauranteId);
 
         return response()->json(['message' => 'Mesa removida.']);
     }
