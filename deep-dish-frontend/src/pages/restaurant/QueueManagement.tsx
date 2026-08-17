@@ -8,8 +8,11 @@ import { ClienteFilaEntry } from '@/types';
 import { ListOrdered, Users, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatBRT } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRealtime } from '@/hooks/useRealtime';
 
 const QueueManagement: React.FC = () => {
+  const { user }                  = useAuth();
   const [entries, setEntries]     = useState<ClienteFilaEntry[]>([]);
   const [loading, setLoading]     = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -28,11 +31,12 @@ const QueueManagement: React.FC = () => {
 
   useEffect(() => { fetchQueue(); }, [fetchQueue]);
 
-  // Polling a cada 30s
-  useEffect(() => {
-    const interval = setInterval(() => fetchQueue(true), 30_000);
-    return () => clearInterval(interval);
-  }, [fetchQueue]);
+  // Tempo real: o backend avisa quando a fila muda, no lugar do polling de 30s.
+  useRealtime(
+    user?.id ? `restaurante.${user.id}` : undefined,
+    { 'fila.atualizada': () => fetchQueue(true) },
+    () => fetchQueue(true)
+  );
 
   const handleRemover = async (id: string) => {
     setRemovingId(id);

@@ -12,6 +12,21 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    // A rota /broadcasting/auth nasce com o guard de sessao, que este projeto nao usa.
+    // Aqui ela passa a aceitar os dois guards JWT e a revalidar o token_version —
+    // sem isso, um token de quem ja deslogou continuaria assinando canal privado.
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        [
+            // Sob /api para casar com o VITE_API_URL que o frontend ja usa.
+            'prefix' => 'api',
+            'middleware' => [
+                'api',
+                'auth:api,restaurante',
+                \App\Http\Middleware\VerifyJwtTokenVersion::class,
+            ],
+        ],
+    )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'cliente.or.restaurante' => \App\Http\Middleware\ClienteOuRestaurante::class,

@@ -2,6 +2,10 @@
 
 namespace App\Services;
 
+use App\Events\ClientePromovido;
+use App\Events\FilaAtualizada;
+use App\Events\OperacaoAtualizada;
+use App\Events\PosicaoFilaAtualizada;
 use App\Models\ClienteFila;
 use App\Models\ClienteMesa;
 use App\Models\Fila;
@@ -39,9 +43,9 @@ class FilaService
             try {
                 $fila = Fila::firstOrCreate(
                     [
-                        'restaurante_id'  => $restauranteId,
+                        'restaurante_id' => $restauranteId,
                         'horario_reserva' => $horario,
-                        'status'          => Fila::STATUS_ABERTA,
+                        'status' => Fila::STATUS_ABERTA,
                     ]
                 );
             } catch (QueryException $e) {
@@ -54,11 +58,16 @@ class FilaService
             }
 
             try {
-                return ClienteFila::create([
-                    'fila_id'      => $fila->id,
-                    'cliente_id'   => $clienteId,
+                $registro = ClienteFila::create([
+                    'fila_id' => $fila->id,
+                    'cliente_id' => $clienteId,
                     'qntd_pessoas' => $qntdPessoas,
                 ]);
+
+                FilaAtualizada::dispatch($restauranteId);
+                PosicaoFilaAtualizada::dispatch((string) $fila->id);
+
+                return $registro;
             } catch (QueryException $e) {
                 // violação do índice parcial único (fila_id, cliente_id) WHERE status_saida IS NULL
                 throw new InvalidArgumentException('Você já está na fila deste restaurante.');
@@ -85,6 +94,9 @@ class FilaService
             $registro->registrarSaida(ClienteFila::STATUS_SAIDA_DESISTIU);
 
             $this->encerrarFilaSeVazia($fila);
+
+            FilaAtualizada::dispatch((string) $fila->restaurante_id);
+            PosicaoFilaAtualizada::dispatch((string) $fila->id);
 
             return true;
         });
@@ -161,6 +173,18 @@ class FilaService
             $proximo->registrarSaida(ClienteFila::STATUS_SAIDA_ATENDIDO);
 
             $this->encerrarFilaSeVazia($fila);
+
+            FilaAtualizada::dispatch($restauranteId);
+            PosicaoFilaAtualizada::dispatch((string) $fila->id);
+            // Nasceu uma reserva: as telas de Mesas e Reservas do painel mudaram.
+            OperacaoAtualizada::dispatch($restauranteId);
+
+            // Aviso pessoal: quem foi promovido nao descobre pelo canal da fila,
+            // que so diz que a composicao mudou.
+            ClientePromovido::dispatch(
+                (string) $proximo->cliente_id,
+                (string) $clienteMesa->id,
+            );
 
             return $clienteMesa;
         });

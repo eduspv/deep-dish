@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\FilaAtualizada;
+use App\Events\PosicaoFilaAtualizada;
 use App\Models\ClienteFila;
 use App\Models\Fila;
 use App\Services\FilaService;
@@ -64,14 +66,14 @@ class FilaController extends Controller
         $restauranteId = auth('restaurante')->id();
 
         $entries = ClienteFila::with(['fila', 'cliente'])
-        ->ativas()
-        ->whereHas('fila', fn ($q) => $q
-            ->where('restaurante_id', $restauranteId)
-            ->where('status', Fila::STATUS_ABERTA)
-        )
-        ->orderBy('created_at')
-        ->orderBy('id')
-        ->get();
+            ->ativas()
+            ->whereHas('fila', fn ($q) => $q
+                ->where('restaurante_id', $restauranteId)
+                ->where('status', Fila::STATUS_ABERTA)
+            )
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
 
         // Posição calculada em memória: a lista já está ordenada e contém só ativos.
         // Usar ->append('posicao') aqui dispararia um COUNT por registro.
@@ -90,22 +92,25 @@ class FilaController extends Controller
         $restauranteId = auth('restaurante')->id();
 
         $registro = ClienteFila::query()
-    ->ativas()
-    ->whereKey($id)
-    ->whereHas('fila', fn ($q) => $q->where('restaurante_id', $restauranteId))
-    ->first();
+            ->ativas()
+            ->whereKey($id)
+            ->whereHas('fila', fn ($q) => $q->where('restaurante_id', $restauranteId))
+            ->first();
 
-if (! $registro) {
-    return response()->json(['message' => 'Entrada não encontrada.'], 404);
-}
+        if (! $registro) {
+            return response()->json(['message' => 'Entrada não encontrada.'], 404);
+        }
 
-$fila = $registro->fila;
+        $fila = $registro->fila;
 
-$registro->registrarSaida(ClienteFila::STATUS_SAIDA_REMOVIDO);
+        $registro->registrarSaida(ClienteFila::STATUS_SAIDA_REMOVIDO);
 
-$this->filaService->encerrarFilaSeVazia($fila);
+        $this->filaService->encerrarFilaSeVazia($fila);
 
-return response()->json(['message' => 'Removido da fila.']);
+        FilaAtualizada::dispatch((string) $restauranteId);
+        PosicaoFilaAtualizada::dispatch((string) $fila->id);
+
+        return response()->json(['message' => 'Removido da fila.']);
     }
 
     public function consultarPosicao(Request $request): JsonResponse

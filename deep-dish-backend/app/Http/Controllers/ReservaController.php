@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OperacaoAtualizada;
+use App\Events\ReservaAtualizada;
 use App\Models\ClienteMesa;
 use App\Models\Mesa;
 use App\Models\Restaurante;
@@ -97,16 +99,32 @@ class ReservaController extends Controller
             return 0;
         }
 
-        DB::transaction(function () use ($vencidas) {
+        $restaurantesAfetados = [];
+
+        DB::transaction(function () use ($vencidas, &$restaurantesAfetados) {
             /** @var ClienteMesa $reserva */
             foreach ($vencidas as $reserva) {
                 $reserva->update(['status' => 'expirada']);
+                // No-show não tem check-in, então a duração fica NULL sozinha;
+                // as sessões encerradas pelo fechamento gravam duração real.
+                $reserva->registrarSaida();
                 $mesa = Mesa::find($reserva->mesa_id);
-                if ($mesa && in_array($mesa->status, ['reservada', 'ocupada'])) {
-                    $mesa->update(['status' => 'livre']);
+                if ($mesa) {
+                    if (in_array($mesa->status, ['reservada', 'ocupada'])) {
+                        $mesa->update(['status' => 'livre']);
+                    }
+                    // Chave do array: expirar 10 reservas do mesmo salão avisa o
+                    // painel uma vez, não dez.
+                    $restaurantesAfetados[(string) $mesa->restaurante_id] = true;
                 }
+
+                ReservaAtualizada::dispatch((string) $reserva->cliente_id);
             }
         });
+
+        foreach (array_keys($restaurantesAfetados) as $restauranteId) {
+            OperacaoAtualizada::dispatch($restauranteId);
+        }
 
         return $vencidas->count();
     }
@@ -211,6 +229,9 @@ class ReservaController extends Controller
 
                 $reserva->load(['mesa.restaurante']);
 
+                OperacaoAtualizada::dispatch((string) $mesa->restaurante_id);
+                ReservaAtualizada::dispatch((string) $clienteId);
+
                 return response()->json([
                     'message' => 'Reserva criada com sucesso! Confirme sua chegada com o restaurante para liberar sua mesa.',
                     'reserva' => $reserva,
@@ -283,12 +304,19 @@ class ReservaController extends Controller
         }
 
         $reserva->update(['status' => 'cancelada']);
+        // Cancelamento depois do check-in é permanência real; antes dele fica NULL.
+        $reserva->registrarSaida();
 
         // Libera a mesa se estiver ocupada (check-in já havia sido feito)
         $mesa = Mesa::find($reserva->mesa_id);
         if ($mesa && $mesa->status === 'ocupada') {
             $mesa->update(['status' => 'livre']);
         }
+
+        if ($mesa) {
+            OperacaoAtualizada::dispatch((string) $mesa->restaurante_id);
+        }
+        ReservaAtualizada::dispatch((string) $clienteId);
 
         return response()->json([
             'message' => 'Reserva cancelada.',
@@ -350,6 +378,9 @@ class ReservaController extends Controller
             $mesa->update(['status' => 'ocupada']);
         }
 
+        OperacaoAtualizada::dispatch((string) $restauranteId);
+        ReservaAtualizada::dispatch((string) $reserva->cliente_id);
+
         return response()->json([
             'message' => 'Check-in realizado! Mesa liberada para o cliente.',
             'reserva' => $reserva->fresh(['mesa', 'cliente']),
@@ -375,6 +406,7 @@ class ReservaController extends Controller
         }
 
         $reserva->update(['status' => 'liberada']);
+        $reserva->registrarSaida();
 
         // Mesa volta a ficar livre
         $mesa = $reserva->mesa;
@@ -385,13 +417,18 @@ class ReservaController extends Controller
             app(FilaService::class)->promoverProximoParaMesa($mesa->restaurante_id, $mesa->fresh());
         }
 
+        OperacaoAtualizada::dispatch((string) $restauranteId);
+        ReservaAtualizada::dispatch((string) $reserva->cliente_id);
+
         return response()->json([
             'message' => 'Mesa liberada.',
             'reserva' => $reserva->fresh(['mesa', 'cliente']),
         ]);
     }
 
-    // ─── Restaurante: exclui permanentemente reserva finalizada
+    // ─── Restaurante: remove reserva finalizada do painel ───
+    // Soft delete: a linha sai das listagens mas o histórico de permanência
+    // continua no banco, acessível ao Analytics via withTrashed().
     public function forceDestroyRestaurante(string $id): JsonResponse
     {
         $restauranteId = auth('restaurante')->id();
@@ -409,6 +446,8 @@ class ReservaController extends Controller
         }
 
         $reserva->delete();
+
+        OperacaoAtualizada::dispatch((string) $restauranteId);
 
         return response()->json(['message' => 'Reserva excluída.']);
     }
