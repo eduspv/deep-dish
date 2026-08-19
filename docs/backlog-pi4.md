@@ -1133,22 +1133,48 @@ lint, teste e build só rodam se alguém lembrar de rodar na própria máquina.
 
 `labels: chore, infra` · `1 ponto` · **Depende de: #31**
 
-**Contexto.** O `Deep_Dish_Contributing_Guide.md` já diz que só o Tech Lead faz merge em `develop`
-e `main`, mas isso é convenção verbal — nada impede tecnicamente um push direto. Esta issue dá
-trava técnica à regra que já existe no papel.
+**Contexto.** A CI da `#31` já roda em todo PR, mas o resultado é **apenas informativo** — nada
+impede mergear com o check vermelho. Esta issue transforma o aviso em trava.
 
-**Só executar depois de a CI rodar verde por pelo menos um sprint.** Tornar obrigatório cedo demais
-transforma falso positivo em bloqueio de trabalho.
+**Só executar depois de a CI rodar verde num PR real.** Tornar obrigatório cedo demais transforma
+falso positivo em bloqueio de trabalho.
+
+**Descoberta que reduziu o escopo:** a branch protection **já existia** em `develop` e `main`, e bem
+configurada — PR obrigatório, 1 aprovação, `dismiss_stale_reviews`, `enforce_admins`, sem force
+push, sem deleção, conversas resolvidas. **Faltava só `required_status_checks`.** Ou seja, a issue
+é habilitar uma opção num conjunto que já estava de pé, não montar o conjunto.
+
+Confirmado também que a regra de aprovação já vinha sendo cumprida na prática: os quatro PRs
+mergeados até aqui (#187, #190, #191, #192) foram aprovados pelo `jpvoliveir` — o `enforce_admins`
+impede o dono do repositório de mergear o próprio trabalho sem revisão, e o GitHub não permite
+aprovar o próprio PR.
 
 **Tarefas**
-- Branch protection em `develop` e `main`: exigir os checks da #31, exigir PR com aprovação,
-  bloquear push direto.
-- Registrar no `Deep_Dish_Contributing_Guide.md` que a regra agora é aplicada automaticamente.
+- Habilitar `required_status_checks` em `develop` e `main`, com os contextos exatos
+  `Backend (PHP 8.2)` e `Frontend (Node 20)`.
+- Registrar no `Deep_Dish_Contributing_Guide.md` as regras automatizadas e o procedimento de
+  emergência.
+
+**Decisões**
+- **`strict: true`** (branch atualizada antes do merge). Pega a falha de agosto/2026: os PRs #187,
+  #188 e #189 estavam verdes separadamente e a `develop` combinada quebrou, exigindo o #190 só para
+  consertar. Custo: `Update branch` + ~40s de CI sempre que alguém mergear antes.
+- **`enforce_admins` mantido ativo.** A regra vale para todos. Se o Actions cair, o caminho é
+  desligar a proteção em Settings, mergear e religar — ato deliberado e visível, documentado no
+  guia.
+- **Branch protection clássica, não rulesets.** O repositório já usa o mecanismo clássico; misturar
+  os dois criaria duas fontes de regra concorrendo.
+
+⚠️ **Cuidado ao aplicar por API:** o `PATCH` em `/branches/{branch}/protection` **substitui o
+objeto inteiro** — omitir um campo o desliga. Enviar só `required_status_checks` derrubaria a
+exigência de PR e o `enforce_admins` sem aviso. Pela interface esse risco não existe.
 
 **Critérios de aceite**
 - [ ] Push direto em `develop` é rejeitado pelo GitHub.
 - [ ] PR com CI vermelha não pode ser mergeada.
-- [ ] O guia de contribuição reflete a regra automatizada.
+- [ ] PR desatualizado exige `Update branch` antes do merge.
+- [ ] Nenhuma das regras que já existiam foi perdida (comparar a proteção antes e depois).
+- [ ] O guia de contribuição reflete as regras automatizadas e o procedimento de emergência.
 
 ---
 
