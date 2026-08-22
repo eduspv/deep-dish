@@ -21,6 +21,18 @@ class ClienteFilaTest extends TestCase
         $this->assertSame('desistiu', ClienteFila::STATUS_SAIDA_DESISTIU);
         $this->assertSame('atendido', ClienteFila::STATUS_SAIDA_ATENDIDO);
         $this->assertSame('removido', ClienteFila::STATUS_SAIDA_REMOVIDO);
+        $this->assertSame('expirado', ClienteFila::STATUS_SAIDA_EXPIRADO);
+    }
+
+    public function test_chamado_em_e_convertido_para_data(): void
+    {
+        // A #12 compara 'chamado_em' com a janela de tolerância para marcar o
+        // no-show. Sem o cast a coluna volta do Postgres como string e a
+        // comparação de datas passa a ser comparação de texto.
+        $registro = new ClienteFila;
+
+        $this->assertArrayHasKey('chamado_em', $registro->getCasts());
+        $this->assertSame('datetime', $registro->getCasts()['chamado_em']);
     }
 
     public function test_quem_ja_saiu_da_fila_nao_tem_posicao(): void
