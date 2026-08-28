@@ -21,6 +21,8 @@ class ClienteFila extends Model
 
     public const STATUS_SAIDA_REMOVIDO = 'removido'; // ação administrativa (item 6)
 
+    public const STATUS_SAIDA_EXPIRADO = 'expirado'; // no-show: foi chamado e não apareceu (#12)
+
     public $incrementing = false;
 
     protected $keyType = 'string';
@@ -33,6 +35,9 @@ class ClienteFila extends Model
         'qntd_pessoas',
     ];
 
+    // 'chamado_em' fica fora do $fillable como os demais campos de histórico:
+    // quem escreve é a rotina de chamada (#12), não um request do cliente.
+
     // 'posicao' saiu do $appends de propósito: dispara um COUNT por registro.
     // Use ->append('posicao') apenas onde a posição é realmente necessária.
 
@@ -41,6 +46,7 @@ class ClienteFila extends Model
         return [
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'chamado_em' => 'datetime',
             'saiu_em' => 'datetime',
             'tempo_espera_segundos' => 'integer',
         ];

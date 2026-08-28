@@ -376,16 +376,16 @@ histórico.
 como calcular giro de mesa nem duração média — que é o insumo da estimativa de espera (#10).
 
 **Tarefas**
-- Migration: `horario_liberacao` (timestamp, nullable) e `duracao_minutos` (integer, nullable) em
+- Migration: `horario_saida` (timestamp, nullable) e `duracao_segundos` (integer, nullable) em
   `clientemesa`.
 - Preencher ambos em `ReservaController::liberar` e em `ReservaController::expirarReservasVencidas`
   (nos dois ramos: no-show e sessão estourada).
-- Quando não houve check-in (no-show), `duracao_minutos` fica `null` — não zero. Zero seria lido
+- Quando não houve check-in (no-show), `duracao_segundos` fica `null` — não zero. Zero seria lido
   como "sentou e saiu na hora" e contaminaria a média.
 
 **Critérios de aceite**
-- [ ] Liberar mesa grava `horario_liberacao` e `duracao_minutos` = diferença até o `horario_checkin`.
-- [ ] Reserva expirada por no-show fica com `duracao_minutos = null`.
+- [x] Liberar mesa grava `horario_saida` e `duracao_segundos` = diferença até o `horario_checkin`.
+- [x] Reserva expirada por no-show fica com `duracao_segundos = null`.
 - [ ] Sessão expirada pelo command grava a duração normalmente.
 - [ ] Backfill não se aplica — não há dado histórico a recuperar.
 
@@ -402,17 +402,34 @@ impede escrever teste ou seeder.
 
 **Tarefas**
 - Apagar `database/factories/UserFactory.php` e limpar o `DatabaseSeeder`.
-- Criar factories para `Cliente`, `Restaurante`, `Mesa`, `Funcionario`, `Fila`, `ClienteFila`,
-  `ClienteMesa`, com dados brasileiros plausíveis (CPF/CNPJ válidos em formato, endereços, horários
-  de funcionamento coerentes).
-- Um seeder mínimo de desenvolvimento: 1 restaurante com mesas variadas + alguns clientes, para
-  subir o ambiente e clicar.
+- **Adicionar o trait `HasFactory`** a `Mesa`, `Funcionario`, `Fila`, `ClienteFila` e `ClienteMesa`
+  — descoberto durante a execução: só `Cliente` e `Restaurante` tinham, e sem ele o método
+  `Model::factory()` nem existe.
+- Criar factories para os 7 models, com dados brasileiros plausíveis.
+- Seeder de cenário clicável: restaurantes com fila povoada e reservas em estados variados.
 
 **Critérios de aceite**
-- [ ] `php artisan db:seed` roda sem erro num banco limpo.
-- [ ] Toda factory gera model persistível sem violar constraint (inclusive os uniques
+- [x] `php artisan db:seed` roda sem erro num banco limpo.
+- [x] Toda factory gera model persistível sem violar constraint (inclusive os uniques
       `restaurante_id + numero` em `mesa` e `restaurante_id + cpf` em `funcionario`).
-- [ ] Nenhuma referência a `App\Models\User` sobra no repositório.
+- [x] Nenhuma referência a `App\Models\User` sobra no repositório.
+
+**Decisões de execução**
+
+- **`fake('pt_BR')` fixo no código**, não via `APP_FAKER_LOCALE`. `.env` já existentes não mudam
+  quando o `.env.example` muda — depender do env faria cada pessoa gerar dados diferentes, e um
+  teste passaria numa máquina e falharia noutra.
+- **Os states de saída passam pelo `registrarSaida()` do model**, em vez de escreverem
+  `status_saida`/`saiu_em` direto. Escrever direto burlaria o hook `deleting` do `ClienteFila` e
+  produziria dado que não corresponde ao que o sistema real gera.
+- **`created_at` no passado antes do `registrarSaida()`.** Sem isso todo registro histórico sai com
+  `tempo_espera_segundos = 0` — pego durante a verificação, e teria inutilizado as métricas da
+  `#8` (AnalyticsService). Os states aceitam o tempo: `atendido(20)`, `desistiu(35)`.
+
+⚠️ **Achado que afeta a `#12`** (detecção automática de desistência): a coluna **`chamado_em` não
+existe**. O plano previa que a `#1` a criasse, mas o PR entregue adicionou apenas `status_saida`,
+`saiu_em`, `tempo_espera_segundos` e `deleted_at`. Sem saber *quando* o cliente foi chamado, não há
+como decidir que ele desistiu — a `#12` precisa criar a coluna ou adotar outro critério.
 
 ---
 
@@ -436,7 +453,7 @@ gerado.
 
 **Critérios de aceite**
 - [ ] Rodar o seeder popula histórico coerente: todo `ClienteFila` fechado tem `status_saida`,
-      `saiu_em` e `tempo_espera_segundos`; todo `ClienteMesa` fechado tem `duracao_minutos`.
+      `saiu_em` e `tempo_espera_segundos`; todo `ClienteMesa` fechado tem `duracao_segundos`.
 - [ ] Distribuição por hora do dia reproduz os dois picos ao ser plotada.
 - [ ] Rodar duas vezes não duplica nem corrompe o dado.
 - [ ] O documento de entrega (#29) consegue apontar exatamente qual dado é sintético.
@@ -1133,22 +1150,48 @@ lint, teste e build só rodam se alguém lembrar de rodar na própria máquina.
 
 `labels: chore, infra` · `1 ponto` · **Depende de: #31**
 
-**Contexto.** O `Deep_Dish_Contributing_Guide.md` já diz que só o Tech Lead faz merge em `develop`
-e `main`, mas isso é convenção verbal — nada impede tecnicamente um push direto. Esta issue dá
-trava técnica à regra que já existe no papel.
+**Contexto.** A CI da `#31` já roda em todo PR, mas o resultado é **apenas informativo** — nada
+impede mergear com o check vermelho. Esta issue transforma o aviso em trava.
 
-**Só executar depois de a CI rodar verde por pelo menos um sprint.** Tornar obrigatório cedo demais
-transforma falso positivo em bloqueio de trabalho.
+**Só executar depois de a CI rodar verde num PR real.** Tornar obrigatório cedo demais transforma
+falso positivo em bloqueio de trabalho.
+
+**Descoberta que reduziu o escopo:** a branch protection **já existia** em `develop` e `main`, e bem
+configurada — PR obrigatório, 1 aprovação, `dismiss_stale_reviews`, `enforce_admins`, sem force
+push, sem deleção, conversas resolvidas. **Faltava só `required_status_checks`.** Ou seja, a issue
+é habilitar uma opção num conjunto que já estava de pé, não montar o conjunto.
+
+Confirmado também que a regra de aprovação já vinha sendo cumprida na prática: os quatro PRs
+mergeados até aqui (#187, #190, #191, #192) foram aprovados pelo `jpvoliveir` — o `enforce_admins`
+impede o dono do repositório de mergear o próprio trabalho sem revisão, e o GitHub não permite
+aprovar o próprio PR.
 
 **Tarefas**
-- Branch protection em `develop` e `main`: exigir os checks da #31, exigir PR com aprovação,
-  bloquear push direto.
-- Registrar no `Deep_Dish_Contributing_Guide.md` que a regra agora é aplicada automaticamente.
+- Habilitar `required_status_checks` em `develop` e `main`, com os contextos exatos
+  `Backend (PHP 8.2)` e `Frontend (Node 20)`.
+- Registrar no `Deep_Dish_Contributing_Guide.md` as regras automatizadas e o procedimento de
+  emergência.
+
+**Decisões**
+- **`strict: true`** (branch atualizada antes do merge). Pega a falha de agosto/2026: os PRs #187,
+  #188 e #189 estavam verdes separadamente e a `develop` combinada quebrou, exigindo o #190 só para
+  consertar. Custo: `Update branch` + ~40s de CI sempre que alguém mergear antes.
+- **`enforce_admins` mantido ativo.** A regra vale para todos. Se o Actions cair, o caminho é
+  desligar a proteção em Settings, mergear e religar — ato deliberado e visível, documentado no
+  guia.
+- **Branch protection clássica, não rulesets.** O repositório já usa o mecanismo clássico; misturar
+  os dois criaria duas fontes de regra concorrendo.
+
+⚠️ **Cuidado ao aplicar por API:** o `PATCH` em `/branches/{branch}/protection` **substitui o
+objeto inteiro** — omitir um campo o desliga. Enviar só `required_status_checks` derrubaria a
+exigência de PR e o `enforce_admins` sem aviso. Pela interface esse risco não existe.
 
 **Critérios de aceite**
 - [ ] Push direto em `develop` é rejeitado pelo GitHub.
 - [ ] PR com CI vermelha não pode ser mergeada.
-- [ ] O guia de contribuição reflete a regra automatizada.
+- [ ] PR desatualizado exige `Update branch` antes do merge.
+- [ ] Nenhuma das regras que já existiam foi perdida (comparar a proteção antes e depois).
+- [ ] O guia de contribuição reflete as regras automatizadas e o procedimento de emergência.
 
 ---
 

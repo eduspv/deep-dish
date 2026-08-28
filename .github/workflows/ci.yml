@@ -71,7 +71,7 @@ jobs:
       BROADCAST_CONNECTION: "null"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Instalar PHP
         uses: shivammathur/setup-php@v2
@@ -86,7 +86,7 @@ jobs:
         run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
       - name: Restaurar cache do Composer
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: composer-${{ runner.os }}-${{ hashFiles('deep-dish-backend/composer.lock') }}
@@ -155,10 +155,10 @@ jobs:
         working-directory: deep-dish-frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Instalar Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           # Mesma versao do servico frontend no docker-compose.yml.
           node-version: '20'
