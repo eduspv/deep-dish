@@ -459,6 +459,24 @@ class AnalyticsServiceTest extends TestCase
         );
     }
 
+    public function test_periodo_de_exatamente_366_dias_e_aceito(): void
+    {
+        // O teto e inclusive. A contagem por float ('365,999... + 1') fazia a
+        // guarda rejeitar justamente o valor maximo que deveria permitir.
+        //
+        // O endOfDay no fim NAO e detalhe: com as duas pontas em 00:00 a conta
+        // antiga dava 366 exatos e passava, e este teste nao guardaria nada. E
+        // com endOfDay que a diferenca vira 365,999... — e e assim que o
+        // AnalyticsController monta o periodo.
+        $serie = $this->analytics->taxaDeOcupacao(
+            $this->restaurante->id,
+            $this->local('2026-01-01 00:00:00'),
+            $this->local('2027-01-01 00:00:00')->endOfDay()
+        );
+
+        $this->assertCount(366, $serie);
+    }
+
     public function test_periodo_longo_demais_e_rejeitado(): void
     {
         $this->expectException(InvalidArgumentException::class);
