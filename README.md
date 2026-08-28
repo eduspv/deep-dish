@@ -238,20 +238,35 @@ npm run build                 # build de produção
 > tipo sem verificá-las. Sem esse comando, nenhum erro de tipo é detectado antes de chegar no
 > navegador.
 
-Os testes rodam em SQLite na sua máquina e em PostgreSQL na CI. Se precisar reproduzir o ambiente
-da CI localmente, suba um Postgres descartável e aponte as variáveis para ele:
+Os testes rodam em **PostgreSQL tanto na sua máquina quanto na CI** — o `phpunit.xml` já aponta
+por padrão para um banco de teste local descartável, o mesmo que o job de backend da CI usa
+(`deepdish_test`, usuário `postgres`, senha `secret`). Isso existe porque parte do SQL do projeto
+usa sintaxe específica do Postgres (`interval '1 hour'`, `ALTER COLUMN ... SET/DROP DEFAULT`) que
+SQLite não entende — testar em Postgres local evita descobrir isso só na CI.
+
+**Suba o banco de teste** (serviço `postgres_test` do `docker-compose.yml`, na raiz do repo):
 
 ```bash
-docker run -d --name dd-test -e POSTGRES_PASSWORD=secret \
-  -e POSTGRES_DB=deepdish_test -p 55432:5432 postgres:16
-
-cd deep-dish-backend
-DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=55432 DB_DATABASE=deepdish_test \
-DB_USERNAME=postgres DB_PASSWORD=secret DB_SSLMODE=disable \
-  php artisan migrate --force && php artisan test
-
-docker rm -f dd-test
+docker compose up -d postgres_test
 ```
+
+**Rode os testes** normalmente — não precisa passar nenhuma variável `DB_*` na mão, o
+`phpunit.xml` já resolve para esse container:
+
+```bash
+cd deep-dish-backend
+composer test                 # ou: php artisan test
+```
+
+Para derrubar só o banco de teste depois (sem afetar backend/queue/reverb/frontend, se estiverem
+rodando): `docker compose stop postgres_test`. Ele não usa volume nomeado — os dados somem quando
+o container é removido (`docker compose rm -f postgres_test`), de propósito.
+
+> ⚠️ `tests/TestCase.php` tem uma trava de segurança: antes de qualquer teste, ela confere se a
+> conexão de banco aponta para um host permitido (`127.0.0.1`, `localhost` ou `postgres_test`) e
+> aborta imediatamente — antes de `RefreshDatabase` rodar — se detectar o host do Supabase
+> compartilhado do time ou qualquer host fora dessa lista. O projeto não tem staging nem backup
+> desse banco, então isso é intencional e não deve ser enfraquecido para "rodar mais fácil".
 
 ---
 
