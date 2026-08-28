@@ -59,6 +59,19 @@ class ClienteFilaFactory extends Factory
     }
 
     /**
+     * No-show: foi chamado para a mesa e nao apareceu.
+     *
+     * Em producao quem grava este status e a rotina de expiracao da fila (#164),
+     * que ainda nao existe. A factory cobre o estado desde ja porque a taxa de
+     * abandono do AnalyticsService soma 'desistiu' + 'expirado' — sem este
+     * estado, metade da metrica ficaria sem teste.
+     */
+    public function expirou(int $esperouMinutos = 25): static
+    {
+        return $this->saiu(ClienteFila::STATUS_SAIDA_EXPIRADO, $esperouMinutos);
+    }
+
+    /**
      * Registra a saida usando a MESMA porta que o codigo de producao usa.
      *
      * Escrever status_saida/saiu_em direto no banco funcionaria, mas burlaria o
