@@ -62,8 +62,8 @@ abstract class TestCase extends BaseTestCase
                 throw new RuntimeException(
                     "TESTES ABORTADOS: a conexão '{$connectionName}' aponta para host "
                     ."'{$host}', que parece ser o banco Supabase compartilhado do time "
-                    ."(sem staging, sem backup). Rodar a suíte aqui (ex.: com RefreshDatabase) "
-                    ."apagaria o banco de todo mundo."
+                    .'(sem staging, sem backup). Rodar a suíte aqui (ex.: com RefreshDatabase) '
+                    .'apagaria o banco de todo mundo.'
                 );
             }
         }
@@ -84,7 +84,7 @@ abstract class TestCase extends BaseTestCase
             throw new RuntimeException(
                 "TESTES ABORTADOS: conexão de teste é '{$connectionName}' com host "
                 .($host !== null ? "'{$host}'" : '(nenhum)').' e database '
-                .($database !== null ? "'{$database}'" : '(nenhum)').", fora da allowlist "
+                .($database !== null ? "'{$database}'" : '(nenhum)').', fora da allowlist '
                 .'de bancos de teste seguros.'."\n"
                 .'Permitido: sqlite \':memory:\', ou host em ['.implode(', ', self::HOSTS_SEGUROS)."].\n"
                 .'Se este é um host de teste novo e legítimo (ex.: novo serviço de banco '
