@@ -77,6 +77,9 @@ Route::prefix('restaurante')->middleware(['auth:restaurante', \App\Http\Middlewa
 Route::prefix('restaurante')->middleware(['auth:restaurante', \App\Http\Middleware\VerifyJwtTokenVersion::class, \App\Http\Middleware\EnsureEmailIsVerified::class])->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'stats']);
 
+    // Historico operacional. O /dashboard acima continua sendo o estado atual.
+    Route::get('/analytics', [App\Http\Controllers\AnalyticsController::class, 'index']);
+
     Route::get('/me', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'me']);
     Route::put('/me', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'update']);
     Route::post('/me/imagem', [App\Http\Controllers\Auth\RestauranteAuthController::class, 'uploadImagem']);

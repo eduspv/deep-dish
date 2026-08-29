@@ -471,7 +471,18 @@ class AnalyticsService
             throw new InvalidArgumentException('A data inicial do período não pode ser posterior à final.');
         }
 
-        if ($inicio->diffInDays($fim) + 1 > self::MAX_DIAS) {
+        // Dia de calendário contra dia de calendário, NO FUSO DO RESTAURANTE.
+        //
+        // Duas coisas dependem disso. Primeiro, diffInDays() devolve float: de
+        // startOfDay até endOfDay o resultado é 365,999..., e o '+1' passava de
+        // MAX_DIAS por uma fração, rejeitando exatamente o período máximo que
+        // esta guarda deveria permitir. Segundo, o setTimezone tem de estar aqui
+        // porque diasDoPeriodo() enumera em self::FUSO — contar em um fuso e
+        // enumerar em outro faz a série responder um dia diferente do pedido.
+        $diasCorridos = (int) $inicio->copy()->setTimezone(self::FUSO)->startOfDay()
+            ->diffInDays($fim->copy()->setTimezone(self::FUSO)->startOfDay());
+
+        if ($diasCorridos + 1 > self::MAX_DIAS) {
             throw new InvalidArgumentException('Período de no máximo '.self::MAX_DIAS.' dias por consulta.');
         }
     }
